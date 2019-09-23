@@ -122,6 +122,7 @@ public:
   LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   void defaults();
   virtual ~LavaVu();
+  static void cleanup();
 
   //Argument parser
   virtual void arguments(std::vector<std::string> args);

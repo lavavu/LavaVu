@@ -2139,6 +2139,9 @@ class Viewer(dict):
                 viewer = vref()
                 if viewer:
                     viewer._shutdown()
+                #Clean up any static data
+                LavaVuPython.LavaVu_cleanup()
+
             import atexit
             atexit.register(exitfn, weakref.ref(self))
 

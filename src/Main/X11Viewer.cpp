@@ -40,6 +40,11 @@
 #include <signal.h>
 #include <sys/time.h>
 
+//Hold the X display and framebuffer config / visual info
+Display* X11Viewer::Xdisplay = NULL;
+GLXFBConfig X11Viewer::fbconfig = NULL;
+XVisualInfo* X11Viewer::vi = NULL;
+
 int X11_error(Display* Xdisplay, XErrorEvent* error)
 {
   char error_str[256];
@@ -53,27 +58,32 @@ X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
 {
   XSetErrorHandler(X11_error);
   debug_print("X11 viewer created\n");
-  Xdisplay = NULL;
-  sHints = NULL;
-  wmHints = NULL;
-  vi = NULL;
-  fbcfg = NULL;
-
-  x11_fd = -1; //Initial unset flag value
 }
 
 X11Viewer::~X11Viewer()
 {
+  if (sHints) XFree(sHints);
+  if (wmHints) XFree(wmHints);
+  if (win) XDestroyWindow(Xdisplay, win);
+  if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+}
+
+void X11Viewer::cleanup()
+{
+  //Set the cleanup flag to completely tear down display data
+  //This is no longer done by default in destructor so we can re-use the display
+  //connection and framebuffer config.
+  //Result is slightly more efficient and works around a memory leak in Mesa, 
+  //with the caveat that the cleanup flag must be set before exiting
   if (Xdisplay)
   {
-    if (sHints) XFree(sHints);
-    if (wmHints) XFree(wmHints);
-    XDestroyWindow(Xdisplay ,win);
-    if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+    printf("X11 CLEANUP!\n");
     if (vi) XFree(vi);
-    if (fbcfg) XFree(fbcfg);
+    vi = NULL;
     XSetCloseDownMode(Xdisplay, DestroyAll);
     XCloseDisplay(Xdisplay);
+    Xdisplay = NULL;
+    fbconfig = NULL;
   }
 }
 
@@ -109,38 +119,38 @@ void X11Viewer::open(int w, int h)
     // Get visual
     if (!chooseVisual()) return;
 
-    // Setup window manager hints
-    sHints = XAllocSizeHints();
-    wmHints = XAllocWMHints();
-
     // Create a window or buffer to render to
     createWindow(width, height);
   }
   else
   {
     //Resize
-    XDestroyWindow(Xdisplay, win );
-    if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+    if (win)
+      XDestroyWindow(Xdisplay, win);
+    if (glxcontext)
+      glXDestroyContext(Xdisplay, glxcontext);
     createWindow(width, height);
-    show();
+    //show();
     XSync(Xdisplay, false);  // Flush output buffer
   }
 
   //Call OpenGL init
-  OpenGLViewer::init();
+  if (Xdisplay && glxcontext)
+    OpenGLViewer::init();
 }
 
 void X11Viewer::setsize(int w, int h)
 {
   if (w <= 0 || h <= 0 || !Xdisplay || (w==width && h==height)) return;
-  XResizeWindow(Xdisplay, win, w, h);
+  if (win)
+    XResizeWindow(Xdisplay, win, w, h);
   //Call base class setsize
   OpenGLViewer::setsize(w, h);
 }
 
 void X11Viewer::show()
 {
-  if (!Xdisplay) return;
+  if (!Xdisplay || !win) return;
   OpenGLViewer::show();
 
   //Notify active window, raises window even if already mapped
@@ -158,7 +168,7 @@ void X11Viewer::show()
 
 void X11Viewer::title(std::string title)
 {
-  if (!visible || !Xdisplay || !isopen) return;
+  if (!visible || !Xdisplay || !isopen || !win) return;
   // Update title
   XTextProperty Xtitle;
   char* titlestr = (char*)title.c_str();
@@ -168,14 +178,14 @@ void X11Viewer::title(std::string title)
 
 void X11Viewer::hide()
 {
-  if (!Xdisplay) return;
+  if (!Xdisplay || !win) return;
   OpenGLViewer::hide();
   XUnmapWindow( Xdisplay, win ); // Hide the window
 }
 
 void X11Viewer::display(bool redraw)
 {
-  if (!Xdisplay) return;
+  if (!Xdisplay || !win) return;
   glXMakeCurrent(Xdisplay, win, glxcontext);
   OpenGLViewer::display(redraw);
   // Swap buffers
@@ -187,7 +197,7 @@ void X11Viewer::execute()
 {
   //Inside event loop
   //visible = true;
-  if (!Xdisplay) open(width, height);
+  if (!Xdisplay || !win) open(width, height);
   XEvent event;
   MouseButton button;
   unsigned char key;
@@ -312,6 +322,7 @@ void X11Viewer::execute()
 
 void X11Viewer::fullScreen()
 {
+  if (!Xdisplay || !win) return;
   XEvent xev;
   memset(&xev, 0, sizeof(xev));
   xev.type = ClientMessage;
@@ -340,6 +351,8 @@ bool X11Viewer::chooseVisual()
   // find an OpenGL-capable display - trying different configurations if nessesary
   // Note: only attempt to get stereo and double buffered visuals when in interactive mode
   //Updated for 3.0+ https://www.khronos.org/opengl/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
+  int fbcount, fbcidx;
+  GLXFBConfig* fbcfg = NULL;
   vi = NULL;
   for (int i = stereo ? 0 : 2; i < 4; i += 2)
   {
@@ -369,6 +382,8 @@ bool X11Viewer::chooseVisual()
         debug_print("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d DEPTH %d DB %d\n",
                     fbcidx, (unsigned int)vi->visualid, samp_buf, samples, depth, db);
 
+        XFree(vi);
+
         if ( best_fbc < 0 || (samp_buf && samples > best_num_samp))
           best_fbc = fbcidx, best_num_samp = samples;
         //4 x Multisample is fine
@@ -378,13 +393,16 @@ bool X11Viewer::chooseVisual()
           break;
         }
       }
-      XFree(vi);
     }
     //Use the best or first with 4xMSAA
     fbcidx = best_fbc;
-    vi = glXGetVisualFromFBConfig(Xdisplay, fbcfg[fbcidx]);
+    //Store the chosen FB config
+    fbconfig = fbcfg[fbcidx];
+    vi = glXGetVisualFromFBConfig(Xdisplay, fbconfig);
+    //Free the array
+    XFree(fbcfg);
 
-    if (vi && fbcfg && fbcount > 0)
+    if (vi && fbconfig && fbcount > 0)
     {
       debug_print("Success, Got %d FB configs (Using %d)\n", fbcount, fbcidx);
       break;
@@ -411,6 +429,13 @@ bool X11Viewer::createWindow(int width, int height)
   swa.border_pixel = 0;
   swa.background_pixel = 0;
   swa.event_mask = ExposureMask | StructureNotifyMask | ButtonReleaseMask | ButtonPressMask | ButtonMotionMask | KeyPressMask;
+
+  if (!sHints || !wmHints)
+  {
+    // Setup window manager hints
+    sHints = XAllocSizeHints();
+    wmHints = XAllocWMHints();
+  }
 
   if (sHints && wmHints)
   {
@@ -452,8 +477,8 @@ bool X11Viewer::createWindow(int width, int height)
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
 
-    assert(fbcount > 0);
-    glxcontext = glXCreateContextAttribsARB(Xdisplay, fbcfg[fbcidx], NULL, true, attribs);
+    assert(fbconfig);
+    glxcontext = glXCreateContextAttribsARB(Xdisplay, fbconfig, NULL, true, attribs);
 
     if (glxcontext)
     {

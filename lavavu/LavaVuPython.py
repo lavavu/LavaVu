@@ -482,6 +482,7 @@ class LavaVu(object):
     def __init__(self, binpath, havecontext=False, omegalib=False):
         _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
+    cleanup = staticmethod(_LavaVuPython.LavaVu_cleanup)
 LavaVu.run = new_instancemethod(_LavaVuPython.LavaVu_run, None, LavaVu)
 LavaVu.printall = new_instancemethod(_LavaVuPython.LavaVu_printall, None, LavaVu)
 LavaVu.loadFile = new_instancemethod(_LavaVuPython.LavaVu_loadFile, None, LavaVu)
@@ -546,6 +547,10 @@ LavaVu.commandList = new_instancemethod(_LavaVuPython.LavaVu_commandList, None, 
 LavaVu.propertyList = new_instancemethod(_LavaVuPython.LavaVu_propertyList, None, LavaVu)
 LavaVu_swigregister = _LavaVuPython.LavaVu_swigregister
 LavaVu_swigregister(LavaVu)
+
+def LavaVu_cleanup():
+    return _LavaVuPython.LavaVu_cleanup()
+LavaVu_cleanup = _LavaVuPython.LavaVu_cleanup
 
 
 def rawImageWrite(array, path, jpegquality=0):

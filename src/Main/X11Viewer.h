@@ -51,15 +51,15 @@
 //Derived from interactive window class
 class X11Viewer  : public OpenGLViewer
 {
+  static Display* Xdisplay;
+  static XVisualInfo* vi;
+  static GLXFBConfig fbconfig;
+
   int quitEventLoop;
-  GLXContext     glxcontext;
-  Display*       Xdisplay;
-  Window         win;
-  XVisualInfo*   vi;
-  XWMHints*      wmHints;
-  GLXFBConfig*   fbcfg;
-  int            fbcount, fbcidx;
-  XSizeHints*    sHints;
+  GLXContext     glxcontext = 0;
+  Window         win = 0;
+  XWMHints*      wmHints = NULL;
+  XSizeHints*    sHints = NULL;
   Atom           wmDeleteWindow;
   char           displayName[256] = {':', '0', '.', '0'};
 
@@ -67,7 +67,7 @@ class X11Viewer  : public OpenGLViewer
   bool redisplay;
 
   //Timer variables and file descriptors for monitoring
-  int x11_fd;
+  int x11_fd = -1; //Initial unset flag value
   fd_set in_fds;
   struct timeval tv;
 
@@ -75,6 +75,8 @@ public:
 
   X11Viewer();
   ~X11Viewer();
+
+  static void cleanup();
 
   //Function implementations
   void open(int w, int h);
