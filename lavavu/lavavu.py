@@ -4141,6 +4141,7 @@ class DrawData(object):
             array = self.parent.app.geometryArrayViewFloat(self.data, typename)
 
         if array.size > 0:
+            #print(typename,array.size,array.shape,dims, self.data.width, self.data.height, self.data.depth)
             #Remove any dims <= 1
             dims = [d for d in dims if d > 1]
             #Special case where only a single element returned
@@ -4216,7 +4217,7 @@ class DrawData(object):
                     newdims = newdims[:-1]
 
             #Specified "dims" does not match data size, adjust the properties
-            if length != array.size:
+            if length != array.size and len(newdims) == 3:
                 self._obj["dims"] = newdims
                 self.data.width = newdims[0]
                 self.data.height = newdims[1]
