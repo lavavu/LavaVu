@@ -4254,18 +4254,39 @@ class Image(object):
     >>> img = lv.rawimage() # doctest: +SKIP
     >>> img.save('out.png') # doctest: +SKIP
     
-    TODO: expose image loading functions, custom blend equations
+    TODO: control blend equations
 
     """
-    def __init__(self, resolution=(640, 480), channels=4, value=[255, 255, 255, 0]):
-        if isinstance(value, int):
-            value = [value, value, value, 255]
-        if isinstance(value, float):
-            value = [value*255, value*255, value*255, 255]
-        while len(value) < channels:
-            value.append(value[-1])
-        fill = numpy.array(value[0:channels], dtype=numpy.uint8)
-        self.data = numpy.tile(fill, (resolution[1], resolution[0], 1))
+    def __init__(self, resolution=(640, 480), channels=4, value=[255, 255, 255, 0], data=None):
+        if data is not None and len(data.shape) > 2:
+            self.data = data
+        else:
+            if isinstance(value, int):
+                value = [value, value, value, 255]
+            if isinstance(value, float):
+                value = [value*255, value*255, value*255, 255]
+            while len(value) < channels:
+                value.append(value[-1])
+            fill = numpy.array(value[0:channels], dtype=numpy.uint8)
+            self.data = numpy.tile(fill, (resolution[1], resolution[0], 1))
+
+    def crop(self, width, height, x=0, y=0):
+        """
+        Crop image to specified width and height, with optional x,y offset
+
+        Parameters
+        ----------
+        width : int
+            Crop width
+        height : int
+            Crop height
+        x : int
+            Crop x offset
+        y : int
+            Crop y offset
+        """
+        self.data = self.data[y:y+height, x:x+width, ::]
+        self.data = numpy.ascontiguousarray(self.data)
 
     def convert(self, source):
         """
@@ -4359,7 +4380,7 @@ class Image(object):
             source = source.rawimage(resolution, self.data.shape[2]).data
 
         channels = self.data.shape[2]
-        if channels < 4 and blend is not None:
+        if channels < 4:
             print("Require alpha channel to blend")
             return
 
@@ -4405,6 +4426,7 @@ class Image(object):
         path : str
             Path to the output image
         """
+        self.data = numpy.ascontiguousarray(self.data)
         return LavaVuPython.rawImageWrite(self.data, filename)
 
     def display(self):
