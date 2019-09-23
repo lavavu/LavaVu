@@ -10,6 +10,7 @@ import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
 from setuptools import Extension
+from setuptools import find_packages
 import platform
 import glob
 
@@ -301,8 +302,8 @@ if __name__ == "__main__":
           license           = "LGPL-3",
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/lavavu/LavaVu for more info',
-          packages          = ['lavavu'],
-          install_requires  = requirements,
+          packages          = find_packages(),
+          setup_requires    = requirements,
           platforms         = ['any'],
           entry_points      = {
               'gui_scripts': [
@@ -310,9 +311,10 @@ if __name__ == "__main__":
                   'LavaVu = lavavu.__main__:main'
               ]
           },
-          package_data      = {'lavavu': glob.glob('lavavu/shaders/*.*') + glob.glob('lavavu/html/*.*') + ['lavavu/font.bin', 'lavavu/dict.json']},
-          data_files        = install,
+          #Use below to include files from MANIFEST.in or specify package_data, not both
           include_package_data = True,
+          #Not generally recommend to use this, but is required for windows to install dlls
+          data_files        = install,
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
