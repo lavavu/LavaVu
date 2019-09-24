@@ -24,9 +24,8 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - libgl1-mesa-dri
-    - libgl1-mesa-glx
     - libgl1-mesa-dev
+    - libglfw3-dev
 script:
   - python setup.py install
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then

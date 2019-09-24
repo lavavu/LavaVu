@@ -239,7 +239,7 @@ if __name__ == "__main__":
                 libs += ['swscale']
 
         if P == 'Linux':
-            #Linux X11, EGL or OSMesa
+            #Linux GLFW, X11, EGL or OSMesa
             #To force EGL or OSMesa, set LV_EGL=1 or LV_OSMESA=1
             if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
             and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
@@ -251,8 +251,12 @@ if __name__ == "__main__":
                 #OSMesa for software rendered offscreen OpenGL
                 defines += [('HAVE_OSMESA', '1')]
                 libs += ['OSMesa']
+            elif find_library('glfw') and check_libraries(['GLFW'], ['GLFW/glfw3.h'])):
+                #Use GLFW if installed
+                defines += [('HAVE_GLFW', '1')]
+                libs += ['GL', 'GLFW']
             else:
-                #Default - X11
+                #Fallback - X11
                 defines += [('HAVE_X11', '1')]
                 libs += ['GL', 'X11']
 
