@@ -29,7 +29,7 @@ void Session::destroy()
   borderobj = axisobj = rulerobj = NULL;
 
   if (globalcam) delete globalcam;
-  globalcam = NULL
+  globalcam = NULL;
 
   if (x_coords != NULL) delete[] x_coords;
   if (y_coords != NULL) delete[] y_coords;
