@@ -251,7 +251,7 @@ if __name__ == "__main__":
                 #OSMesa for software rendered offscreen OpenGL
                 defines += [('HAVE_OSMESA', '1')]
                 libs += ['OSMesa']
-            elif find_library('glfw') and check_libraries(['GLFW'], ['GLFW/glfw3.h'])):
+            elif find_library('glfw') and check_libraries(['GLFW'], ['GLFW/glfw3.h']):
                 #Use GLFW if installed
                 defines += [('HAVE_GLFW', '1')]
                 libs += ['GL', 'GLFW']
