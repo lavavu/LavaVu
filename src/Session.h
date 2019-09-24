@@ -76,6 +76,7 @@ public:
 
   Session();
   ~Session();
+  void destroy();
   std::string counterFilename();
   void reset();
   int parse(Properties* target, const std::string& property);

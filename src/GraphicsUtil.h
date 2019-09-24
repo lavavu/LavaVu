@@ -655,9 +655,9 @@ class FontManager
   GLuint vbo = 0;
   GLuint ibo = 0;
   char buffer[4096];
-  RenderContext* context;
 
 public:
+  RenderContext* context;
 
   int charset;
   float fontscale;
@@ -675,6 +675,8 @@ public:
 
   void clear()
   {
+    context = NULL;
+
     //Vector font
     charset = FONT_DEFAULT;
     fontscale = 1.0;

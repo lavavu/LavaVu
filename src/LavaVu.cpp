@@ -191,6 +191,8 @@ void LavaVu::destroy()
   //Ensure not processed twice
   if (viewer)
   {
+    session.destroy();
+
     if (sort_thread.joinable())
     {
       viewer->quitProgram = true;

@@ -15,7 +15,13 @@ Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1
 
 Session::~Session()
 {
-  fonts.clear();
+  destroy();
+}
+
+void Session::destroy()
+{
+  if (fonts.context)
+    fonts.clear();
 
   if (borderobj) delete borderobj;
   if (axisobj) delete axisobj;
