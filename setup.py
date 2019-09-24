@@ -254,7 +254,7 @@ if __name__ == "__main__":
             elif find_library('glfw') and check_libraries(['glfw'], ['GLFW/glfw3.h']):
                 #Use GLFW if installed
                 defines += [('HAVE_GLFW', '1')]
-                libs += ['GL', 'GLFW']
+                libs += ['GL', 'glfw']
             else:
                 #Fallback - X11
                 defines += [('HAVE_X11', '1')]

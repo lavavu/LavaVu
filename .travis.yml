@@ -21,8 +21,6 @@ matrix:
       install: pip2 install numpy
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
     packages:
     - libgl1-mesa-dev
     - libglfw3-dev
