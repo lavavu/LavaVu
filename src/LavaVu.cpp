@@ -183,20 +183,31 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
-  if (sort_thread.joinable())
+  destroy();
+}
+
+void LavaVu::destroy()
+{
+  //Ensure not processed twice
+  if (viewer)
   {
-    viewer->quitProgram = true;
-    sortcv.notify_one();
-    sort_thread.join();
+    if (sort_thread.joinable())
+    {
+      viewer->quitProgram = true;
+      sortcv.notify_one();
+      sort_thread.join();
+    }
+
+    GL_Check_Thread(viewer->render_thread);
+
+    close();
+
+    if (encoder) delete encoder;
+    debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
+  printf("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
+    if (viewer) delete viewer;
+    viewer = NULL;
   }
-
-  GL_Check_Thread(viewer->render_thread);
-
-  close();
-
-  if (encoder) delete encoder;
-  debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
-  if (viewer) delete viewer;
 }
 
 void LavaVu::cleanup()

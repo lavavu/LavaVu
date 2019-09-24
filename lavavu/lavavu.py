@@ -2018,6 +2018,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     self.viewer.hide()
                     self.viewer.quitProgram = False
 
+        #Must be called from thread to free OpenGL resources!
+        self.destroy()
+
 
 class Viewer(dict):
     """  
@@ -2162,10 +2165,6 @@ class Viewer(dict):
 
                 #Handle events
                 viewer().app._thread_run()
-
-                #Closedown/delete must be called from thread to free OpenGL resources!
-                if viewer() is not None:
-                    viewer().app = None
 
             #Thread start
             self._thread = threading.Thread(target=_thread_run, args=[weakref.ref(self), args, kwargs])

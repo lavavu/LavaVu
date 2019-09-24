@@ -19821,6 +19821,34 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_destroy(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_destroy" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      (arg1)->destroy();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_cleanup(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   
@@ -26876,6 +26904,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_binpath_get", _wrap_LavaVu_binpath_get, METH_O, NULL},
 	 { "new_LavaVu", _wrap_new_LavaVu, METH_VARARGS, NULL},
 	 { "delete_LavaVu", _wrap_delete_LavaVu, METH_O, NULL},
+	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},
 	 { "LavaVu_cleanup", _wrap_LavaVu_cleanup, METH_NOARGS, NULL},
 	 { "LavaVu_run", _wrap_LavaVu_run, METH_VARARGS, NULL},
 	 { "LavaVu_printall", _wrap_LavaVu_printall, METH_VARARGS, NULL},
