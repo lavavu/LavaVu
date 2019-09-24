@@ -146,7 +146,6 @@ public:
   LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   ~LavaVu();
   void destroy();
-  static void cleanup();
 
   void run(std::vector<std::string> args={});
 

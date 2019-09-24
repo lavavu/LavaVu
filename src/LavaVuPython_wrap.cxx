@@ -19849,24 +19849,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_cleanup(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_cleanup",0,0,0)) SWIG_fail;
-  {
-    try {
-      LavaVu::cleanup();
-    } catch (const std::runtime_error& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_LavaVu_run__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -26905,7 +26887,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "new_LavaVu", _wrap_new_LavaVu, METH_VARARGS, NULL},
 	 { "delete_LavaVu", _wrap_delete_LavaVu, METH_O, NULL},
 	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},
-	 { "LavaVu_cleanup", _wrap_LavaVu_cleanup, METH_NOARGS, NULL},
 	 { "LavaVu_run", _wrap_LavaVu_run, METH_VARARGS, NULL},
 	 { "LavaVu_printall", _wrap_LavaVu_printall, METH_VARARGS, NULL},
 	 { "LavaVu_loadFile", _wrap_LavaVu_loadFile, METH_VARARGS, NULL},

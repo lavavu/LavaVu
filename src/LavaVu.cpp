@@ -211,19 +211,6 @@ void LavaVu::destroy()
   }
 }
 
-void LavaVu::cleanup()
-{
-  //Call cleanup() to completely tear down display data
-  //Some windows (X11) keep global(static) data which is not 
-  //cleaned up in destructor so we can re-use the display
-  //connection and framebuffer config.
-  //Result is slightly more efficient and works around a memory leak in Mesa, 
-  //with the caveat that the cleanup function must be called before exiting completely
-#ifdef HAVE_X11
-  X11Viewer::cleanup();
-#endif
-}
-
 void LavaVu::arguments(std::vector<std::string> args)
 {
   //Read command line switches

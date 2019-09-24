@@ -51,15 +51,14 @@
 //Derived from interactive window class
 class X11Viewer  : public OpenGLViewer
 {
-  static Display* Xdisplay;
-  static XVisualInfo* vi;
-  static GLXFBConfig fbconfig;
-
   int quitEventLoop;
   GLXContext     glxcontext = 0;
+  Display*       Xdisplay = NULL;
   Window         win = 0;
+  XVisualInfo*   vi = NULL;
   XWMHints*      wmHints = NULL;
   XSizeHints*    sHints = NULL;
+  GLXFBConfig    fbconfig = 0;
   Atom           wmDeleteWindow;
   char           displayName[256] = {':', '0', '.', '0'};
 
@@ -75,8 +74,6 @@ public:
 
   X11Viewer();
   ~X11Viewer();
-
-  static void cleanup();
 
   //Function implementations
   void open(int w, int h);

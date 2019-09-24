@@ -123,7 +123,6 @@ public:
   void defaults();
   virtual ~LavaVu();
   void destroy();
-  static void cleanup();
 
   //Argument parser
   virtual void arguments(std::vector<std::string> args);

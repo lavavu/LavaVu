@@ -40,11 +40,6 @@
 #include <signal.h>
 #include <sys/time.h>
 
-//Hold the X display and framebuffer config / visual info
-Display* X11Viewer::Xdisplay = NULL;
-GLXFBConfig X11Viewer::fbconfig = NULL;
-XVisualInfo* X11Viewer::vi = NULL;
-
 int X11_error(Display* Xdisplay, XErrorEvent* error)
 {
   char error_str[256];
@@ -62,27 +57,15 @@ X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
 
 X11Viewer::~X11Viewer()
 {
-  if (sHints) XFree(sHints);
-  if (wmHints) XFree(wmHints);
-  if (win) XDestroyWindow(Xdisplay, win);
-  if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
-}
-
-void X11Viewer::cleanup()
-{
-  //Set the cleanup flag to completely tear down display data
-  //This is no longer done by default in destructor so we can re-use the display
-  //connection and framebuffer config.
-  //Result is slightly more efficient and works around a memory leak in Mesa, 
-  //with the caveat that the cleanup flag must be set before exiting
   if (Xdisplay)
   {
+    if (sHints) XFree(sHints);
+    if (wmHints) XFree(wmHints);
+    XDestroyWindow(Xdisplay ,win);
+    if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
     if (vi) XFree(vi);
-    vi = NULL;
     XSetCloseDownMode(Xdisplay, DestroyAll);
     XCloseDisplay(Xdisplay);
-    Xdisplay = NULL;
-    fbconfig = NULL;
   }
 }
 
