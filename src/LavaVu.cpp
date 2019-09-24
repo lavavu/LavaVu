@@ -206,7 +206,6 @@ void LavaVu::destroy()
 
     if (encoder) delete encoder;
     debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
-  printf("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
     if (viewer) delete viewer;
     viewer = NULL;
   }
