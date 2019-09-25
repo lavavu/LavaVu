@@ -3727,6 +3727,7 @@ class Viewer(dict):
             self.commands("interactive noloop")
         else:
             self.commands("interactive")
+        self.render()
 
     #TODO: TEST, on mac and with/without threading
     def interact(self, resolution=None):
