@@ -55,6 +55,7 @@ class X11Viewer  : public OpenGLViewer
   GLXContext     glxcontext = 0;
   Display*       Xdisplay = NULL;
   Window         win = 0;
+  Colormap       colormap = 0;
   XVisualInfo*   vi = NULL;
   XWMHints*      wmHints = NULL;
   XSizeHints*    sHints = NULL;

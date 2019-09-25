@@ -59,10 +59,15 @@ X11Viewer::~X11Viewer()
 {
   if (Xdisplay)
   {
+    if (glxcontext)
+    {
+      glXMakeCurrent(Xdisplay, None, NULL);
+      glXDestroyContext(Xdisplay, glxcontext);
+    }
     if (sHints) XFree(sHints);
     if (wmHints) XFree(wmHints);
-    XDestroyWindow(Xdisplay ,win);
-    if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+    if (win) XDestroyWindow(Xdisplay, win);
+    if (colormap) XFreeColormap(Xdisplay, colormap);
     if (vi) XFree(vi);
     XSetCloseDownMode(Xdisplay, DestroyAll);
     XCloseDisplay(Xdisplay);
@@ -107,10 +112,13 @@ void X11Viewer::open(int w, int h)
   else
   {
     //Resize
+    if (glxcontext)
+    {
+      glXMakeCurrent(Xdisplay, None, NULL);
+      glXDestroyContext(Xdisplay, glxcontext);
+    }
     if (win)
       XDestroyWindow(Xdisplay, win);
-    if (glxcontext)
-      glXDestroyContext(Xdisplay, glxcontext);
     createWindow(width, height);
     //show();
     XSync(Xdisplay, false);  // Flush output buffer
@@ -145,7 +153,7 @@ void X11Viewer::show()
 
   XSendEvent(Xdisplay, DefaultRootWindow(Xdisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
 
-  XMapRaised( Xdisplay, win ); // Show the window
+  XMapRaised(Xdisplay, win); // Show the window
 }
 
 void X11Viewer::title(std::string title)
@@ -162,7 +170,7 @@ void X11Viewer::hide()
 {
   if (!Xdisplay || !win) return;
   OpenGLViewer::hide();
-  XUnmapWindow( Xdisplay, win ); // Hide the window
+  XUnmapWindow(Xdisplay, win); // Hide the window
 }
 
 void X11Viewer::display(bool redraw)
@@ -402,12 +410,10 @@ bool X11Viewer::chooseVisual()
 
 bool X11Viewer::createWindow(int width, int height)
 {
-  Colormap             cmap;
   XSetWindowAttributes swa;
 
   // Create Colourmap
-  cmap = XCreateColormap(Xdisplay, RootWindow(Xdisplay, vi->screen), vi->visual, AllocNone);
-  swa.colormap = cmap;
+  swa.colormap = colormap = XCreateColormap(Xdisplay, RootWindow(Xdisplay, vi->screen), vi->visual, AllocNone);
   swa.border_pixel = 0;
   swa.background_pixel = 0;
   swa.event_mask = ExposureMask | StructureNotifyMask | ButtonReleaseMask | ButtonPressMask | ButtonMotionMask | KeyPressMask;
