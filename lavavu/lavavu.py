@@ -2683,6 +2683,8 @@ class Viewer(dict):
         >>> lv = lavavu.Viewer()
         >>> lv.test()
         >>> lv('reset; translate -2')
+        >>> print(lv['translate'])
+        [-2.0, 0.0, -6.928203105926514]
 
         """
         self.commands(cmds)
