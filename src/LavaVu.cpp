@@ -3657,7 +3657,6 @@ void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
 
 void LavaVu::imageFromFile(std::string filename, unsigned char** array, int* height, int* width, int* depth)
 {
-  if (!amodel || !viewer->isopen) return;
   // Read an image file into provided buffer
   ImageLoader* imfile = new ImageLoader(filename, false); //Don't flip
   imfile->read();
@@ -3672,6 +3671,8 @@ void LavaVu::imageFromFile(std::string filename, unsigned char** array, int* hei
     *height = im->height;
     *depth = im->channels;
   }
+  else
+    *array = NULL;
   delete imfile;
 }
 
