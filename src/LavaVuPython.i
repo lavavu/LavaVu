@@ -76,6 +76,7 @@ public:
   bool nodisplay; //Flag to manage render loop externally
   bool visible;
   int width, height;
+  int timer_animate = 50;
 
   virtual void open(int width=0, int height=0);
   virtual void init();
@@ -89,6 +90,7 @@ public:
   void loop(bool interactive=true);
   void downSample(int q);
   void multiSample(int q);
+  void animateTimer(int msec=-1);
 };
 
 class DrawingObject

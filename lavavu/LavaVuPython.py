@@ -385,6 +385,7 @@ class OpenGLViewer(object):
     visible = _swig_property(_LavaVuPython.OpenGLViewer_visible_get, _LavaVuPython.OpenGLViewer_visible_set)
     width = _swig_property(_LavaVuPython.OpenGLViewer_width_get, _LavaVuPython.OpenGLViewer_width_set)
     height = _swig_property(_LavaVuPython.OpenGLViewer_height_get, _LavaVuPython.OpenGLViewer_height_set)
+    timer_animate = _swig_property(_LavaVuPython.OpenGLViewer_timer_animate_get, _LavaVuPython.OpenGLViewer_timer_animate_set)
 
     def __init__(self):
         _LavaVuPython.OpenGLViewer_swiginit(self, _LavaVuPython.new_OpenGLViewer())
@@ -400,6 +401,7 @@ OpenGLViewer.events = new_instancemethod(_LavaVuPython.OpenGLViewer_events, None
 OpenGLViewer.loop = new_instancemethod(_LavaVuPython.OpenGLViewer_loop, None, OpenGLViewer)
 OpenGLViewer.downSample = new_instancemethod(_LavaVuPython.OpenGLViewer_downSample, None, OpenGLViewer)
 OpenGLViewer.multiSample = new_instancemethod(_LavaVuPython.OpenGLViewer_multiSample, None, OpenGLViewer)
+OpenGLViewer.animateTimer = new_instancemethod(_LavaVuPython.OpenGLViewer_animateTimer, None, OpenGLViewer)
 OpenGLViewer_swigregister = _LavaVuPython.OpenGLViewer_swigregister
 OpenGLViewer_swigregister(OpenGLViewer)
 cvar = _LavaVuPython.cvar

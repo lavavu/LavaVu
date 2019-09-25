@@ -17215,6 +17215,58 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_OpenGLViewer_timer_animate_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_timer_animate_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_timer_animate_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_timer_animate_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  if (arg1) (arg1)->timer_animate = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_timer_animate_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_timer_animate_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (int) ((arg1)->timer_animate);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_OpenGLViewer_open__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
@@ -17758,6 +17810,90 @@ SWIGINTERN PyObject *_wrap_OpenGLViewer_multiSample(PyObject *SWIGUNUSEDPARM(sel
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_animateTimer__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_animateTimer" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_animateTimer" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      (arg1)->animateTimer(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_animateTimer__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_animateTimer" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  {
+    try {
+      (arg1)->animateTimer();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_animateTimer(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"OpenGLViewer_animateTimer",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 1) {
+    return _wrap_OpenGLViewer_animateTimer__SWIG_1(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_OpenGLViewer_animateTimer__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'OpenGLViewer_animateTimer'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    OpenGLViewer::animateTimer(int)\n"
+    "    OpenGLViewer::animateTimer()\n");
+  return 0;
 }
 
 
@@ -26815,6 +26951,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "OpenGLViewer_width_get", _wrap_OpenGLViewer_width_get, METH_O, NULL},
 	 { "OpenGLViewer_height_set", _wrap_OpenGLViewer_height_set, METH_VARARGS, NULL},
 	 { "OpenGLViewer_height_get", _wrap_OpenGLViewer_height_get, METH_O, NULL},
+	 { "OpenGLViewer_timer_animate_set", _wrap_OpenGLViewer_timer_animate_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_timer_animate_get", _wrap_OpenGLViewer_timer_animate_get, METH_O, NULL},
 	 { "OpenGLViewer_open", _wrap_OpenGLViewer_open, METH_VARARGS, NULL},
 	 { "OpenGLViewer_init", _wrap_OpenGLViewer_init, METH_O, NULL},
 	 { "OpenGLViewer_display", _wrap_OpenGLViewer_display, METH_VARARGS, NULL},
@@ -26826,6 +26964,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "OpenGLViewer_loop", _wrap_OpenGLViewer_loop, METH_VARARGS, NULL},
 	 { "OpenGLViewer_downSample", _wrap_OpenGLViewer_downSample, METH_VARARGS, NULL},
 	 { "OpenGLViewer_multiSample", _wrap_OpenGLViewer_multiSample, METH_VARARGS, NULL},
+	 { "OpenGLViewer_animateTimer", _wrap_OpenGLViewer_animateTimer, METH_VARARGS, NULL},
 	 { "new_OpenGLViewer", _wrap_new_OpenGLViewer, METH_NOARGS, NULL},
 	 { "delete_OpenGLViewer", _wrap_delete_OpenGLViewer, METH_O, NULL},
 	 { "OpenGLViewer_swigregister", OpenGLViewer_swigregister, METH_VARARGS, NULL},

@@ -56,8 +56,6 @@ import LavaVuPython
 version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
-TIMER_MAX_FPS = 200   #FPS for frame timer
-TIMER_INC = 1.0 / TIMER_MAX_FPS #Timer increment in milliseconds
 
 geomnames = ["labels", "points", "grid", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "screen"]
 geomtypes = [LavaVuPython.lucLabelType,
@@ -2009,7 +2007,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     method(*args, **kwargs)
                 method = None
 
-            time.sleep(TIMER_INC)
+            FPS = self.viewer.timer_animate  #FPS for frame timer
+            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+            time.sleep(self.TIMER_INC)
 
             #Detect window closed
             if self.viewer.quitProgram:
@@ -3761,7 +3761,7 @@ class Viewer(dict):
                 webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
                 #Handle events until quit - allow interaction without exiting when run from python script
                 while not self.app.viewer.quitProgram:
-                    time.sleep(TIMER_INC)
+                    time.sleep(self.app.TIMER_INC)
 
         except (Exception) as e:
             print("Interactive launch error: " + str(e))
@@ -4329,9 +4329,7 @@ class Image(object):
                 #Greyscale+Alpha to RGBA
                 L = source[:,:,0]
                 A = source[:,:,1]
-                print(source.shape, L.shape, A.shape)
                 source = numpy.dstack((L, L, L, A))
-                print(source.shape, L.shape, A.shape)
             else:
                 print("Base image and source image have incompatible bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
         return source
