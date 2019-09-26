@@ -4303,10 +4303,8 @@ class Video(object):
     ...         lv.render()
     Recording complete, filename:  Test Pattern.mp4
     """
-    def __init__(self, viewer, filename="", resolution=None, framerate=30, quality=1):
+    def __init__(self, viewer, filename="", resolution=(0,0), framerate=30, quality=1):
         self.resolution = resolution
-        if self.resolution is None:
-            self.resolution = viewer.resolution
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
@@ -4316,7 +4314,7 @@ class Video(object):
         """
         Start recording, all rendered frames will be added to the video
         """
-        self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality)
+        self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality, self.resolution[0], self.resolution[1])
         #Clear existing image frames
         if os.path.isdir(self.filename):
             for f in glob.glob(self.filename + "/frame_*.jpg"):
@@ -4328,12 +4326,12 @@ class Video(object):
         No further frames will be added to the video
         """
         self.viewer.app.encodeVideo()
-        #Check if encoded video is a directory (no built in video encoding support)
+        #Check if encoded video is a directory (not built with video encoding support)
         #if so attempt to encode with ffmpeg
         if os.path.isdir(self.filename):
             try:
                 outfn = '{0}.mp4'.format(self.filename)
-                cmd = 'ffmpeg -i {0}/frame_%05d.jpg -c:v libx264 -framerate {1} -movflags +faststart -pix_fmt yuv420p -y {2}'.format(self.filename, self.framerate, outfn)
+                cmd = 'ffmpeg -r {1} -i {0}/frame_%05d.jpg -c:v libx264 -vf fps={1} -movflags +faststart -pix_fmt yuv420p -y {2}'.format(self.filename, self.framerate, outfn)
                 print("No built in video encoding, attempting to build movie from frames with ffmpeg:\n", cmd)
 
                 import subprocess
