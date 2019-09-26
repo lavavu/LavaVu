@@ -3347,7 +3347,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", fps=30, quality=1, resolution=None):
+    def video(self, filename="", fps=30, quality=1, resolution=(0,0)):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -4329,17 +4329,19 @@ class Video(object):
         #Check if encoded video is a directory (not built with video encoding support)
         #if so attempt to encode with ffmpeg
         if os.path.isdir(self.filename):
+            log = ""
             try:
                 outfn = '{0}.mp4'.format(self.filename)
-                cmd = 'ffmpeg -r {1} -i {0}/frame_%05d.jpg -c:v libx264 -vf fps={1} -movflags +faststart -pix_fmt yuv420p -y {2}'.format(self.filename, self.framerate, outfn)
-                print("No built in video encoding, attempting to build movie from frames with ffmpeg:\n", cmd)
+                cmd = 'ffmpeg -r {1} -i "{0}/frame_%05d.jpg" -c:v libx264 -vf fps={1} -movflags +faststart -pix_fmt yuv420p -y "{2}"'.format(self.filename, self.framerate, outfn)
+                log += "No built in video encoding, attempting to build movie from frames with ffmpeg:\n"
+                log += cmd
 
                 import subprocess
                 #os.system(cmd)
-                subprocess.check_call(cmd.split())
+                subprocess.check_call(cmd, shell=True)
                 self.filename = outfn
             except (Exception) as e:
-                print("Video encoding failed: ", str(e))
+                print("Video encoding failed: ", str(e), "\nlog:\n", log)
 
     def play(self):
         """
