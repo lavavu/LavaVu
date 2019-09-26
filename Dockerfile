@@ -8,25 +8,26 @@ RUN apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
         bash-completion \
         build-essential \
-        xorg-dev \
         ssh \
         curl \
-        libfreetype6-dev \
         libpng-dev \
         libtiff-dev \
-        libxft-dev \
-        xvfb \
-        freeglut3 \
-        freeglut3-dev \
-        libgl1-mesa-dri \
-        libgl1-mesa-glx \
         mesa-utils \
         libavcodec-dev \
         libavformat-dev \
         libavutil-dev \
         libswscale-dev \
+        zlib1g-dev \
         rsync \
+        wget \
         xauth
+
+#Add deb-src repo
+RUN echo "deb-src http://deb.debian.org/debian buster main" >> /etc/apt/sources.list
+
+# install mesa deps
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y build-dep mesa
 
 # Add Tini
 ENV TINI_VERSION v0.18.0
@@ -73,23 +74,32 @@ RUN adduser --disabled-password \
     ${NB_USER}
 WORKDIR ${HOME}
 
-# script for xvfb-run.  all docker commands will effectively run under this via the entrypoint
-RUN printf "#\041/bin/sh \n rm -f /tmp/.X99-lock && xvfb-run -s '-screen 0 1600x1200x16' \$@" >> /usr/local/bin/xvfbrun.sh && \
-chmod +x /usr/local/bin/xvfbrun.sh
-
 # Make sure the contents of our repo are in ${HOME}
 COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
 USER ${NB_USER}
 
+#Build OSMesa
+RUN wget ftp://ftp.freedesktop.org/pub/mesa/mesa-19.1.7.tar.xz && \
+    tar xvf mesa-19.1.7.tar.xz  && \
+    rm mesa-19.1.7.tar.xz && \
+    cd mesa-19.1.7 && \
+    meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && \
+    meson configure build/ -Dprefix=${PWD}/build/install && \
+    ninja -C build/ -j5 && \
+    ninja -C build/ install
+
 #Build LavaVu
 # setup environment
 ENV PYTHONPATH $PYTHONPATH:${HOME}
 
+ENV LV_LIB_DIRS $HOME/mesa-19.1.7/build/install/lib/x86_64-linux-gnu/
+ENV LV_INC_DIRS $HOME/mesa-19.1.7/build/install/include/
+
 # Compile, delete some unnecessary files
 RUN cd ~ && \
-    make LIBPNG=1 TIFF=1 VIDEO=1 -j$(nproc) && \
+    make OSMESA=1 LIBPNG=1 TIFF=1 VIDEO=1 -j$(nproc) && \
     rm -fr tmp
 
 #Trust included notebooks
@@ -102,8 +112,7 @@ RUN cd ~ && \
     echo "c.NotebookApp.ip = '0.0.0.0'" >> .jupyter/jupyter_notebook_config.py && \
     echo "c.NotebookApp.token = ''" >> .jupyter/jupyter_notebook_config.py
 
-# note we use xvfb which to mimic the X display for lavavu
-ENTRYPOINT ["/tini", "--", "/usr/local/bin/xvfbrun.sh"]
+ENTRYPOINT ["/tini", "--"]
 
 # launch notebook
 # CMD scripts/run-jupyter.sh
