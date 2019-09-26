@@ -69,9 +69,19 @@ FBO::~FBO()
 bool FBO::create(int w, int h, int samples)
 {
   //Re-render at specified output size (in a framebuffer object if available)
+  int mt = 0;
+  glGetIntegerv(GL_MAX_TEXTURE_SIZE, &mt);
   if (downsample > 1)
   {
     float factor = downsampleFactor();
+    //Check texture size
+    if (w*factor > mt || h*factor > mt)
+    {
+      //Reduce downsampling
+      downsample--;
+      std::cerr << "Max texture size is " << mt << " : FBO too large at " << (w*factor) << "x" << (h*factor) << ", reducing downsample to " << downsample << std::endl;
+      return create(w, h, samples);
+    }
     w *= factor;
     h *= factor;
   }
