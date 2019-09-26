@@ -3018,8 +3018,13 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
     if (filename.length() == 0) 
       filename = session.counterFilename() + ".mp4";
     FilePath fp(filename);
+#ifndef HAVE_LIBAVCODEC
+    //Just use the base filename when saving frames only
+    filename = fp.base;
+#else
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
+#endif
 
     //Enable output just to get the dimensions
     if (!viewer->outwidth) viewer->outwidth = viewer->width;

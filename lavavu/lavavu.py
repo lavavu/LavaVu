@@ -3347,8 +3347,42 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", fps=10, quality=1, resolution=(0,0)):
-        """        
+    def video(self, filename="", fps=30, quality=1, resolution=None):
+        """
+        Record and show the generated video inline within an ipython notebook.
+
+        If IPython is installed, displays the result video content inline
+
+        If IPython is not installed, will save the result in the current directory
+
+        This function is best used with the "with" statement as it returns a context manager.
+        Alternatively recording can be manually started, stopped and the video displayed
+
+        See also: Video (class)
+
+        Parameters
+        ----------
+        filename : str
+            Name of the file to save, if not provided a default will be used
+        fps : int
+            Frames to output per second of video
+        quality : int
+            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            encoding artifacts at cost of larger file size
+        resolution : list or tuple
+            Video resolution in pixels [x,y]
+
+        Returns
+        -------
+        recorder : Video(object)
+            Context manager object that controls the video recording
+        """
+        return Video(self, filename, resolution, fps, quality)
+
+    def video_steps(self, filename="", fps=10, quality=1, resolution=(0,0)):
+        """
+        Record a video of the model by looping through all time steps
+
         Shows the generated video inline within an ipython notebook.
         
         If IPython is installed, displays the result video content inline
@@ -3393,17 +3427,22 @@ class Viewer(dict):
             if is_notebook():
                 from IPython.display import display,HTML
                 html = """
-                <video src="{fn}" controls loop>
+                <video controls loop>
+                  <source src="{fn1}">
+                  <source src="{fn2}">
                 Sorry, your browser doesn't support embedded videos, 
                 </video><br>
-                <a href="{fn}">Download Video</a> 
+                <a href="{fn2}">Download Video</a>
                 """
-                #Jupyterlab replaces ? with encoded char TODO: fix
-                #Get a UUID based on host ID and current time
-                #import uuid
-                #uid = uuid.uuid1()
-                #filename = filename + "?" + str(uid)
-                display(HTML(html.format(fn=filename)))
+                #Jupyterlab adds it's own timestamp but notebook doesn't
+                #don't know a way to detect jupyterlab, so provide source url with and without
+                #Browser should load the first working url
+                import uuid
+                uid = uuid.uuid1()
+                #Append a UUID based on host ID and current time
+                filename_ts = filename + "?" + str(uid)
+                html = HTML(html.format(fn1=filename_ts, fn2=filename))
+                display(html)
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass
@@ -4246,6 +4285,82 @@ class DrawData(object):
     def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
+
+#Class for managing video animation recording
+class Video(object):
+    """
+    The Video class provides an interface to record animations
+
+    Example
+    -------
+
+    >>> import lavavu
+    >>> lv = lavavu.Viewer()
+    >>> lv.test()
+    >>> with lv.video(): #Returns Video object
+    ...     for i in range(0,5):
+    ...         lv.rotate('y', 10)
+    ...         lv.render()
+    Recording complete, filename:  Test Pattern.mp4
+    """
+    def __init__(self, viewer, filename="", resolution=None, framerate=30, quality=1):
+        self.resolution = resolution
+        if self.resolution is None:
+            self.resolution = viewer.resolution
+        self.framerate = framerate
+        self.quality = quality
+        self.viewer = viewer
+        self.filename = filename
+
+    def start(self):
+        """
+        Start recording, all rendered frames will be added to the video
+        """
+        self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality)
+        #Clear existing image frames
+        if os.path.isdir(self.filename):
+            for f in glob.glob(self.filename + "/frame_*.jpg"):
+                os.remove(f)
+
+    def stop(self):
+        """
+        Stop recording, final frames will be written and file closed, ready to play. 
+        No further frames will be added to the video
+        """
+        self.viewer.app.encodeVideo()
+        #Check if encoded video is a directory (no built in video encoding support)
+        #if so attempt to encode with ffmpeg
+        if os.path.isdir(self.filename):
+            try:
+                outfn = '{0}.mp4'.format(self.filename)
+                cmd = 'ffmpeg -i {0}/frame_%05d.jpg -c:v libx264 -framerate {1} -movflags +faststart -pix_fmt yuv420p -y {2}'.format(self.filename, self.framerate, outfn)
+                print("No built in video encoding, attempting to build movie from frames with ffmpeg:\n", cmd)
+
+                import subprocess
+                #os.system(cmd)
+                subprocess.check_call(cmd.split())
+                self.filename = outfn
+            except (Exception) as e:
+                print("Video encoding failed: ", str(e))
+
+    def play(self):
+        """
+        Show the video in an inline player if in an interative notebook
+        """
+        self.viewer.player(self.filename)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.stop()
+        if exc_value == None:
+            print('Recording complete, filename: ', self.filename)
+            self.play()
+        else:
+            print('Recording failed: ', exc_value)
+        return True
 
 #Wrapper class for raw image data
 class Image(object):
