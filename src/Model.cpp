@@ -2183,7 +2183,7 @@ int Model::jsonRead(std::string data)
   //List of keys to ignore on import if already set
   //(Default is to always replace if found in imported data,
   // this is reversed for these keys, existing value takes precedence)
-  std::string skiplist[] = {"resolution", "antialias"};
+  std::string skiplist[] = {"resolution", "antialias", "dims"};
   for (auto del : skiplist)
     if (session.globals.count(del)) imported["properties"].erase(del);
 
