@@ -941,6 +941,7 @@ void Volumes::isosurface(Triangles* surfaces, DrawingObject* source, DrawingObje
 {
   //Ensure data is loaded for this step
   setup(view);
+  surfaces->setup(view);
   countSlices();
 
   //Isosurface extract
