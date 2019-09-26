@@ -181,9 +181,14 @@ int Session::parse(Properties* target, const std::string& property)
     {
       dest[key] = false;
     }
+    else if (valuel == "null")
+    {
+      dest.erase(key);
+    }
     else
     {
       dest[key] = json::parse(value);
+      //std::cerr << value << " : '" << key << "' => " << dest[key] << std::endl;
     }
   }
   catch (std::exception& e)
