@@ -834,7 +834,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string opt = parsed["interactive"];
     if (opt == "noshow")
       interactive = false;
-    viewer->visible = interactive;
+    //viewer->visible = interactive;
     if (opt == "noloop")
         return parseCommands("animate 20");
     else
