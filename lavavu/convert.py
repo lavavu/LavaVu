@@ -11,6 +11,7 @@ Tools for converting between 3D data types
 """
 import numpy
 import os
+import sys
 
 def min_max_range(verts):
     """
@@ -378,7 +379,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
             vperc = int(verts.shape[0] / len(data.colours))
 
         for n,i in enumerate(indices):
-            if n%1000==0: print(".", end='', flush=True)
+            if n%1000==0: print(".", end=''); sys.stdout.flush()
             i0 = i[0]+offset
             i1 = i[1]+offset
             i2 = i[2]+offset
@@ -435,7 +436,7 @@ def export_PLY(filepath, source, binary=True):
         vc = 0
         for obj in objects:
             for o,data in enumerate(obj):
-                vc += len(data.vertices) // 3
+                vc += len(data.vertices) #Vertices now in shape (N,3) so len returns correct count
                 fc += len(data.indices) // 3
 
         #Pass the counts first
@@ -449,6 +450,9 @@ def export_PLY(filepath, source, binary=True):
                 verts = data.vertices.reshape((-1,3))
                 if len(verts) == 0:
                     print("No vertices")
+                    return
+                if len(verts) != vc:
+                    print("Vertex count error!", len(verts), vc, verts.shape)
                     return
                 indices = data.indices.reshape((-1,3))
                 normals = data.normals.reshape((-1,3))
@@ -472,7 +476,7 @@ def export_PLY(filepath, source, binary=True):
                         print("FACE:",face.dtype)
 
                     for i,idx in enumerate(indices):
-                        if i%1000==0: print(".", end='', flush=True)
+                        if i%1000==0: print(".", end=''); sys.stdout.flush()
                         if vperc and vperc < len(verts):
                             #Have colour, but less than vertices, apply to faces
                             ci = idx[0] // vperc
@@ -499,7 +503,7 @@ def export_PLY(filepath, source, binary=True):
                 for i,v in enumerate(verts):
                     #if i%1000==0:
                     #    print("vert index",i,vperc)
-                    if i%1000==0: print(".", end='', flush=True)
+                    if i%1000==0: print(".", end=''); sys.stdout.flush()
                     E = [v[0], v[1], v[2]]
                     if normals.shape[0] == verts.shape[0]:
                         N = normals[i]
