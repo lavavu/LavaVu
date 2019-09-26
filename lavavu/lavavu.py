@@ -4297,11 +4297,10 @@ class Video(object):
     >>> import lavavu
     >>> lv = lavavu.Viewer()
     >>> lv.test()
-    >>> with lv.video(): #Returns Video object
+    >>> with lv.video():
     ...     for i in range(0,5):
     ...         lv.rotate('y', 10)
     ...         lv.render()
-    Recording complete, filename:  Test Pattern.mp4
     """
     def __init__(self, viewer, filename="", resolution=(0,0), framerate=30, quality=1):
         self.resolution = resolution
