@@ -3001,17 +3001,15 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 
 std::string LavaVu::video(std::string filename, int fps, int width, int height, int start, int end, int quality)
 {
-  if (width > 0) viewer->outwidth = width;
-  if (height > 0) viewer->outheight = height;
   if (end <= 0) end = amodel->lastStep();
   debug_print("VIDEO: w %d h %d fps %d, %d --> %d\n", width, height, fps, start, end);
-  filename = encodeVideo(filename, fps, quality);
+  filename = encodeVideo(filename, fps, quality, width, height);
   writeSteps(false, start, end);
   encodeVideo(); //Write final step and stop encoding
   return filename;
 }
 
-std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
+std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int width, int height)
 {
   if (!encoder)
   {
@@ -3025,6 +3023,10 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
 #endif
+
+    //Set outwidth/height if provided
+    if (width > 0) viewer->outwidth = width;
+    if (height > 0) viewer->outheight = height;
 
     //Enable output just to get the dimensions
     if (!viewer->outwidth) viewer->outwidth = viewer->width;
