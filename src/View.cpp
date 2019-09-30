@@ -864,11 +864,11 @@ void View::zoomToFit()
       yscale = height / rheight;
       if (xscale < yscale) scalerect = xscale;
       else scalerect = yscale;
-    }
 
-    //printf("BB new_min_x %f new_max_x %f === ", new_min_x, new_max_x);
-    //  printf("Bounding rect: %f,%f - %f,%f === ",  min_x, min_y, max_x, max_y);
-    //printf("SCALE RECT %f Min rect: 0,0 - %f,%f\n", scalerect, max_x - min_x, max_y - min_y);
+      //printf("BB new_min_x %f new_max_x %f === ", new_min_x, new_max_x);
+      //printf("Bounding rect: %f,%f - %f,%f === ",  min_x, min_y, max_x, max_y);
+      //printf("SCALE RECT %f Min rect: 0,0 - %f,%f\n", scalerect, max_x - min_x, max_y - min_y);
+    }
 
     //Self-adjusting: did we overshoot aim? - compare last error to current 2d scale
     if (count > 0)

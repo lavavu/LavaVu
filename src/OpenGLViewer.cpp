@@ -668,6 +668,7 @@ void OpenGLViewer::outputOFF()
   {
     width = savewidth;
     height = saveheight;
+    app->session.context.scale2d = 1.0;
   }
 
   savewidth = saveheight = 0;

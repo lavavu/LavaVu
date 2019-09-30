@@ -3043,7 +3043,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Reset camera
     aview->reset();
     //Force the model dimensions to be re-checked
-    viewSelect(view, true, true);
+    viewSelect(view, true, false);
     //Reset camera to default view of model
     aview->init(true);
     printMessage("View reset");
