@@ -1502,7 +1502,9 @@ void LavaVu::readOBJ(const FilePath& fn)
     tris->add(tobj);
 
     //Load first material as default for object
-    if (shapes[i].mesh.material_ids.size() > 0 && materials.size() > shapes[i].mesh.material_ids[0])
+    if (shapes[i].mesh.material_ids.size() > 0 &&
+        shapes[i].mesh.material_ids[0] >= 0 &&
+        (int)materials.size() > shapes[i].mesh.material_ids[0])
       readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, tris, verbose);
 
     //Default is to load the indexed triangles and provided normals
