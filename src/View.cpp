@@ -118,20 +118,26 @@ bool View::init(bool force, float* newmin, float* newmax)
       return false;
     }
 
-    if (properties["follow"])
+    //BB updated?
+    if (force || focal_point[i] == FLT_MIN || min[i] != newmin[i] || max[i] != newmax[i])
     {
-      //If bounds changed, reset focal point to default
-      //(causes jitter when switching timesteps as camera follows default focal point)
-      if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
+      min[i] = newmin[i];
+      max[i] = newmax[i];
+      dims[i] = fabs(max[i] - min[i]);
+
+      if (properties["follow"])
+      {
+        //If bounds changed, reset focal point to default
+        //(causes jitter when switching timesteps as camera follows default focal point)
+        focal_point[i] = default_focus[i];
+      }
+      else
+        //Default focal point and rotation centre = model bounding box centre point
+        focal_point[i] = min[i] + dims[i] / 2.0f;
+
+      //Currently just a copy of focal point, no way to set this yet
+      rotate_centre[i] = focal_point[i];
     }
-
-    min[i] = newmin[i];
-    max[i] = newmax[i];
-    dims[i] = fabs(max[i] - min[i]);
-
-    //Fallback focal point and rotation centre = model bounding box centre point
-    if (force || focal_point[i] == FLT_MIN) focal_point[i] = min[i] + dims[i] / 2.0f;
-    rotate_centre[i] = focal_point[i];
   }
 
   //Save magnitude of dimensions
