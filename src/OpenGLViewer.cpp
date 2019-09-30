@@ -642,6 +642,7 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
 
     //Scale text and 2d elements when downsampling output image
     app->session.context.scale2d = fbo.downsampleFactor();
+    glViewport(0, 0, width, height);
   }
 
   //Re-render frame first
@@ -669,6 +670,7 @@ void OpenGLViewer::outputOFF()
     width = savewidth;
     height = saveheight;
     app->session.context.scale2d = 1.0;
+    glViewport(0, 0, width, height);
   }
 
   savewidth = saveheight = 0;
