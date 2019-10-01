@@ -34,6 +34,7 @@ uniform float uBrightness;
 uniform float uContrast;
 uniform float uSaturation;
 uniform float uPower;
+uniform float uBloom;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uTMVMatrix;
@@ -332,12 +333,19 @@ void main()
 
           vec4 value;
           if (uEnableColour)
+          {
             value = texture(uTransferFunction, vec2(density, 0.5));
+            //Premultiply alpha
+            value.rgb *= value.a;
+            //Apply bloom power, makes the blending more additive
+            value.a = pow(value.a, 1.0 + 3.0*uBloom);
+          }
           else
             value = vec4(density);
 
           value *= uDensityFactor * stepSize;
 
+          //Blending is front to back
           //Color
           colour += T * value.rgb;
           //Alpha

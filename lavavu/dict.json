@@ -923,6 +923,22 @@
       ]
     ]
   },
+  "bloom": {
+    "default": 0.0,
+    "target": "object(volume)",
+    "type": "real",
+    "desc": "Bloom effect, brightens colours, particularly around edges of transparent areas, by using a more additive blend equation. Setting this to ~0.5 will replicate the old (technically incorrect) volume shader blending for lavavu pre v1.5.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true,
+      [
+        0.0,
+        1.0,
+        0.01
+      ]
+    ]
+  },
   "samples": {
     "default": 256,
     "target": "object(volume)",

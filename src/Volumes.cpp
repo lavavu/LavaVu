@@ -488,6 +488,7 @@ void Volumes::render(Geom_Ptr g)
   prog->setUniform3f("uBBMax", bbMax);
   prog->setUniformi("uEnableColour", cmap ? 1 : 0);
   prog->setUniformf("uPower", props["power"]);
+  prog->setUniformf("uBloom", props["bloom"]);
   prog->setUniformi("uSamples", props["samples"]);
   float opacity = props["opacity"], density = props["density"];
   prog->setUniformf("uDensityFactor", density * opacity);
