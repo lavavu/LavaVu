@@ -12,10 +12,10 @@
 [image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [bake](#bake), [bakecolour](#bakecolour), [glaze](#glaze), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
  - **[View](#view-commands)**  
 
-[rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [aperture](#aperture), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
+[rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [fov](#fov), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [fixbb](#fixbb), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
  - **[Object](#object-commands)**  
 
-[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [read](#read), [label](#label), [name](#name), [vertex](#vertex), [normal](#normal), [vector](#vector), [value](#value), [colour](#colour), [isosurface](#isosurface)
+[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [name](#name), [isosurface](#isosurface)
  - **[Display](#display-commands)**  
 
 [background](#background), [alpha](#alpha), [axis](#axis), [rulers](#rulers), [antialias](#antialias), [valuerange](#valuerange), [colourmap](#colourmap), [colourbar](#colourbar), [pointtype](#pointtype), [pointsample](#pointsample), [border](#border), [title](#title), [scale](#scale), [modelscale](#modelscale)
@@ -555,11 +555,11 @@
  > z (number) : z coord  
 
 
-### aperture
+### fov
 
- > Set camera aperture (field-of-view)  
+ > Set camera fov (field-of-view)  
  >   
- > **Usage:** aperture degrees  
+ > **Usage:** fov degrees  
  >   
  > degrees (number) : degrees of viewing range  
 
@@ -622,6 +622,11 @@
 ### bounds
 
  > Recalculate the model bounding box from geometry  
+
+
+### fixbb
+
+ > Fix the model bounding box to it's current size, will no longer be elastic  
 
 
 ### camera
@@ -692,7 +697,7 @@
  >   
  > geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes  
  > id (integer, optional) : id of geometry to hide  
- > eg: 'hide points' will hide all objects containing point data  
+ > eg: 'hide points' will hide all point data  
  > note: 'hide all' will hide all objects  
 
 
@@ -708,7 +713,7 @@
  >   
  > geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes  
  > id (integer, optional) : id of geometry to show  
- > eg: 'hide points' will show all objects containing point data  
+ > eg: 'hide points' will show all point data  
  > note: 'hide all' will show all objects  
 
 
@@ -763,27 +768,6 @@
  > object (integer/string) : the index or name of the object to select (see: "list objects")  
 
 
-### read
-
- > Read data into selected object, appends to specified data array  
- >   
- > **Usage:** read type  
- >   
- > type (string) : data type to load vertices/vectors/normals/values/colours  
- > Before using this command, store the data a json array in a property of same name  
- >   
-
-
-### label
-
- > Label vertices of selected object  
- >   
- > **Usage:** label "labels"  
- >   
- > labels (string) : list of newline separated label data  
- >   
-
-
 ### name
 
  > Set object name  
@@ -792,64 +776,6 @@
  >   
  > object (integer/string) : the index or name of the object to rename (see: "list objects")  
  > newname (string) : new name to apply  
-
-
-### vertex
-
- > Add a vertex to selected object, appends to vertex array  
- >   
- > **Usage:** vertex x y z  
- >   
- > x (number) : vertex X coord  
- > y (number) : vertex Y coord  
- > z (number) : vertex Z coord  
- >   
- > (minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)  
-
-
-### normal
-
- > Add a normal to selected object, appends to normal array  
- >   
- > **Usage:** normal x y z  
- >   
- > x (number) : normal X coord  
- > y (number) : normal Y coord  
- > z (number) : normal Z coord  
- >   
- > (minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)  
-
-
-### vector
-
- > Add a vector to selected object, appends to vector array  
- >   
- > **Usage:** vector x y z  
- >   
- > x (number) : vector X coord  
- > y (number) : vector Y coord  
- > z (number) : vector Z coord  
- >   
- > (minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)  
-
-
-### value
-
- > Add a float value to selected object, appends to value array  
- >   
- > **Usage:** value val label  
- >   
- > label (string) : name of data set to append to  
- > val (number) : value to append  
-
-
-### colour
-
- > Add a colour value to selected object, appends to colour value array  
- >   
- > **Usage:** colour colourval  
- >   
- > colourval (string) : json [r,g,b(,a)] or hex RRGGBB(AA)  
 
 
 ### isosurface

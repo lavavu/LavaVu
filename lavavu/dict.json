@@ -51,7 +51,7 @@
         "fullscreen" : "screen"
       }
     ],
-    "target": "global",
+    "target": "all",
     "type": "object",
     "desc": "Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.",
     "strict": true,
@@ -62,7 +62,7 @@
   },
   "renderlist": {
     "default": "",
-    "target": "global",
+    "target": "all",
     "type": "string",
     "desc": "Sets a list of renderers to create and order they are displayed. This allows overriding the default renderer order, defined by the object order. For valid types see \"renderers\" property.",
     "strict": true,
@@ -76,17 +76,6 @@
     "target": "all",
     "type": "string",
     "desc": "List of renderers created for rendering primitives (points, lines, triangles) from more complex renderers (eg: vectors). Allows selection of different primitive rendering modes, globally or per object.",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "time": {
-    "default": 0.0,
-    "target": "timestep",
-    "type": "real",
-    "desc": "Time value for timestep",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -129,6 +118,17 @@
     "redraw": 0,
     "control": [
       true
+    ]
+  },
+  "time": {
+    "default": 0.0,
+    "target": "timestep",
+    "type": "real",
+    "desc": "Time value for timestep",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
     ]
   },
   "name": {

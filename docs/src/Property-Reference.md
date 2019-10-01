@@ -2,6 +2,7 @@
 # Property reference
 
  * [all](#all)
+ * [timestep](#timestep)
  * [object](#object)
  * [object(shapes)](#objectshapes)
  * [object](#object)
@@ -11,7 +12,6 @@
  * [object(volume)](#objectvolume)
  * [object(vector)](#objectvector)
  * [object(vector/shapes)](#objectvectorshapes)
- * [object(vector)](#objectvector)
  * [object(tracer)](#objecttracer)
  * [object(shape)](#objectshape)
  * [colourbar](#colourbar)
@@ -23,12 +23,18 @@
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
-|*renderers*       | object     | [["labels"],["points","sortedpoints","particles","spheres","cuboids"],["quads","grid"],["triangles","sortedtriangles","mesh","surface"],["vectors","arrows"],["tracers","streamlines"],["lines","sortedlines","links","tubes"],["shapes"],["volume","volumes"],["screen","fullscreen"]] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
-|*renderlist*      | string     | "sortedtriangles quads vectors tracers shapes sortedpoints labels links volume screen" | List of default renderers created and order they are displayed. For valid types see "renderers" property.|
-|*glyphrenderlist* | string     | "sortedtriangles points lines" | List of renderers created for glyph rendering and order they are displayed.|
+|*renderers*       | object     | [{"labels":"labels"},{"particles":"points","pointcubes":"cuboids","points":"points","pointspheres":"spheres","sortedpoints":"points"},{"grid":"quads","quads":"quads"},{"basictriangles":"basictriangles","mesh":"basictriangles","sortedtriangles":"sortedtriangles","surface":"basictriangles","triangles":"sortedtriangles"},{"arrows":"vectors","vectors":"vectors"},{"streamlines":"tracers","tracers":"tracers"},{"lines":"lines","links":"lines","simplelines":"simplelines","sortedlines":"sortedlines"},{"cubes":"cuboids","cuboids":"cuboids","shapes":"shapes","spheres":"spheres"},{"volume":"volume","volumes":"volume"},{"fullscreen":"screen","screen":"screen"}] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
+|*renderlist*      | string     | ""             | Sets a list of renderers to create and order they are displayed. This allows overriding the default renderer order, defined by the object order. For valid types see "renderers" property.|
+|*subrenderers*    | string     | "sortedtriangles points simplelines" | List of renderers created for rendering primitives (points, lines, triangles) from more complex renderers (eg: vectors). Allows selection of different primitive rendering modes, globally or per object.|
 |*font*            | string     | "vector"       | Font typeface vector/small/fixed/sans/serif|
 |*fontscale*       | real       | 1.0            | Font scaling, note that only the 'vector' font scales well|
 |*fontcolour*      | colour     | [0,0,0,0]      | Font colour RGB(A)|
+
+### timestep
+
+| Property         | Type       | Default            | Description                               |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
+|*time*            | real       | 0.0            | Time value for timestep|
 
 ### object
 
@@ -36,7 +42,8 @@
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*name*            | string     | ""             | Name of object|
 |*visible*         | boolean    | true           | Set to false to hide object|
-|*geometry*        | string     | "points"       | Geometry renderer type to load into when adding new data|
+|*inview*          | boolean    | true           | Set to false to exclude object from bounding box calculation and the default camera view|
+|*fixed*           | boolean    | false          | Set to true to make all data fixed, not time varying, for this object|
 |*renderer*        | string     | ""             | Create a custom renderer using label provided instead of using the default renderers, type of renderer created based on the "geometry" property|
 |*shaders*         | object     | []             | Custom shaders for rendering object, either filenames or source strings, provide either [fragment], [vertex, fragment] or [geometry, vertex, fragment]|
 |*uniforms*        | object     | []             | Custom shader uniforms for rendering objects, list of uniform names, will be copied from property data|
@@ -125,6 +132,7 @@
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*power*           | real       | 1.0            | Power used when applying transfer function, 1.0=linear mapping|
+|*bloom*           | real       | 0.0            | Bloom effect, brightens colours, particularly around edges of transparent areas, by using a more additive blend equation. Setting this to ~0.5 will replicate the old (technically incorrect) volume shader blending for lavavu pre v1.5.|
 |*samples*         | integer    | 256            | Number of samples to take per ray cast, higher = better quality, but slower|
 |*density*         | real       | 5.0            | Density multiplier for volume data|
 |*isovalue*        | real       | 0.0            | Isovalue for dynamic isosurface|
@@ -146,21 +154,16 @@
 |*scalemax*        | real       | 0.0            | Length scaling maximum, sets the range over which vectors will be scaled [0,scalemax]. Default automatically calculated based on data max|
 |*arrowhead*       | real       | 5.0            | Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius|
 |*scalevectors*    | real       | 1.0            | Vector scaling multiplier, applies to all vector objects|
+|*thickness*       | real       | 0.0            | Arrow shaft thickness as fixed value (overrides "radius")|
+|*length*          | real       | 0.0            | Arrow fixed length, default is to use vector magnitude|
+|*normalise*       | real       | 1.0            | Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant "length" property (if property length=0.0, this is ignored).|
+|*autoscale*       | boolean    | true           | Automatically scale vectors based on maximum magnitude|
 
 ### object(vector/shapes)
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*radius*          | real       | 0.02           | When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.|
-
-### object(vector)
-
-| Property         | Type       | Default            | Description                               |
-| ---------------- | ---------- | ------------------ | ----------------------------------------- |
-|*thickness*       | real       | 0.0            | Arrow shaft thickness as fixed value (overrides "radius")|
-|*length*          | real       | 0.0            | Arrow fixed length, default is to use vector magnitude|
-|*normalise*       | real       | 1.0            | Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant "length" property (if property length=0.0, this is ignored).|
-|*autoscale*       | boolean    | true           | Automatically scale vectors based on maximum magnitude|
 
 ### object(tracer)
 
@@ -226,7 +229,7 @@
 |*scale*           | real[3]    | [1.0,1.0,1.0]  | Global model scaling factors [x,y,z]|
 |*near*            | real       | 0.0            | Near clipping plane position, adjusts where geometry close to the camera is clipped|
 |*far*             | real       | 0.0            | Far clip plane position, adjusts where far geometry is clipped|
-|*aperture*        | real       | 45.0           | Aperture or Field-Of-View in degrees|
+|*fov*             | real       | 45.0           | Field-Of-View (horizontal) in degrees|
 |*orthographic*    | boolean    | false          | Enable to switch to an orthographic projection instead of the default perspective projection|
 |*coordsystem*     | integer    | 1              | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed|
 |*follow*          | boolean    | false          | Enable to follow the model bounding box centre with camera as it changes|
@@ -244,6 +247,7 @@
 |*rulerformat*     | string     | "%-10.3f"      | Format specifier for ruler tick values, eg: %.3[f/e/g] standard, scientific, both|
 |*rulerlabels*     | string[][] | []             | Tick labels to display on rulers, 2d array, one dimension per model axis, replaces rulerticks. If values are numeric, will define the position value, otherwise define the label only.|
 |*rulerwidth*      | real       | 1.5            | Width of ruler lines|
+|*rulerscale*      | real       | 1.0            | Scaling of ruler label text|
 |*border*          | real       | 1.0            | Border width around model boundary, 0=disabled|
 |*fillborder*      | boolean    | false          | Draw filled background box around model boundary|
 |*bordercolour*    | colour     | "grey"         | Colour of model boundary border|
