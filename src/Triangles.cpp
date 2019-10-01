@@ -225,6 +225,8 @@ void Triangles::loadBuffers()
     //      will require adjustment to draw() code, attrib pointers etc
     float texCoord[2] = {0.0, 0.0};
     float nullTexCoord[2] = {-1.0, -1.0};
+    if (index > 0)
+      geom[index]->voffset = geom[index-1]->voffset + geom[index-1]->count();
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
@@ -408,7 +410,6 @@ void Triangles::draw()
     glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
     glEnableVertexAttribArray(aColour);
     glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
-    GLint voffset = 0; //Vertex buffer offset
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] > 0)
@@ -418,18 +419,17 @@ void Triangles::draw()
         {
           //Draw with index buffer
           //glDrawElements(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-          glDrawElementsBaseVertex(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)), voffset);
+          glDrawElementsBaseVertex(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)), geom[index]->voffset);
           //printf("  DRAW %d from %d by INDEX (voffset %d)\n", counts[index], start, voffset);
         }
         else
         {
           //Draw directly from vertex buffer
-          glDrawArrays(primitive, voffset, geom[index]->count());
+          glDrawArrays(primitive, geom[index]->voffset, geom[index]->count());
           //printf("  DRAW %d from %d by VERTEX\n", geom[index]->count(), voffset);
         }
         start += counts[index];
       }
-      voffset += geom[index]->count();
 
       //Vertex buffer offset (bytes) required because indices per object are zero based
       //vstart += stride * geom[index]->count();

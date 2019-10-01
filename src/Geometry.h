@@ -312,6 +312,7 @@ public:
   Texture_Ptr texture;
   lucGeometryType type;   //Holds the object type
   int step = -1; //Holds the timestep
+  unsigned int voffset = 0; //Vertex offset in VBO
 
   //Colour/Opacity lookup functors
   ColourLookup _getColour;
