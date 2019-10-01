@@ -150,8 +150,7 @@ void Volumes::sort()
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
   float distanceRange[2];
-  mat4 modelView;
-  view->getMinMaxDistance(min, max, distanceRange, modelView);
+  view->getMinMaxDistance(min, max, distanceRange);
 
   float distance = 0;
   for (auto g : sorted) //unsigned int i=0; i<slices.size(); i++)
@@ -179,7 +178,7 @@ void Volumes::sort()
     }
 
     //Calculate distance from viewing plane
-    distance = view->eyeDistance(modelView, pos);
+    distance = view->eyeDistance(pos);
     if (distance < distanceRange[0]) distanceRange[0] = distance;
     if (distance > distanceRange[1]) distanceRange[1] = distance;
     g->distance = distance;

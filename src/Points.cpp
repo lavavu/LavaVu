@@ -281,8 +281,7 @@ void Points::sort()
 
   //Calculate min/max distances from view plane
   float distanceRange[2];
-  mat4 modelView;
-  view->getMinMaxDistance(min, max, distanceRange, modelView, true);
+  view->getMinMaxDistance(min, max, distanceRange, true);
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX-1
   //float multiplier = (float)USHRT_MAX / (distanceRange[1] - distanceRange[0]);
@@ -295,8 +294,8 @@ void Points::sort()
     if (sorter.buffer[i].distance < USHRT_MAX)
     {
       //Distance from viewing plane is -eyeZ
-      fdistance = eyePlaneDistance(modelView, sorter.buffer[i].vertex);
-      //fdistance = view->eyeDistance(modelView, sorter.buffer[i].vertex);
+      fdistance = view->eyePlaneDistance(sorter.buffer[i].vertex);
+      //fdistance = view->eyeDistance(sorter.buffer[i].vertex);
       //float d = floor(multiplier * (fdistance - distanceRange[0])) + 0.5;
       //assert(d < USHRT_MAX);
       //assert(d >= 0);

@@ -66,8 +66,7 @@ void QuadSurfaces::update()
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
   float distanceRange[2];
-  mat4 modelView;
-  view->getMinMaxDistance(min, max, distanceRange, modelView);
+  view->getMinMaxDistance(min, max, distanceRange);
 
   unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
@@ -91,7 +90,7 @@ void QuadSurfaces::update()
                    };
 
     //Calculate distance from viewing plane
-    geom[i]->distance = view->eyeDistance(modelView, pos);
+    geom[i]->distance = view->eyeDistance(pos);
     if (geom[i]->distance < distanceRange[0]) distanceRange[0] = geom[i]->distance;
     if (geom[i]->distance > distanceRange[1]) distanceRange[1] = geom[i]->distance;
     //printf("%d) %p %f %f %f distance = %f\n", i, geom[i].get(), pos[0], pos[1], pos[2], geom[i]->distance);

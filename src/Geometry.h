@@ -488,9 +488,10 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 class GeomPtrCompare
 {
 public:
+  //For sorting in descending order by distance
   bool operator()(const Geom_Ptr& l, const Geom_Ptr& r) const
   {
-    return l->distance < r->distance;
+    return l->distance > r->distance;
   }
 };
 

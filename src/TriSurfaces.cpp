@@ -511,8 +511,7 @@ void TriSurfaces::sort()
 
   //Calculate min/max distances from view plane
   float distanceRange[2];
-  mat4 modelView;
-  view->getMinMaxDistance(min, max, distanceRange, modelView, true);
+  view->getMinMaxDistance(min, max, distanceRange, true);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (USHRT_MAX-1.0) / (distanceRange[1] - distanceRange[0]);
@@ -525,8 +524,8 @@ void TriSurfaces::sort()
     if (sorter.buffer[i].distance < USHRT_MAX)
     {
       assert(sorter.buffer[i].vertex);
-      fdistance = eyePlaneDistance(modelView, sorter.buffer[i].vertex);
-      //fdistance = view->eyeDistance(modelView, sorter.buffer[i].vertex);
+      fdistance = view->eyePlaneDistance(sorter.buffer[i].vertex);
+      //fdistance = view->eyeDistance(sorter.buffer[i].vertex);
       fdistance = std::min(distanceRange[1], std::max(distanceRange[0], fdistance)); //Clamp to range
       sorter.buffer[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
       //if (i%10000==0) printf("%d : centroid %f %f %f distance %f %d\n", i, sorter.buffer[i].vertex[0], sorter.buffer[i].vertex[1], sorter.buffer[i].vertex[2], fdistance, sorter.buffer[i].distance);

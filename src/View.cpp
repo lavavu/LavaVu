@@ -217,12 +217,12 @@ void View::checkClip(float& near_clip, float& far_clip)
   }
 }
 
-void View::getMinMaxDistance(float* min, float* max, float range[2], mat4& mv, bool eyePlane)
+void View::getMinMaxDistance(float* min, float* max, float range[2], bool eyePlane)
 {
   //Preserve the modelView at time of calculations
   {
     std::lock_guard<std::mutex> guard(matrix_lock);
-    mv = modelView;
+    modelView = session.context.MV;
   }
 
   //Save min/max distance
@@ -240,11 +240,11 @@ void View::getMinMaxDistance(float* min, float* max, float range[2], mat4& mv, b
         vert[2] = k==0 ? min[2] : max[2];
         if (eyePlane)
         {
-          dist = eyePlaneDistance(mv, vert);
+          dist = eyePlaneDistance(vert);
         }
         else
         {
-          dist = eyeDistance(mv, vert);
+          dist = eyeDistance(vert);
         }
         if (dist < range[0]) range[0] = dist;
         if (dist > range[1]) range[1] = dist;
@@ -253,6 +253,21 @@ void View::getMinMaxDistance(float* min, float* max, float range[2], mat4& mv, b
   }
   if (range[1] == range[0]) range[1] += 0.0000001;
   //printf("DISTANCE MIN %f MAX %f\n", range[0], range[1]);
+}
+
+float View::eyeDistance(const Vec3d& vec)
+{
+  //float rX = (modelView[0][0] * vec.x + modelView[1][0] * vec.y + modelView[2][0] * vec.z + modelView[3][0]);
+  //float rY = (modelView[0][1] * vec.x + modelView[1][1] * vec.y + modelView[2][1] * vec.z + modelView[3][1]);
+  //float rZ = (modelView[0][2] * vec.x + modelView[1][2] * vec.y + modelView[2][2] * vec.z + modelView[3][2]);
+  //return sqrt(rX*rX+rY*rY+rZ*rZ);
+  vec4 r4 = linalg::mul(modelView, vec4(vec.x, vec.y, vec.z, 1.0));
+  return linalg::length(r4.xyz());
+}
+
+float View::eyePlaneDistance(const Vec3d& vec)
+{
+  return -(modelView[0][2] * vec.x + modelView[1][2] * vec.y + modelView[2][2] * vec.z + modelView[3][2]);
 }
 
 void View::autoRotate()
@@ -668,10 +683,6 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
     session.context.scale3(1.0, 1.0, -1.0);
   }
   GL_Error_Check;
-
-  //Store the matrix
-  std::lock_guard<std::mutex> guard(matrix_lock);
-  modelView = session.context.MV;
 
   //Copy updates to properties
   if (updated)
