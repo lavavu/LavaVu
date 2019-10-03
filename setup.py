@@ -170,7 +170,11 @@ if __name__ == "__main__":
         import numpy
     except:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'numpy>=1.11.0'])
-        import numpy
+        try:
+            import numpy
+        except:
+            subprocess.check_call([sys.executable, '-m', 'pip3', 'install', 'numpy>=1.11.0'])
+            import numpy
     inc_dirs += [numpy.get_include()]
     install = []  #Extra files to install in package root
 
@@ -307,7 +311,7 @@ if __name__ == "__main__":
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/lavavu/LavaVu for more info',
           packages          = find_packages(),
-          setup_requires    = requirements,
+          install_requires  = requirements,
           platforms         = ['any'],
           entry_points      = {
               'gui_scripts': [
@@ -340,6 +344,7 @@ if __name__ == "__main__":
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
             'Framework :: Jupyter',
             'Framework :: IPython',
           ],
