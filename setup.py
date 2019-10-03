@@ -15,7 +15,7 @@ import platform
 import glob
 
 #Current version
-version = "1.4.5"
+version = "1.4.6"
 
 """
 To release a new verison:
