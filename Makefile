@@ -206,12 +206,16 @@ $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 $(SWIGOBJ) : $(SWIGSRC) | src/sqlite3/sqlite3.c
 	$(CXX) $(CPPFLAGS) ${PYINC} -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
+LV_VERSION = $(shell $(PYTHON) -c 'import setup; print(setup.version)')
 docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	$(PROGRAM) -S -h -p0 : docs:properties quit > docs/src/Property-Reference.md
 	$(PROGRAM) -S -h -p0 : docs:interaction quit > docs/src/Interaction.md
 	$(PROGRAM) -S -h -p0 : docs:scripting quit > docs/src/Scripting-Commands-Reference.md
 	$(PROGRAM) -? > docs/src/Commandline-Arguments.md
 	#pip install -r docs/src/requirements.txt
+	#Update binder links
+	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' README.md
+	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/Installation.rst
 	sphinx-build docs/src docs/
 
 clean:
