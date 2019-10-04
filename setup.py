@@ -147,6 +147,10 @@ if __name__ == "__main__":
     write_version()
 
     sqlite3_path = os.path.join('src', 'sqlite3')
+    if not os.path.exists(os.path.join(sqlite3_path, 'sqlite3.c')):
+        #Attempt to get sqlite3 source submodule if not checked out
+        os.system("git submodule update --init")
+
     sqlite3_lib = [['sqlite3', {
                    'sources': [os.path.join(sqlite3_path, 'sqlite3.c')],
                    'include_dirs': [sqlite3_path],
@@ -188,10 +192,19 @@ if __name__ == "__main__":
         else:
             cflags += ['-g', '-O0']
 
+    #Parallel build
+    num_jobs = 1
+    try:
+        num_jobs = os.cpu_count()
+    except AttributeError:
+        import multiprocessing
+        num_jobs = multiprocessing.cpu_count()
     try:
         from numpy.distutils.ccompiler import CCompiler_compile
         import distutils.ccompiler
         distutils.ccompiler.CCompiler.compile = CCompiler_compile
+        os.environ['NPY_NUM_BUILD_JOBS'] = str(num_jobs)
+        print('Using parallel build, jobs: ', num_jobs)
     except ImportError:
         print("Numpy not found, parallel compile not available")
 
