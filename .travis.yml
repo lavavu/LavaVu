@@ -11,10 +11,6 @@ matrix:
       os: linux
       compiler: gcc
       install: pip install numpy
-    - python: "3.5"
-      os: linux
-      compiler: gcc
-      install: pip install numpy
     - python: "3.7"
       os: linux
       compiler: gcc
