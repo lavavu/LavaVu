@@ -2320,6 +2320,17 @@
       false
     ]
   },
+  "validate": {
+    "default": true,
+    "target": "global",
+    "type": "boolean",
+    "desc": "Disable to turn off validation of property names from the dictionary. Allows setting/reading custom properties.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "data": {
     "default": null,
     "target": "global",
