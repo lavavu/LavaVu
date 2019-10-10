@@ -117,6 +117,7 @@ int Session::parse(Properties* target, const std::string& property)
 
   //Check a valid key provided
   bool strict = false;
+  bool validate = global("validate");
   int redraw = 0;
   if (properties.count(key) == 0)
   {
@@ -198,8 +199,8 @@ int Session::parse(Properties* target, const std::string& property)
     dest[key] = value;
   }
 
-  if (!validate)
-    return 0;
+  //if (!validate)
+  //  return 0;
 
   //Run a type check
   //checkall(strict);

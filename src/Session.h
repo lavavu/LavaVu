@@ -23,8 +23,6 @@ public:
   bool havecontext;
   //Set when called from omegalib, camera handled externally
   bool omegalib;
-  //Flag to enable validation of all property names from dictionary
-  bool validate = true;
 
   //Model
   int now;

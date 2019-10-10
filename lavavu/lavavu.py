@@ -439,7 +439,7 @@ class Object(dict):
         if key in self.dict:
             return self.dict[key]
         #Check for valid key
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise KeyError(key + " : Invalid property name")
         #Default to the property lookup dict (default value is first element)
         #(allows default values to be returned from prop get)
@@ -449,7 +449,7 @@ class Object(dict):
 
     def __setitem__(self, key, value):
         #Check for valid key
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise KeyError(key + " : Invalid property name")
         if key == "colourmap":
             if isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
@@ -1599,7 +1599,7 @@ class ColourMap(dict):
 
     def __getitem__(self, key):
         self._get() #Ensure in sync
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         if key in self.dict:
             return self.dict[key]
@@ -1609,7 +1609,7 @@ class ColourMap(dict):
         return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Set new value and send
         self.dict[key] = value
@@ -1726,7 +1726,7 @@ class Figure(dict):
         return self._parent()
 
     def __getitem__(self, key):
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Activate this figure on viewer
         self.load()
@@ -1739,7 +1739,7 @@ class Figure(dict):
         return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
-        if not key in self.parent.properties:
+        if self.parent.validate and not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Activate this figure on viewer
         self.load()
@@ -2131,6 +2131,7 @@ class Viewer(dict):
         self.server = None
         self._thread = None
         self._collections = {}
+        self.validate = True #Property validation flag
 
         #Launch in thread?
         #(Can disable by setting port=0)
@@ -2436,7 +2437,7 @@ class Viewer(dict):
 
     def __setitem__(self, key, item):
         #Set view/global property
-        if not key in self.properties:
+        if self.validate and not key in self.properties:
             raise ValueError(key + " : Invalid property name")
         self.app.parseProperty(key + '=' + _convert_args(item))
         self._get()
@@ -2607,6 +2608,9 @@ class Viewer(dict):
     def _get(self):
         #Import state from lavavu
         self.state = _convert_keys(json.loads(self.app.getState()))
+        #Cache the validate flag
+        if "validate" in self.state["properties"]:
+            self.validate = self.state["properties"]["validate"]
         self._objects._sync()
 
     def _set(self):
