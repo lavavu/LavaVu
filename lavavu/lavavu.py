@@ -4889,7 +4889,13 @@ def lerp(first, second, mu):
     return final
 
 if __name__ == '__main__':
-    #Run doctests
-    import doctest
-    doctest.testmod()
+    #Run doctests - only works on numpy 1.14+ due to changes in array printing
+    npyv = numpy.__version__.split('.')
+    if sys.version_info[0] < 3:
+        print("Python 3 required for doctests")
+    elif int(npyv[0]) < 2 and int(npyv[1]) < 14:
+        print("NumPy 1.14 required for doctests")
+    else:
+        import doctest
+        doctest.testmod()
 
