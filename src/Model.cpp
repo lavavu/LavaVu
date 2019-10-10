@@ -2190,12 +2190,24 @@ int Model::jsonRead(std::string data)
   //Load globals, merge with existing values
   Properties::mergeJSON(session.globals, imported["properties"]);
 
+  //Get known data from imported json
   json inviews;
   //If "options" exists (old format) read it as first view properties
   if (imported.count("options") > 0)
     inviews.push_back(imported["options"]);
   else
     inviews = imported["views"];
+  json cmaps = imported["colourmaps"];
+  json inobjects = imported["objects"];
+  json reloadflag = imported["reload"];
+
+  //Custom data, anything not recognised will be set in globals
+  //Delete known keys first
+  std::string known[] = {"properties", "objects", "views", "colourmaps", "options", "reload"};
+  for (auto del : known)
+    imported.erase(del);
+  //Load custom globals, merge with existing values
+  Properties::mergeJSON(session.globals, imported);
 
   // Import views
   for (unsigned int v=0; v < inviews.size(); v++)
@@ -2223,7 +2235,6 @@ int Model::jsonRead(std::string data)
   }
 
   // Import colourmaps
-  json cmaps = imported["colourmaps"];
   for (unsigned int i=0; i < cmaps.size(); i++)
   {
     //Set default name if none provided
@@ -2257,7 +2268,6 @@ int Model::jsonRead(std::string data)
   }
 
   //Import objects
-  json inobjects = imported["objects"];
   unsigned int len = objects.size();
   if (len < inobjects.size()) len = inobjects.size();
   for (unsigned int i=0; i < inobjects.size(); i++)
@@ -2287,14 +2297,13 @@ int Model::jsonRead(std::string data)
   }
 
   //If integer reload code provided, return it, otherwise reload if true, redraw otherwise
-  if (imported["reload"].is_number())
-  {
-    return imported["reload"];
-  }
-  else if ((imported["reload"].is_boolean() && imported["reload"]))
+  if (reloadflag.is_number())
+    return reloadflag;
+  else if ((reloadflag.is_boolean() && reloadflag))
     reload();
   else
     redraw();
+
   return 0;
 }
 
