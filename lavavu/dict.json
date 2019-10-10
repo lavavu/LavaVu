@@ -363,7 +363,7 @@
   "opacity": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Opacity of object where 0 is transparent and 1 is opaque",
     "strict": true,
     "redraw": 2,
@@ -379,7 +379,7 @@
   "brightness": {
     "default": 0.0,
     "target": "object",
-    "type": "real [-1,1]",
+    "type": "real",
     "desc": "Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)",
     "strict": true,
     "redraw": 0,
@@ -395,7 +395,7 @@
   "contrast": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,2]",
+    "type": "real",
     "desc": "Contrast of object from 0 (none, grey) to 2 (max)",
     "strict": true,
     "redraw": 0,
@@ -411,7 +411,7 @@
   "saturation": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,2]",
+    "type": "real",
     "desc": "Saturation of object from 0 (greyscale) to 2 (fully saturated)",
     "strict": true,
     "redraw": 0,
@@ -427,7 +427,7 @@
   "ambient": {
     "default": 0.4,
     "target": "object",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Ambient lighting level (background constant light)",
     "strict": true,
     "redraw": 0,
@@ -443,7 +443,7 @@
   "diffuse": {
     "default": 0.65,
     "target": "object",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Diffuse lighting level (shading light/dark)",
     "strict": true,
     "redraw": 0,
@@ -459,7 +459,7 @@
   "specular": {
     "default": 0.0,
     "target": "object",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Specular highlight lighting level (spot highlights)",
     "strict": true,
     "redraw": 0,
@@ -475,7 +475,7 @@
   "shininess": {
     "default": 0.5,
     "target": "object",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Specular shininess factor, controls size of highlight",
     "strict": true,
     "redraw": 0,
@@ -528,8 +528,8 @@
   "xmin": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, minimum x",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -544,8 +544,8 @@
   "ymin": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, maximum y",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -560,8 +560,8 @@
   "zmin": {
     "default": 1.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, minimum z",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -576,8 +576,8 @@
   "xmax": {
     "default": 0.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, maximum x",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -592,8 +592,8 @@
   "ymax": {
     "default": 0.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, maximum y",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -608,8 +608,8 @@
   "zmax": {
     "default": 0.0,
     "target": "object",
-    "type": "real [0,1]",
     "desc": "Object clipping, maximum z",
+    "type": "real",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -1001,7 +1001,7 @@
   "isoalpha": {
     "default": 1.0,
     "target": "object(volume)",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Transparency value for isosurface",
     "strict": true,
     "redraw": 0,
@@ -2029,7 +2029,7 @@
   "alpha": {
     "default": 1.0,
     "target": "global",
-    "type": "real [0,1]",
+    "type": "real",
     "desc": "Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with \"opacity\" prop",
     "strict": true,
     "redraw": 0,
