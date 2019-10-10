@@ -178,7 +178,7 @@ def points_to_volume_tree(verts, res=8):
     return (values, lmin, lmax)
 
 
-def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=False, normed=False, clamp=None):
+def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=0, pad=None, normed=False, clamp=None):
     """
     Interpolate points to grid and load into passed volume object
 
@@ -198,10 +198,15 @@ def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=False, normed=Fa
     #bb_all == (vmin, vmax)
     vdata, vmin, vmax = points_to_volume(pverts, res, kdtree, normed, clamp, bb_all)
 
-    if blur:
-        print("Filter/blur distance field")
+    if blur > 0:
+        if pad == None:
+            pad = int(blur*2)
+        if pad > 0:
+            print("Pad edges before blur", pad)
+            vdata = numpy.pad(vdata, pad, mode='constant')
+        print("Filter/blur distance field, sigma=%d" % blur)
         from scipy.ndimage.filters import gaussian_filter
-        values = gaussian_filter(vdata, sigma=1) #, mode='nearest')
+        values = gaussian_filter(vdata, sigma=blur) #, mode='nearest')
     else:
         values = vdata #Need extra space at edges to use blur, so skip, or use pad() 
     
