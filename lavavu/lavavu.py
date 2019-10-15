@@ -2431,7 +2431,7 @@ class Viewer(dict):
         elif key in self.properties:
             #Must always return a copy to prevent modifying the defaults!
             return copy.copy(self.properties[key]["default"]) #Default from prop list
-        else:
+        elif self.validate:
             raise ValueError(key + " : Invalid property name")
         return None
 

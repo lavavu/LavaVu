@@ -2205,7 +2205,7 @@ int Model::jsonRead(std::string data)
   //Delete known keys first
   std::string known[] = {"properties", "objects", "views", "colourmaps", "options", "reload"};
   for (auto del : known)
-    imported.erase(del);
+    if (imported.count(del)) imported.erase(del);
   //Load custom globals, merge with existing values
   Properties::mergeJSON(session.globals, imported);
 
