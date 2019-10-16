@@ -2185,7 +2185,8 @@ int Model::jsonRead(std::string data)
   // this is reversed for these keys, existing value takes precedence)
   std::string skiplist[] = {"resolution", "antialias", "dims"};
   for (auto del : skiplist)
-    if (session.globals.count(del)) imported["properties"].erase(del);
+    if (session.globals.count(del) && imported["properties"].count(del))
+      imported["properties"].erase(del);
 
   //Load globals, merge with existing values
   Properties::mergeJSON(session.globals, imported["properties"]);
@@ -2205,7 +2206,8 @@ int Model::jsonRead(std::string data)
   //Delete known keys first
   std::string known[] = {"properties", "objects", "views", "colourmaps", "options", "reload"};
   for (auto del : known)
-    if (imported.count(del)) imported.erase(del);
+    if (imported.count(del))
+      imported.erase(del);
   //Load custom globals, merge with existing values
   Properties::mergeJSON(session.globals, imported);
 
