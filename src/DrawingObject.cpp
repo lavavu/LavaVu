@@ -209,7 +209,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
     {
       tex->load();
     }
-    else if (texture)
+    else if (texture && !texture->empty())
     {
       tex = texture;
     }

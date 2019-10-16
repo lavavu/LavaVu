@@ -1034,7 +1034,7 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucLuminanceData)
 
-    def texture(self, data, flip=True, bgr=False):
+    def texture(self, data=None, flip=True, bgr=False):
         """
         Load raw texture data for object
 
@@ -1052,6 +1052,11 @@ class Object(dict):
         bgr : boolean
             rgb data is in BGR/BGRA format instead of RGB/RGBA
         """
+        if data is None:
+            #Clear texture
+            self.parent.app.clearTexture(self.ref)
+            return
+
         data = self._convert(data)
         if len(data.shape) < 2:
             raise ValueError(data.shape + " : Must pass a 2D or 3D data set")
@@ -1883,6 +1888,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     def clearAll(self, *args, **kwargs):
         return self._lavavu_call('clearAll', True, *args, **kwargs)
+
+    def clearTexture(self, *args, **kwargs):
+        return self._lavavu_call('clearTexture', True, *args, **kwargs)
 
     """
     #def loadColours(self, *args, **kwargs):

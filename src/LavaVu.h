@@ -258,6 +258,7 @@ public:
   Geom_Ptr arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
   Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData);
   Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, std::string label);
+  void clearTexture(DrawingObject* target);
   void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
   void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
 

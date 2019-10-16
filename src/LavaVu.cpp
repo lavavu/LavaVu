@@ -3463,6 +3463,18 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::s
   return p;
 }
 
+void LavaVu::clearTexture(DrawingObject* target)
+{
+  GL_Check_Thread(viewer->render_thread);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
+  if (container)
+  {
+    container->clearTexture(target);
+    reloadObject(target);
+  }
+}
+
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)
 {
   if (!amodel || !target) return;

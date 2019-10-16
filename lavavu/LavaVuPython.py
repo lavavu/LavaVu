@@ -522,6 +522,7 @@ LavaVu.getObjectDataLabels = new_instancemethod(_LavaVuPython.LavaVu_getObjectDa
 LavaVu.arrayUChar = new_instancemethod(_LavaVuPython.LavaVu_arrayUChar, None, LavaVu)
 LavaVu.arrayUInt = new_instancemethod(_LavaVuPython.LavaVu_arrayUInt, None, LavaVu)
 LavaVu.arrayFloat = new_instancemethod(_LavaVuPython.LavaVu_arrayFloat, None, LavaVu)
+LavaVu.clearTexture = new_instancemethod(_LavaVuPython.LavaVu_clearTexture, None, LavaVu)
 LavaVu.textureUChar = new_instancemethod(_LavaVuPython.LavaVu_textureUChar, None, LavaVu)
 LavaVu.textureUInt = new_instancemethod(_LavaVuPython.LavaVu_textureUInt, None, LavaVu)
 LavaVu.getGeometry = new_instancemethod(_LavaVuPython.LavaVu_getGeometry, None, LavaVu)
@@ -549,6 +550,7 @@ LavaVu.commandList = new_instancemethod(_LavaVuPython.LavaVu_commandList, None, 
 LavaVu.propertyList = new_instancemethod(_LavaVuPython.LavaVu_propertyList, None, LavaVu)
 LavaVu_swigregister = _LavaVuPython.LavaVu_swigregister
 LavaVu_swigregister(LavaVu)
+
 
 def rawImageWrite(array, path, jpegquality=0):
     return _LavaVuPython.rawImageWrite(array, path, jpegquality)

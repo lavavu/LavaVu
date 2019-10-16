@@ -628,6 +628,7 @@ public:
   void move(Geometry* other);
   void toImage(unsigned int idx);
   void setTexture(DrawingObject* draw, Texture_Ptr tex);
+  void clearTexture(DrawingObject* draw);
   void loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, int filter=2, bool bgr=false);
   Quaternion vectorRotation(Vec3d rvector);
   void drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, bool scale3d, float scale, float radius0, float radius1, float head_scale, int segment_count=24, Colour* colour=NULL);

@@ -2132,6 +2132,18 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   }
 }
 
+void Geometry::clearTexture(DrawingObject* draw)
+{
+  //Must be called on render thread as calls glDeleteTexures
+  if (draw->texture)
+    draw->texture = nullptr;
+  if (draw->properties.has("texture"))
+    draw->properties.data.erase("texture");
+  Geom_Ptr geomdata = getObjectStore(draw);
+  if (geomdata)
+    geomdata->texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
+}
+
 void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr)
 {
   Geom_Ptr geomdata = getObjectStore(draw);
