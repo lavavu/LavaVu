@@ -66,6 +66,9 @@
 //Viewer class implementation...
 LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp()
 {
+#ifdef DEBUG
+  printf("This is a DEBUG build of LavaVu, not for production use!\n");
+#endif
   viewer = NULL;
   encoder = NULL;
   verbose = dbpath = false;
