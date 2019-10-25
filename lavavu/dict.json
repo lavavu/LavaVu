@@ -1582,17 +1582,6 @@
       false
     ]
   },
-  "camera": {
-    "default": {},
-    "target": "global",
-    "type": "object",
-    "desc": "Camera settings for Omegalib",
-    "strict": false,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
   "rotate": {
     "default": [
       0.0,
