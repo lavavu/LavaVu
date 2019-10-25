@@ -4709,13 +4709,13 @@ def download(url, filename=None, overwrite=False, quiet=False):
     filename : str
         Actual filename written to local filesystem
     """
-    #Python 3 moved urlretrieve to request submodule
+    #Python 3 moved modules
     try:
-        from urllib.request import urlretrieve
+        from urllib.request import urlopen, URLError, HTTPError
         from urllib.parse import urlparse
         from urllib.parse import quote
     except ImportError:
-        from urllib import urlretrieve
+        from urllib2 import urlopen, URLError, HTTPError
         from urllib import quote
         from urlparse import urlparse
 
@@ -4728,9 +4728,17 @@ def download(url, filename=None, overwrite=False, quiet=False):
         o = o._replace(path=quote(o.path))
         url = o.geturl()
         if not quiet: print("Downloading: " + filename)
-        urlretrieve(url, filename)
+        try:
+            f = urlopen(url)
+            with open(filename, "wb") as out:
+                out.write(f.read())
+        except (Exception) as e:
+            print(str(e), url)
+            raise(e)
+
     else:
-        if not quiet: print(filename + " exists, skipped downloading.")
+        if not quiet:
+            print(filename + " exists, skipped downloading.")
 
     return filename
 
