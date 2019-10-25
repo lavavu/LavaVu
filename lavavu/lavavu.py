@@ -3772,7 +3772,7 @@ class Viewer(dict):
             import webbrowser
             webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
 
-    def interactive(self, args):
+    def interactive(self, args=None):
         """
         Open an interactive native window
 
