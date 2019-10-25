@@ -792,6 +792,28 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     volume = NULL;
     printMessage("Cleared static volume object");
   }
+  else if (parsed.exists("texture"))
+  {
+    if (gethelp)
+    {
+      help += "Set or clear object texture data\n";
+      return false;
+    }
+    if (aobject)
+    {
+      std::string props = parsed.get("texture");
+      if (props.length() > 0)
+      {
+        aobject->properties.data["texture"] = props;
+        printMessage("Set texture on object: %s to %s", aobject->name().c_str(), props.c_str());
+      }
+      else
+      {
+        clearTexture(aobject);
+        printMessage("Cleared texture on object: %s", aobject->name().c_str());
+      }
+    }
+  }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
     std::string action = parsed.exists("alpha") ? "alpha" : "opacity";
@@ -3227,7 +3249,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "spin", "focus", "fov", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "fixbb", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
-    {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface"},
+    {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface", "texture"},
     {"background", "alpha", "axis", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
