@@ -240,7 +240,7 @@ std::vector<Geometry*> Model::getRenderersByTypeName(const std::string& typestr)
   std::vector<Geometry*> list;
   for (auto g : geometry)
   {
-    std::cout << "  " << g->type << " : " << GeomData::names[g->type] << " -- " << g->renderer << std::endl;
+    //std::cout << "  " << g->type << " : " << GeomData::names[g->type] << " -- " << g->renderer << std::endl;
     if (GeomData::names[g->type] == typestr)
       list.push_back(g);
   }
