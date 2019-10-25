@@ -3772,9 +3772,16 @@ class Viewer(dict):
             import webbrowser
             webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
 
-    def interactive(self):
+    def interactive(self, args):
+        """
+        Open an interactive native window
+
+        WARNING: On MacOS this function will never return until the window closes
+        """
         self.app.show() #Need to manually call show now
-        if is_notebook():
+        if args:
+            self.commands("interactive " + args)
+        elif is_notebook():
             self.commands("interactive noloop")
         else:
             self.commands("interactive")
