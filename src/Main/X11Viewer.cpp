@@ -143,6 +143,8 @@ void X11Viewer::show()
   if (!Xdisplay || !win) return;
   OpenGLViewer::show();
 
+  XMapRaised(Xdisplay, win); // Show the window
+
   //Notify active window, raises window even if already mapped
   XEvent xev;
   memset(&xev, 0, sizeof(xev));
@@ -152,8 +154,6 @@ void X11Viewer::show()
   xev.xclient.format = 32;
 
   XSendEvent(Xdisplay, DefaultRootWindow(Xdisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-
-  XMapRaised(Xdisplay, win); // Show the window
 }
 
 void X11Viewer::title(std::string title)
