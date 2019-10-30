@@ -217,7 +217,7 @@ void Triangles::loadBuffers()
     }
 
     float zero[3] = {0,0,0};
-    float shift = view->is3d && geom[index]->draw->properties["shift"];
+    float shift = geom[index]->draw->properties["shift"];
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
     //Shift by index, helps prevent z-clashing
     shift *= index * 10e-7 * view->model_size;
@@ -236,7 +236,7 @@ void Triangles::loadBuffers()
         getColour(colour, cidx);
 
       float* vert = geom[index]->render->vertices[v];
-      if (shift > 0)
+      if (view->is3d && shift > 0)
       {
         //Shift vertices
         shiftvert = {vert[0] + shift, vert[1] + shift, vert[2] + shift};
