@@ -219,7 +219,8 @@ void Triangles::loadBuffers()
     float zero[3] = {0,0,0};
     float shift = geom[index]->draw->properties["shift"];
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
-    shift *= 0.0001 * view->model_size;
+    //Shift by index, helps prevent z-clashing
+    shift *= index * 10e-7 * view->model_size;
     std::array<float,3> shiftvert;
     //TODO: instead of writing blank normal, skip normal and texcoord if no data
     //      will require adjustment to draw() code, attrib pointers etc
