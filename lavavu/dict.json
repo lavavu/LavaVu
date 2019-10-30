@@ -896,6 +896,17 @@
       false
     ]
   },
+  "smoothangle": {
+    "default": 90,
+    "target": "object(surface)",
+    "type": "int",
+    "desc": "Angle between surface normals (in degrees) below which normals will be smoothed. Reduce this to preserve hard edges.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "flip": {
     "default": false,
     "target": "object(surface)",

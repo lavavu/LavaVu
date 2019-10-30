@@ -309,6 +309,7 @@ void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<
   bool vertColour = (hasColours && hasColours >= geom[index]->render->vertices.size()/3);
   if (hasColours && !vertColour) debug_print("Not enough colour values for per-vertex normalisation %d < %d\n", hasColours, geom[index]->render->vertices.size()/3);
   bool vnormals = geom[index]->draw->properties["vertexnormals"];
+  int anglemin = geom[index]->draw->properties["smoothangle"];
   //Calculate face normals for each triangle and copy to each face vertex
   if (vnormals)
   {
@@ -349,7 +350,7 @@ void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<
       float angle = vnormals ? RAD2DEG * normals[verts[v].id].angle(normals[verts[match].id]) : 0;
       //debug_print("angle %f ", angle);
       //Don't include vertices in the sum if angle between normals too sharp
-      if (angle < 90)
+      if (angle < anglemin)
       {
         //Found a duplicate, replace reference idx (original retained in "id")
         verts[v].ref = verts[match].ref;
