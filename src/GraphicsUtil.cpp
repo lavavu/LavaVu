@@ -49,8 +49,8 @@
 #endif
 
 #ifdef USE_FONTS
-#include  "font.h"
 #include  "FontSans.h"
+#include  "FontLine.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.h"
@@ -72,45 +72,50 @@ void FontManager::init(std::string& path, RenderContext* context)
   GL_Error_Check;
   //std::cout << vertices.size() * sizeof(GLfloat) << " bytes, " << vertices.size() << " float buffer loaded for vector font\n";
 
-  rasterSetupFonts();
+  //As above for line font
+  std::vector<float> lvertices;
+  GenerateLineFontCharacters(lvertices);
+  glGenVertexArrays(1, &l_vao);
+  glBindVertexArray(l_vao);
+  //Initialise vertex buffer
+  glGenBuffers(1, &l_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, l_vbo);
+  glBufferData(GL_ARRAY_BUFFER, lvertices.size() * sizeof(float), lvertices.data(), GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  //std::cout << lvertices.size() * sizeof(GLfloat) << " bytes, " << lvertices.size() << " float buffer loaded for line font\n";
 }
 
-Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d)
+Colour FontManager::setFont(Properties& properties, float scaling)
 {
-  //fixed, small, sans, serif, vector
-  std::string fonttype = def;
-  if (properties["vectorfont"])
-    //Always use 3D vector font
-    fonttype = "vector";
-  if (properties.has("font"))
+  //vector, line - default to line when anti-aliasing disabled
+  std::string fonttype = context->antialiased ? "vector" : "line";
+  if (properties.has("font") || properties.hasglobal("font"))
     fonttype = properties["font"];
 
-  fontscale = properties.getFloat("fontscale", scaling);
+  //"fontscale" property scales any automatic scaling parameter
+  float fontsize = (float)properties["fontscale"] * scaling;
+  //"fontsize" property overrides automatic scaling, so get value, with calculated/scaled as default
+  fontscale = properties.getFloat("fontsize", fontsize);
 
   //Colour
   colour = Colour(properties["fontcolour"]);
 
-  //Bitmap fonts
-  if (fonttype == "fixed")
-    charset = FONT_FIXED;
-  else if (fonttype == "sans")
-    charset = FONT_NORMAL;
-  else if (fonttype == "serif")
-    charset = FONT_SERIF;
-  else if (fonttype == "vector")
+  //Set font type
+  //Mesh vector font is the default
+  if (fonttype == "vector")
+  {
     charset = FONT_VECTOR;
-  else  //Default (small)
-    charset = FONT_SMALL;
-
-  //For non-vector fonts
-  if (charset > FONT_VECTOR)
-  {
-    fontscale *= multiplier2d;
-  }
-  else if (fontscale < 0.3)
-  {
     //Minimum readable vector font size
-    fontscale = 0.3;
+    if (fontscale < 0.35)
+      fontscale = 0.35;
+  }
+  //Hershey line font for very small text
+  else if (fonttype == "line")
+  {
+    charset = FONT_LINE;
+    //Minimum readable size for line font
+    if (fontscale < 0.3)
+      fontscale = 0.3;
   }
 
   return colour;
@@ -118,16 +123,24 @@ Colour FontManager::setFont(Properties& properties, std::string def, float scali
 
 void FontManager::printString(const char* str)
 {
-  glDisable(GL_CULL_FACE);
-
   //Render the characters in loop
   //1) Create index buffer data for each char
   //2) Load and render index buffer
   //3) Translate by char width
-  if (!ibo) glGenBuffers(1, &ibo);
-  glBindVertexArray(vao);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  if (charset == FONT_VECTOR)
+  {
+    if (!ibo) glGenBuffers(1, &ibo);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  }
+  else
+  {
+    if (!l_ibo) glGenBuffers(1, &l_ibo);
+    glBindVertexArray(l_vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l_ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, l_vbo);
+  }
 
   context->fontshader->use();
   GLint aPosition = context->fontshader->attribs["aVertexPosition"];
@@ -145,30 +158,65 @@ void FontManager::printString(const char* str)
   glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y
   GL_Error_Check;
 
-  for (unsigned int c=0; c<strlen(str); c++)
+  if (charset == FONT_VECTOR)
   {
-    //Render character
-    int i = (int)str[c] - 32;
-    std::vector<unsigned int> indices;
-    unsigned int offset = font_offsets[i]; //Vertex offsets of 2d vertices
-    //Load the tris
-    for (unsigned int t=0; t<font_tricounts[i]; t++)
+    glDisable(GL_CULL_FACE);
+    for (unsigned int c=0; c<strlen(str); c++)
     {
-      assert(offset + t*3+2 < (unsigned int)font_vertex_total);
-      //Tri: 3 * vertex indices
-      indices.push_back(offset + t*3);
-      indices.push_back(offset + t*3 + 1);
-      indices.push_back(offset + t*3 + 2);
-    }
+      //Render character
+      int i = (int)str[c] - 32;
+      std::vector<unsigned int> indices;
+      unsigned int offset = font_offsets[i]; //Vertex offsets of 2d vertices
+      //Load the tris
+      for (unsigned int t=0; t<font_tricounts[i]; t++)
+      {
+        assert(offset + t*3+2 < (unsigned int)font_vertex_total);
+        //Tri: 3 * vertex indices
+        indices.push_back(offset + t*3);
+        indices.push_back(offset + t*3 + 1);
+        indices.push_back(offset + t*3 + 2);
+      }
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW);
-    GL_Error_Check;
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-    GL_Error_Check;
-    
-    // Shift right width of character
-    context->translate3(font_charwidths[i], 0, 0);
-    context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW);
+      GL_Error_Check;
+      glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+      GL_Error_Check;
+      
+      // Shift right width of character
+      context->translate3(font_charwidths[i], 0, 0);
+      context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
+    }
+  }
+  else
+  {
+    //Line font
+    float lineWidth = (context->scale2d - 0.5) * 1.5;
+    if (context->core && lineWidth > 1.0) lineWidth = 1.0;
+    glLineWidth(lineWidth);
+    for (unsigned int c=0; c<strlen(str); c++)
+    {
+      //Render character
+      int i = (int)str[c] - 32;
+      std::vector<unsigned int> indices;
+      unsigned int offset = linefont_offsets[i]; //Vertex offsets of 2d vertices
+      //Load the tris
+      for (unsigned int t=0; t<linefont_counts[i]; t++)
+      {
+        assert(offset + t*2+2 < (unsigned int)linefont_vertex_total);
+        //Line: 2 * vertex indices
+        indices.push_back(offset + t*2);
+        indices.push_back(offset + t*2 + 1);
+      }
+
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW);
+      GL_Error_Check;
+      glDrawElements(GL_LINES, indices.size()/2, GL_UNSIGNED_INT, (GLvoid*)0);
+      GL_Error_Check;
+      
+      // Shift right width of character
+      context->translate3(linefont_charwidths[i], 0, 0);
+      context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
+    }
   }
 
   GL_Error_Check;
@@ -186,7 +234,6 @@ void FontManager::printf(int x, int y, const char *fmt, ...)
 
 void FontManager::print(int x, int y, const char *str, bool scale2d)
 {
-  if (charset > FONT_VECTOR) return rasterPrint(x, y, str);
   context->MV = linalg::identity;
   if (scale2d)
     context->scale3(context->scale2d, context->scale2d, context->scale2d);
@@ -197,7 +244,6 @@ void FontManager::print(int x, int y, const char *str, bool scale2d)
 
 void FontManager::print3d(float x, float y, float z, const char *str)
 {
-  if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str);
   context->translate3(x, y, z);
   context->scale3(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
   printString(str);
@@ -205,7 +251,6 @@ void FontManager::print3d(float x, float y, float z, const char *str)
 
 void FontManager::print3dBillboard(float x, float y, float z, const char *str, int align, float* scale)
 {
-  if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
   int i,j;
   float scaledef[3] = {1.0, 1.0, 1.0};
   if (!scale) scale = scaledef;
@@ -240,7 +285,6 @@ void FontManager::print3dBillboard(float x, float y, float z, const char *str, i
 // String width calc
 int FontManager::printWidth(const char *string)
 {
-  if (charset > FONT_VECTOR) return rasterPrintWidth(string);
   // Sum character widths in string
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
@@ -251,218 +295,9 @@ int FontManager::printWidth(const char *string)
   return fontscale * w;
 }
 
-//Bitmap fonts
-void FontManager::rasterPrintString(const char* str)
-{
-  assert(r_vbo);
-  if (charset > FONT_SERIF || charset < FONT_FIXED) // Character set valid?
-    charset = FONT_FIXED;
-
-  // First save state of enable flags
-  glDisable(GL_CULL_FACE);
-
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_BLEND);
-
-  glBindTexture(GL_TEXTURE_2D, fonttexture);
-  if (fontscale >= 1.0) //Don't allow downscaling bitmap fonts
-    context->scale3(fontscale, fontscale, fontscale);
-
-  if (!r_ibo) glGenBuffers(1, &r_ibo);
-  glBindVertexArray(r_vao);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, r_ibo);
-  glBindBuffer(GL_ARRAY_BUFFER, r_vbo);
-
-  GL_Error_Check;
-  glBindTexture(GL_TEXTURE_2D, fonttexture);
-  GL_Error_Check;
-
-  context->fontshader->use();
-  GLint aPosition = context->fontshader->attribs["aVertexPosition"];
-  GLint aTexCoord = context->fontshader->attribs["aVertexTexCoord"];
-
-  int stride = 4 * sizeof(GLfloat);
-  glEnableVertexAttribArray(aPosition);
-  glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y
-  glEnableVertexAttribArray(aTexCoord);
-  glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(2*sizeof(float))); //Tex coord s,t
-  GL_Error_Check;
-
-  //Send the matrices as uniform data
-  context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
-  context->fontshader->setUniformMatrixf("uPMatrix", context->P);
-
-  context->fontshader->setUniform("uColour", colour);
-  context->fontshader->setUniformi("uTextured", 1);
-
-  for (unsigned int c=0; c<strlen(str); c++)
-  {
-    //Render character
-    unsigned int startidx = 0;
-    unsigned int stopidx = 384;
-    unsigned int i = (unsigned int)(str[c] - 32 + (96 * charset));      // Choose the font and charset
-    assert(4 * i + 3 < stopidx * 4 * 2 * 2);
-    GLuint buffer[4] = {4 * i, 4 * i + 1, 4 * i + 3, 4 * i + 2};
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(GLuint), buffer, GL_DYNAMIC_DRAW);
-    GL_Error_Check;
-    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)0);
-    GL_Error_Check;
-    
-    // Shift right width of character + 1
-    context->translate3(bmpfont_charwidths[startidx + i]+1, 0, 0);
-    context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
-    GL_Error_Check;
-  }
-
-  GL_Error_Check;
-
-  glDisableVertexAttribArray(aPosition);
-  glDisableVertexAttribArray(aTexCoord);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  GL_Error_Check;
-
-  //glDisable(GL_CULL_FACE);
-}
-
-void FontManager::rasterPrint(int x, int y, const char *str, bool scale2d)
-{
-  context->MV = linalg::identity;
-  if (scale2d)
-    context->scale3(context->scale2d, context->scale2d, context->scale2d);
-  context->translate3(x, y-bmpfont_charheights[charset], 0);
-  rasterPrintString(str);
-}
-
-void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool alignRight)
-{
-  /* Calculate projected screen coords in viewport */
-  float pos[3];
-  GLint viewportArray[4];
-  glGetIntegerv(GL_VIEWPORT, viewportArray);
-  context->project(x, y, z, pos);
-
-  /* Switch to ortho view with 1 unit = 1 pixel and print using calculated screen coords */
-  context->viewport2d(viewportArray[2], viewportArray[3]);
-
-  GL_Error_Check;
-  glDepthFunc(GL_ALWAYS);
-  GL_Error_Check;
-
-  /* FontManager::print at calculated position, compensating for viewport offset */
-  int xs, ys;
-  xs = (int)(pos[0]) - viewportArray[0];
-  if (alignRight) xs -= rasterPrintWidth(str);
-  ys = (int)(pos[1]) - viewportArray[1]; //(viewportArray[3] - (yPos - viewportArray[1]));
-  rasterPrint(xs, ys, str);
-
-  /* Restore state */
-  context->viewport2d(0, 0);
-  /* Put back settings */
-  glDepthFunc(GL_LESS);
-  GL_Error_Check;
-}
-
-/* String width calc */
-int FontManager::rasterPrintWidth(const char *string)
-{
-  /* Sum character widths in string */
-  int i, len = 0, slen = strlen(string);
-  for (i = 0; i < slen; i++)
-    len += bmpfont_charwidths[string[i]-32 + (96 * charset)];
-  /* Additional pixel of spacing for each character */
-  float w = len + slen;
-  if (fontscale >= 1.0) return fontscale * w;
-  return w;
-}
-
-void FontManager::rasterSetupFonts()
-{
-  /* Load font bitmaps and Convert To Textures */
-  int i, j;
-  unsigned char* pixel_data = new unsigned char[IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_BYTES_PER_PIXEL];
-  unsigned char fontdata[IMAGE_HEIGHT][IMAGE_WIDTH];   /* font texture data */
-
-  /* Get font pixels from source data - interpret RGB (greyscale) as alpha channel */
-  IMAGE_RUN_LENGTH_DECODE(pixel_data, IMAGE_RLE_PIXEL_DATA, IMAGE_WIDTH * IMAGE_HEIGHT, IMAGE_BYTES_PER_PIXEL);
-  for (i = 0; i < IMAGE_HEIGHT; i++)
-    for (j = 0; j < IMAGE_WIDTH; j++)
-      fontdata[ i ][ j ] = 255 - pixel_data[ IMAGE_BYTES_PER_PIXEL * (IMAGE_WIDTH * i + j) ];
-
-  GL_Error_Check;
-  /* create and bind texture */
-  glGenTextures(1, &fonttexture);
-  glBindTexture(GL_TEXTURE_2D, fonttexture);
-  //glEnable(GL_COLOR_MATERIAL);
-  /* use linear filtering */
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  /* generate the texture from bitmap alpha data */
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, IMAGE_WIDTH, IMAGE_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, fontdata);
-  GL_Error_Check;
-
-  /* Build font data */
-  rasterBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
-  delete [] pixel_data;
-}
-
-void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx)
-{
-  // Build font buffers
-  //GLfloat buffer[stopidx][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
-  GLfloat buffer[384][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
-
-  int i;
-  float divX = IMAGE_WIDTH / (float)glyphsize;
-  float divY = IMAGE_HEIGHT / (float)glyphsize;
-  float glyphX = 1 / divX;   /* Width & height of a glyph in texture coords */
-  float glyphY = 1 / divY;
-  GLfloat cx = 0, cy = 0;         /* the character coordinates in our texture */
-  glBindTexture(GL_TEXTURE_2D, fonttexture);
-  for (i = 0; i < (stopidx - startidx); i++)
-  {
-    cx = (float) (i % columns) / divX;
-    cy = (float) (i / columns) / divY;
-    //Vertices
-    buffer[i][0][0][0] = 0;
-    buffer[i][0][0][1] = 0;
-    buffer[i][1][0][0] = glyphsize;
-    buffer[i][1][0][1] = 0;
-    buffer[i][2][0][0] = glyphsize;
-    buffer[i][2][0][1] = glyphsize;
-    buffer[i][3][0][0] = 0;
-    buffer[i][3][0][1] = glyphsize;
-    //Tex coords
-    buffer[i][0][1][0] = cx;
-    buffer[i][0][1][1] = cy + glyphY;
-    buffer[i][1][1][0] = cx + glyphX;
-    buffer[i][1][1][1] = cy + glyphY;
-    buffer[i][2][1][0] = cx + glyphX;
-    buffer[i][2][1][1] = cy;
-    buffer[i][3][1][0] = cx;
-    buffer[i][3][1][1] = cy;
-
-  }
-
-  GL_Error_Check;
-  //Initialise vertex array object for OpenGL 3.2+
-  glGenVertexArrays(1, &r_vao);
-  glBindVertexArray(r_vao);
-  //Initialise vertex buffer
-  glGenBuffers(1, &r_vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, r_vbo);
-  assert(glIsBuffer(r_vbo));
-  int size = stopidx * 4 * 2 * 2;
-  glBufferData(GL_ARRAY_BUFFER, size * sizeof(GLfloat), buffer, GL_STATIC_DRAW);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  GL_Error_Check;
-  //std::cout << size * sizeof(GLfloat) << " bytes, " << size << " float buffer loaded for raster font\n";
-}
-
-
 #else //USE_FONTS
 void FontManager::init(std::string& path, RenderContext* context) {this->context = context;}
-Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return Colour();}
+Colour FontManager::setFont(Properties& properties, float scaling) {return Colour();}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str, bool scale2d) {}
@@ -472,15 +307,6 @@ int FontManager::printWidth(const char *string)
 {
   return 0;
 }
-void FontManager::rasterPrintString(const char* str) {}
-void FontManager::rasterPrint(int x, int y, const char *str, bool scale2d) {}
-void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool alignRight) {}
-int FontManager::rasterPrintWidth(const char *string)
-{
-  return 0;
-}
-void FontManager::rasterSetupFonts() {}
-void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx) {}
 #endif //USE_FONTS
 
 

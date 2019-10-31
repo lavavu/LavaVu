@@ -1590,12 +1590,13 @@ void Geometry::labels()
     if (geom[i]->labels.size() > 0 && drawable(i))
     {
       std::string font = geom[i]->draw->properties["font"];
-      //if (session.context.scale2d != 1.0 && font != "vector")
-        geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
       //Default to object colour (if fontcolour provided will replace)
       Colour colour;
       ColourLookup& getColour = geom[i]->colourCalibrate();
-      session.fonts.setFont(geom[i]->draw->properties, "small", 1.0, session.context.scale2d);
+      //Need to scale 3D labels by model size, this can be overridden by setting "fontsize"
+      float font_scale_factor = 0.25*view->model_size;
+      if (!view->is3d) font_scale_factor *= 2;
+      session.fonts.setFont(geom[i]->draw->properties, font_scale_factor);
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {

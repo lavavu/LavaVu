@@ -789,22 +789,12 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
       }
 
       session.context.push();
-      if (session.fonts.charset > FONT_VECTOR)
-      {
-        if (vertical)
-          session.fonts.rasterPrint(starty + breadth + 10, xpos,  string);
-        else
-          session.fonts.rasterPrint(xpos - (int) (0.5 * (float)session.fonts.rasterPrintWidth(string)),  starty - 10, string);
-      }
+      glEnable(GL_MULTISAMPLE);
+      if (vertical)
+        session.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)session.fonts.printWidth("M")),  string);
       else
-      {
-        glEnable(GL_MULTISAMPLE);
-        if (vertical)
-          session.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)session.fonts.printWidth("W")),  string);
-        else
-          session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)),  starty - 5 - session.fonts.printWidth("W"), string);
-        glDisable(GL_MULTISAMPLE);
-      }
+        session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)),  starty - 5 - session.fonts.printWidth("M"), string);
+      glDisable(GL_MULTISAMPLE);
       session.context.pop();
     }
   }

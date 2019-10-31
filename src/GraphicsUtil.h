@@ -47,13 +47,10 @@
 #define BLEND_PNG 1
 #define BLEND_ADD 2
 
-#define FONT_VECTOR  -1
-#define FONT_FIXED    0
-#define FONT_SMALL    1
-#define FONT_NORMAL   2
-#define FONT_SERIF    3
+#define FONT_VECTOR -1
+#define FONT_LINE    0
 
-#define FONT_DEFAULT FONT_NORMAL
+#define FONT_DEFAULT FONT_VECTOR
 
 #define FONT_SCALE_3D 0.0015
 
@@ -647,10 +644,9 @@ public:
 
 class FontManager
 {
-  GLuint fonttexture;
-  GLuint r_vao = 0;
-  GLuint r_vbo = 0;
-  GLuint r_ibo = 0;
+  GLuint l_vao = 0;
+  GLuint l_vbo = 0;
+  GLuint l_ibo = 0;
   GLuint vao = 0;
   GLuint vbo = 0;
   GLuint ibo = 0;
@@ -681,41 +677,29 @@ public:
     charset = FONT_DEFAULT;
     fontscale = 1.0;
 
-    //Fixed (bitmap) fonts
-    fonttexture = 0;
-
 #ifdef USE_FONTS
     // Delete fonts
     if (vao) glDeleteVertexArrays(1, &vao);
     if (vbo) glDeleteBuffers(1, &vbo);
     if (ibo) glDeleteBuffers(1, &ibo);
-    if (r_vao) glDeleteVertexArrays(1, &r_vao);
-    if (r_vbo) glDeleteBuffers(1, &r_vbo);
-    if (r_ibo) glDeleteBuffers(1, &r_ibo);
-    if (fonttexture) glDeleteTextures(1, &fonttexture);
+    if (l_vao) glDeleteVertexArrays(1, &l_vao);
+    if (l_vbo) glDeleteBuffers(1, &l_vbo);
+    if (l_ibo) glDeleteBuffers(1, &l_ibo);
 #endif
 
-    vbo = ibo = r_vbo = r_ibo = vao = r_vao = 0;
+    vbo = ibo = l_vbo = l_ibo = vao = l_vao = 0;
   }
 
   void init(std::string& path, RenderContext* context);
 
   //3d fonts
-  Colour setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
+  Colour setFont(Properties& properties, float scaling=1.0);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str, bool scale2d=true);
   void print3d(float x, float y, float z, const char *str);
   void print3dBillboard(float x, float y, float z, const char *str, int align=-1, float* scale=NULL);
   int printWidth(const char *string);
-
-  //Bitmap texture fonts
-  void rasterPrintString(const char* str);
-  void rasterPrint(int x, int y, const char* str, bool scale2d=true);
-  void rasterPrint3d(float x, float y, float z, const char *str, bool alignRight=false);
-  int rasterPrintWidth(const char *string);
-  void rasterSetupFonts();
-  void rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx);
 };
 
 void vectorNormalise(float vector[3]);

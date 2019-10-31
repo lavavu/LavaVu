@@ -86,7 +86,7 @@
     "default": "vector",
     "target": "all",
     "type": "string",
-    "desc": "Font typeface vector/small/fixed/sans/serif",
+    "desc": "Font typeface vector (thicker, better for larger text) or line (better for small labels)",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -97,7 +97,18 @@
     "default": 1.0,
     "target": "all",
     "type": "real",
-    "desc": "Font scaling, note that only the 'vector' font scales well",
+    "desc": "Font scaling, applied by multiplying with any existing calculated scaling.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "fontsize": {
+    "default": 1.0,
+    "target": "all",
+    "type": "real",
+    "desc": "Font size, absolute scaling that overrides all automatic calculations of the font size",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -2113,17 +2124,6 @@
     "target": "global",
     "type": "boolean",
     "desc": "Enable global camera for all models (default is separate cam for each)",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "vectorfont": {
-    "default": false,
-    "target": "global",
-    "type": "boolean",
-    "desc": "Always use vector font regardless of individual object properties",
     "strict": true,
     "redraw": 0,
     "control": [

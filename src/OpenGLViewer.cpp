@@ -327,11 +327,11 @@ void OpenGLViewer::init()
   GL_Check_Thread(render_thread);
   GL_Error_Check;
   //Init OpenGL (called after context creation)
-  GLint sb, ss;
   glGetIntegerv(GL_SAMPLE_BUFFERS, &sb);
   glGetIntegerv(GL_SAMPLES, &ss);
   glGetBooleanv(GL_STEREO, &stereoBuffer);
   glGetBooleanv(GL_DOUBLEBUFFER, &doubleBuffer);
+  app->session.context.antialiased = ss > 1;
 
   const char* gl_v = (const char*)glGetString(GL_VERSION);
   
@@ -394,6 +394,8 @@ bool OpenGLViewer::useFBO(int w, int h)
   bool status = false;
   status = fbo_blit.create(w, h);
   status = fbo.create(w, h, app->session.context.samples);
+  //Anti-aliasing enabled in FBO?
+  app->session.context.antialiased = fbo.downsample > 1 || fbo.msaa > 1;
   return status;
 }
 
@@ -683,6 +685,8 @@ void OpenGLViewer::disableFBO()
     fbo.disable();
   //Undo 2d scaling for downsampling
   app->session.context.scale2d = 1.0;
+  //Anti-aliasing enabled in default framebuffer?
+  app->session.context.antialiased = ss > 1;
 }
 
 ImageData* OpenGLViewer::pixels(ImageData* image, int channels)

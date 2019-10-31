@@ -117,6 +117,7 @@ public:
   std::mutex cmd_mutex;
 
   GLboolean stereoBuffer, doubleBuffer;
+  GLint sb, ss;
   bool visible;
   bool stereo;
   bool fullscreen;

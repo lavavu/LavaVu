@@ -67,7 +67,7 @@
 LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp()
 {
 #ifdef DEBUG
-  printf("This is a DEBUG build of LavaVu, not for production use!\n");
+  std::cout << "This is a DEBUG build of LavaVu, not for production use!\n";
 #endif
   viewer = NULL;
   encoder = NULL;
@@ -2348,10 +2348,7 @@ void LavaVu::drawRulers()
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
   obj->properties.data["scalelines"] = 1.0;
-  float font_scale_factor = 0.25*aview->model_size;
-  if (!aview->is3d) font_scale_factor *= 2;
-  obj->properties.data["fontscale"] = (float)aview->properties["rulerscale"] * font_scale_factor;
-  obj->properties.data["font"] = "vector";
+  obj->properties.data["fontscale"] = (float)obj->properties["fontscale"] * (float)aview->properties["rulerscale"];
   //Colour for labels
   obj->properties.data["colour"] = aview->textColour.toJson();
 
