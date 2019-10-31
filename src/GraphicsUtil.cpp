@@ -101,21 +101,21 @@ Colour FontManager::setFont(Properties& properties, float scaling)
   colour = Colour(properties["fontcolour"]);
 
   //Set font type
-  //Mesh vector font is the default
-  if (fonttype == "vector")
-  {
-    charset = FONT_VECTOR;
-    //Minimum readable vector font size
-    if (fontscale < 0.35)
-      fontscale = 0.35;
-  }
   //Hershey line font for very small text
-  else if (fonttype == "line")
+  if (fonttype == "line")
   {
     charset = FONT_LINE;
     //Minimum readable size for line font
     if (fontscale < 0.3)
       fontscale = 0.3;
+  }
+  //Mesh vector font is the default
+  else
+  {
+    charset = FONT_VECTOR;
+    //Minimum readable vector font size
+    if (fontscale < 0.35)
+      fontscale = 0.35;
   }
 
   return colour;
