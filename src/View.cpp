@@ -995,7 +995,7 @@ void View::drawOverlay()
       if (vertical)
         margin = 18 + session.fonts.printWidth("1.000001");
       else
-        margin = 7 + session.fonts.printWidth("1.1");
+        margin = 7 + session.fonts.printWidth("22");
     }
 
     //Position: if in range [0,1] they are a ratio of window size so multiply to get pixels
