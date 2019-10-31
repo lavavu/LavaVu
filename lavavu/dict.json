@@ -312,7 +312,7 @@
     ]
   },
   "shift": {
-    "default": 1.0,
+    "default": 0.0,
     "target": "object",
     "type": "real",
     "desc": "Apply a shift to object position by this amount multiplied by model size*10^-7, to fix depth fighting when visualising objects drawn at same depth",
