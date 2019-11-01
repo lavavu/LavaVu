@@ -677,23 +677,24 @@ class Object(dict):
 
         return data
 
-    def _loadScalar(self, data, geomdtype):
+    def _loadScalar(self, data, geomdtype, width=0, height=0, depth=0):
         #Passes a scalar dataset (float/uint8/uint32)
         data = self._convert(data)
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         if data.dtype == numpy.float32:
-            return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype, width, height, depth)
         elif data.dtype == numpy.uint32:
-            return self.parent.app.arrayUInt(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayUInt(self.ref, data.ravel(), geomdtype, width, height, depth)
         elif data.dtype == numpy.uint8:
-            return self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype, width, height, depth)
 
 
     def _checkDims(self, size):
         #User provided dims value
         if 'dims' in self.dict:
             D = self["dims"]
+            """
             #Dims match provided data?
             if isinstance(D, int):
                 if D != size:
@@ -707,6 +708,7 @@ class Object(dict):
             elif len(D) == 3:
                 if D[0]*D[1]*D[2] != size:
                     print("WARNING: provided 'dims' property doesn't match data size: ", D, D[0]*D[1]*D[2], size)
+            """
 
             #As data found, skip auto-calc of dims
             return True
@@ -715,14 +717,19 @@ class Object(dict):
         return False
 
 
-    def _volumeDimsFromShape(self, data):
-        #Volume? Use the shape as dims if not provided on value data load
+    def _valueDimsFromShape(self, data):
+        #Use the shape as dims if not provided on value data load
 
         #If dims not set or don't match provided data?
-        #3D shape required
-        if not self._checkDims(data.size) and len(data.shape) > 2:
-            #Need to flip for volume? (if in expected numpy order of Z,Y,X)
-            self["dims"] = (data.shape[2], data.shape[1], data.shape[0])
+        #2D/3D shape required
+        if not self._checkDims(data.size):
+            if len(data.shape) > 2: # and 'volume' in self["renderer"]:
+                #Need to flip for volume? (if in expected numpy order of Z,Y,X)
+                return data.shape[2], data.shape[1], data.shape[0]
+            elif len(data.shape) > 1:
+                #For grids etc
+                return data.shape[1], data.shape[0], 0
+        return 0, 0, 0
 
 
     def _gridDimsFromShape(self, data):
@@ -730,9 +737,9 @@ class Object(dict):
 
         #3D shape required [y, x, 3]
         #Dims set or already match provided data? skip
+        D = [0, 0, 0]
         if not self._checkDims(data.size/3) and len(data.shape) > 2:
             #Use matching shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
-            D = self["dims"]
             if data.shape[1] * data.shape[0] == data.size/3:
                 D[0] = data.shape[1] #columns
                 D[1] = data.shape[0] #rows
@@ -744,7 +751,7 @@ class Object(dict):
                 D[1] = data.shape[1] #rows
                 D = (data.shape[2], data.shape[1], data.shape[0])
 
-            self["dims"] = D
+        return D[0], D[1], D[2]
 
     def _tracerDimsFromShape(self, data):
         #Tracers? Use the size if not provided on vertex data load
@@ -770,6 +777,7 @@ class Object(dict):
 
         #Detection of structure based on shape
         shape = data.shape
+        width, height, depth = 0, 0, 0
         if len(shape) >= 2:
             #Data provided as separate x,y,z columns? (Must be > 3 elements)
             if shape[-1] > 3 and shape[0] == 3:
@@ -791,13 +799,13 @@ class Object(dict):
                 if ':' in renderer:
                     renderer = renderer[renderer.index(':')+1:]
                 if renderer in self.parent.renderers[LavaVuPython.lucGridType] or renderer in self.parent.renderers[LavaVuPython.lucTriangleType]:
-                    self._gridDimsFromShape(data)
+                    width, height, depth = self._gridDimsFromShape(data)
                 if renderer in self.parent.renderers[LavaVuPython.lucTracerType]:
-                    self._tracerDimsFromShape(data)
+                    width, height, depth = self._tracerDimsFromShape(data)
 
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
-        return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+        return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype, width, height, depth)
 
     @property
     def data(self):
@@ -892,11 +900,10 @@ class Object(dict):
         """
         data = self._convert(data, numpy.float32)
 
-        #Volume? Use the shape as dims if not provided
-        if 'volume' in self["renderer"]:
-            self._volumeDimsFromShape(data)
+        #Use the shape as dims if not provided
+        width, height, depth = self._valueDimsFromShape(data)
 
-        self.parent.app.arrayFloat(self.ref, data.ravel(), label)
+        self.parent.app.arrayFloat(self.ref, data.ravel(), label, width, height, depth)
 
     def magnitude(self, data, label="magnitude"):
         """
@@ -1028,19 +1035,19 @@ class Object(dict):
         #Accepts only uint8 luminance values
         data = self._convert(data, numpy.uint8)
 
-        #Volume? Use the shape as dims if not provided
-        if 'volume' in self["renderer"]:
-            self._volumeDimsFromShape(data)
+        #Use the shape as dims if not provided
+        width, height, depth = self._valueDimsFromShape(data)
 
-        self._loadScalar(data, LavaVuPython.lucLuminanceData)
+        self._loadScalar(data, LavaVuPython.lucLuminanceData, width, height, depth)
 
     def texture(self, data=None, flip=True, bgr=False):
         """
-        Load raw texture data for object
+        Load or clear texture data for object
 
         Parameters
         ----------
         data : list or array
+            (If data is not provided, the object's texture data will be cleared)
             Pass a list or numpy uint32 or uint8 array
             texture data is loaded as raw image data
             shape of array must be 2d or 3d,
@@ -3835,13 +3842,6 @@ class Viewer(dict):
     def isosurface(self, dstref, srcref, properties, clearvol):
         return self.app.isoSurface(dstref, srcref, properties, clearvol)
 
-    #def arrayFloat(self, ref, data, geomdtype):
-    #    return self.app.arrayFloat(ref, data, geomdtype)
-    #def arrayUInt(self, ref, data, geomdtype):
-    #    return self.app.arrayUInt(ref, data, geomdtype)
-    #def arrayUChar(self, ref, data, geomdtype):
-    #    return self.app.arrayUChar(ref, data, geomdtype)
-
     def get_all_vertices(self, objectlist):
         """
         Extract all vertex data from a list of objects
@@ -4186,9 +4186,12 @@ class DrawData(object):
         """
         array = None
         #Attempt to return an array with the correct shape
-        if not "dims" in self._obj and self.data.width*self.data.height*self.data.depth > 1:
-            self._obj["dims"] = [self.data.width, self.data.height, self.data.depth]
-        dims = self._obj["dims"]
+        dims = self._obj["dims"][::-1]
+        if self.data.width > 1:
+            #print("OBJECT W,H,D: ",self.data.width, self.data.height, self.data.depth)
+            #dims = [self.data.depth, self.data.height, self.data.width]
+            dims = [self.data.width, self.data.height, self.data.depth]
+        #print("FINALDIMS",self._obj["dims"],dims)
 
         if typename in datatypes and typename != 'values':
             dims += [dimensions[typename]]
@@ -4218,10 +4221,14 @@ class DrawData(object):
                 length = int(numpy.prod(dims))
                 #print(typename,"DIMS:",dims,"SIZE:",array.size, length)
                 if length == array.size:
-                    #Need to reverse dims for numpy shape
-                    shape = dims[::-1]
+                    #Need to reverse dims for numpy shape (ONLY FOR VOLUMES/VALUE DATA)
+                    #numpy shape = (depth, height, width, d) or (height, width, d) or (height, width)
+                    shape = dims
+                    if typename not in datatypes: #== "values":
+                        shape = dims[::-1]
                     array = array.reshape(shape)
                 elif array.shape[0] == array.size and dims[-1] <= 3:
+                    #Didn't work out, just reshape to element size
                     array = array.reshape((-1, dims[-1]))
                 #print(typename,"DIMS:",dims,"SHAPE:",array.shape)
         

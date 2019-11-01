@@ -3403,7 +3403,7 @@ std::string LavaVu::getObjectDataLabels(DrawingObject* target)
   return ss.str();
 }
 
-Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type, int width, int height, int depth)
 {
   if (!amodel || !target) return nullptr;
   Geometry* container = amodel->lookupObjectRenderer(target);
@@ -3414,29 +3414,29 @@ Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len
     {
       int len32 = len / 4;
       assert(len32*4 == len);
-      p = container->read(target, len32, type, array);
+      p = container->read(target, len32, type, array, width, height, depth);
     }
     else
-      p = container->read(target, len, type, array);
+      p = container->read(target, len, type, array, width, height, depth);
     reloadObject(target);
   }
   return p;
 }
 
-Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type, int width, int height, int depth)
 {
   if (!amodel || !target) return nullptr;
   Geometry* container = amodel->lookupObjectRenderer(target);
   Geom_Ptr p = nullptr;
   if (container)
   {
-    p = container->read(target, len, type, array);
+    p = container->read(target, len, type, array, width, height, depth);
     reloadObject(target);
   }
   return p;
 }
 
-Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type, int width, int height, int depth)
 {
   if (!amodel || !target) return nullptr;
   Geometry* container = amodel->lookupObjectRenderer(target);
@@ -3445,20 +3445,20 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeo
   Geom_Ptr p = nullptr;
   if (container)
   {
-    p = container->read(target, len/dsize, type, array);
+    p = container->read(target, len/dsize, type, array, width, height, depth);
     reloadObject(target);
   }
   return p;
 }
 
-Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
+Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label, int width, int height, int depth)
 {
   if (!amodel || !target) return nullptr;
   Geometry* container = amodel->lookupObjectRenderer(target);
   Geom_Ptr p = nullptr;
   if (container)
   {
-    p = container->read(target, len, array, label);
+    p = container->read(target, len, array, label, width, height, depth);
     reloadObject(target);
   }
   return p;

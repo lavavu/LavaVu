@@ -1824,6 +1824,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
     if (height == 0) height = draw->dims[1];
     if (depth == 0) depth = draw->dims[2];
   }
+  //printf("%d (type %d) WIDTH %d HEIGHT %d DEPTH %d\n", n, dtype, width, height, depth);
 
   //Create new data store if required, save in drawing object and Geometry list
   if (!geomdata)
@@ -1854,7 +1855,7 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
   }
 }
 
-Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
+Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label, int width, int height, int depth)
 {
   //Read into given label - for value data only
 
@@ -1864,12 +1865,16 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, const void* data, s
   if (!geomdata)
     geomdata = add(draw);
 
-  return read(geomdata, n, data, label);
+  return read(geomdata, n, data, label, width, height, depth);
 }
 
-Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::string label)
+Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::string label, int width, int height, int depth)
 {
   //Read into given label - for value data only
+  //Set width & height if provided
+  if (width) geom->width = width;
+  if (height) geom->height = height;
+  if (depth) geom->depth = depth;
 
   //Find labelled value store
   Values_Ptr store = geom->valueContainer(label);
@@ -1886,6 +1891,7 @@ Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::st
   //Read the data
   if (n > 0) store->read(n, data);
 
+  //printf("%d (VALS %s FINAL) WIDTH %d HEIGHT %d DEPTH %d\n", n, label.c_str(), geom->width, geom->height, geom->depth);
   return geom; //Return data store pointer
 }
 

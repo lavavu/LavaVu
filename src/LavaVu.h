@@ -254,10 +254,10 @@ public:
   std::string getObjectDataLabels(DrawingObject* target);
 
   //Numpy interface
-  Geom_Ptr arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData);
-  Geom_Ptr arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
-  Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData);
-  Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, std::string label);
+  Geom_Ptr arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData, int width=0, int height=0, int depth=0);
+  Geom_Ptr arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData, int width=0, int height=0, int depth=0);
+  Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData, int width=0, int height=0, int depth=0);
+  Geom_Ptr arrayFloat(DrawingObject* target, float* array, int len, std::string label, int width=0, int height=0, int depth=0);
   void clearTexture(DrawingObject* target);
   void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
   void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
