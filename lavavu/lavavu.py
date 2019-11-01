@@ -1122,21 +1122,22 @@ class Object(dict):
             The wrapper object of the colourmap loaded/created
         """
         cmap = None
-        if data is None:
-            cmid = self["colourmap"]
-            if cmid:
-                #Just return the existing map
-                return ColourMap(cmid, self.parent)
-            else:
-                #Proceeed to create a new map with default data
-                data = cubehelix()
-        elif isinstance(data, ColourMap):
+        if isinstance(data, ColourMap):
             #Passed a colourmap object
             cmap = data
             self.ref.colourMap = data.ref
             data = None
         else:
-            #Load colourmap on this object
+            if data is None:
+                cmid = self["colourmap"]
+                if cmid:
+                    #Just return the existing map
+                    return ColourMap(cmid, self.parent)
+                else:
+                    #Proceeed to create a new map with default data
+                    data = cubehelix()
+
+            #Load colourmap data to object, create if none exists
             if self.ref.colourMap is None:
                 self.ref.colourMap = self.parent.app.addColourMap(self.name + "_colourmap")
                 self["colourmap"] = self.ref.colourMap.name
