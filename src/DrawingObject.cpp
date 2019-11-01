@@ -159,6 +159,21 @@ void DrawingObject::setup()
   colourMap = getColourMap("colourmap", colourMap);
   opacityMap = getColourMap("opacitymap", opacityMap);
 
+  //Properties reserved for colourmaps can be set from any objects that use that map
+  //Move any colourmap properties to the colourmap
+  if (colourMap)
+  {
+    for (auto p : session.colourMapProps)
+    {
+      if (properties.has(p))
+      {
+        //std::cout << "MOVING PROPERTY TO COLOURMAP: " << p << " : " << properties[p] << std::endl;
+        colourMap->properties.data[p] = properties[p];
+        properties.data.erase(p);
+      }
+    }
+  }
+
   //Cache the filter data
   //The cache stores filter values so we can avoid
   //hitting the json store for every vertex (very slow)

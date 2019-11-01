@@ -694,14 +694,14 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
   }
   else if (obj)
   {
-    //Properties reserved for colourmaps can be set from any objects that use that map
+    /*/Properties reserved for colourmaps can be set from any objects that use that map
     if (obj->colourMap && std::find(session.colourMapProps.begin(), session.colourMapProps.end(), rawkey) != session.colourMapProps.end())
     {
       reload = session.parse(&obj->colourMap->properties, data);
-      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << obj->colourMap->name
+      if (true) std::cerr << "COLOURMAP " << std::setw(2) << obj->colourMap->name
                              << ", DATA: " << obj->colourMap->properties.data << std::endl;
     }
-    else
+    else*/
     {
       reload = session.parse(&obj->properties, data);
       if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
