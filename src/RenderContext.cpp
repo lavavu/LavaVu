@@ -63,6 +63,12 @@ void RenderContext::pop()
   P_stack.pop_back();
 }
 
+void RenderContext::scale(float factor)
+{
+  //Uniform scaling
+  MV = linalg::mul(MV, linalg::scaling_matrix(vec3(factor, factor, factor)));
+}
+
 void RenderContext::scale3(float x, float y, float z)
 {
   MV = linalg::mul(MV, linalg::scaling_matrix(vec3(x, y, z)));

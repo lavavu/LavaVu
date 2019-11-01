@@ -66,7 +66,7 @@ void GeomData::calcBounds()
     checkPointMinMax(render->vertices[j]);
 }
 
-void GeomData::label(std::string& labeltext)
+void GeomData::label(const std::string& labeltext)
 {
   //Adds a vertex label
   labels.push_back(labeltext);
@@ -1594,20 +1594,28 @@ void Geometry::labels()
       Colour colour;
       ColourLookup& getColour = geom[i]->colourCalibrate();
       //Need to scale 3D labels by model size, this can be overridden by setting "fontsize"
-      float font_scale_factor = 0.25*view->model_size;
-      if (!view->is3d) font_scale_factor *= 2;
-      session.fonts.setFont(geom[i]->draw->properties, font_scale_factor);
-
+      float font_scale_factor = view->model_size;
+      //Reduce label font size further
+      //larger reductoin for 3D models (don't use view->is3d as this is switched off if rotated)
+      if (view->dims[2] > FLT_EPSILON)
+        font_scale_factor *= 0.25;
+      else
+        font_scale_factor *= 0.5;
+      session.fonts.setFont(geom[i]->draw->properties, font_scale_factor, true);
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
         float* p = geom[i]->render->vertices[j];
-        getColour(colour, j);
-        session.fonts.colour = colour;
+        //fontcolour property overrides vertex colour
+        if (!geom[i]->draw->properties.has("fontcolour"))
+        {
+          getColour(colour, j);
+          session.fonts.colour = colour;
+        }
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
-        float shift = session.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
+        float shift = session.fonts.printWidth("XX")*session.fonts.SCALE3D/view->scale[1]; //Vertical shift
         char alignchar = ' ';
         char alignchar2 = ' ';
         if (labstr.length() > 1) alignchar = labstr.at(0);

@@ -2278,6 +2278,8 @@ void LavaVu::drawAxis()
     axis->clear(true);
     axis->type = lucVectorType;
     session.axisobj->properties.data = {
+      {"font",         "vector"},
+      {"fontscale",    length*6.0},
       {"fixed",        true},
       {"wireframe",    false},
       {"clip",         false},
@@ -2309,8 +2311,7 @@ void LavaVu::drawAxis()
   //Labels
   glDisable(GL_DEPTH_TEST);
 
-  session.fonts.charset = FONT_VECTOR;
-  session.fonts.fontscale = length*6.0;
+  session.fonts.setFont(session.axisobj->properties);
   session.fonts.colour = aview->textColour;
   float pos = length/2;
   float LH = length * 0.1;

@@ -52,8 +52,6 @@
 
 #define FONT_DEFAULT FONT_VECTOR
 
-#define FONT_SCALE_3D 0.0015
-
 #define EPSILON 0.000001
 #ifndef M_PI
 #define M_PI 3.1415926536
@@ -657,6 +655,7 @@ public:
 
   int charset;
   float fontscale;
+  float SCALE3D;
   Colour colour;
 
   FontManager()
@@ -693,7 +692,7 @@ public:
   void init(std::string& path, RenderContext* context);
 
   //3d fonts
-  Colour setFont(Properties& properties, float scaling=1.0);
+  Colour setFont(Properties& properties, float scaling=1.0, bool print3d=false);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str, bool scale2d=true);

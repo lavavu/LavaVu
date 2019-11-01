@@ -148,14 +148,17 @@ bool View::init(bool force, float* newmin, float* newmax)
     initialised = false;
     return false;
   }
+  //Copy to render context for use in font scaling
+  session.context.model_size = model_size;
 
   //Check and calculate near/far clip planes
   nearclip = properties["near"];
   farclip = properties["far"];
   checkClip(nearclip, farclip);
 
-  if (max[2] > min[2]+FLT_EPSILON) is3d = true;
-  else is3d = false;
+  //Flag 3d model
+  is3d = dims[2] > FLT_EPSILON;
+
   debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %f\n",
               model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), nearclip, farclip);
 

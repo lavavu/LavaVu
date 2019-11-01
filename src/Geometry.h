@@ -444,7 +444,7 @@ public:
   void checkPointMinMax(float *coord);
   void calcBounds();
 
-  void label(std::string& labeltext);
+  void label(const std::string& labeltext);
   std::string getLabels();
   ColourLookup& colourCalibrate();
   int colourCount();

@@ -83,9 +83,12 @@ void FontManager::init(std::string& path, RenderContext* context)
   glBufferData(GL_ARRAY_BUFFER, lvertices.size() * sizeof(float), lvertices.data(), GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   //std::cout << lvertices.size() * sizeof(GLfloat) << " bytes, " << lvertices.size() << " float buffer loaded for line font\n";
+
+  //Scaling from 2d for 3d fonts
+  SCALE3D = 0.0015;
 }
 
-Colour FontManager::setFont(Properties& properties, float scaling)
+Colour FontManager::setFont(Properties& properties, float scaling, bool print3d)
 {
   //vector, line - default to line when anti-aliasing disabled
   std::string fonttype = context->antialiased ? "vector" : "line";
@@ -102,20 +105,24 @@ Colour FontManager::setFont(Properties& properties, float scaling)
 
   //Set font type
   //Hershey line font for very small text
-  if (fonttype == "line")
-  {
+  if (fonttype == "line" || fonttype == "small")
     charset = FONT_LINE;
-    //Minimum readable size for line font
-    if (fontscale < 0.3)
-      fontscale = 0.3;
-  }
   //Mesh vector font is the default
   else
-  {
     charset = FONT_VECTOR;
-    //Minimum readable vector font size
-    if (fontscale < 0.35)
-      fontscale = 0.35;
+
+  //Minimum readable vector font size
+  if (print3d)
+  {
+    //Model based minimum scaling when printing in 3d space
+    if (fontscale < 0.1 * context->model_size)
+      fontscale = 0.1 * context->model_size;
+  }
+  else
+  {
+    //Fixed minimum for printing in viewport space
+    if (fontscale < 0.3)
+      fontscale = 0.3;
   }
 
   return colour;
@@ -244,8 +251,11 @@ void FontManager::print(int x, int y, const char *str, bool scale2d)
 
 void FontManager::print3d(float x, float y, float z, const char *str)
 {
+  //NOTE: this is currently unused
+  //Prints labels as fixed geometry in world space
+  //(only readable from correct viewing angle)
   context->translate3(x, y, z);
-  context->scale3(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
+  context->scale3(fontscale * SCALE3D, fontscale * SCALE3D, fontscale * SCALE3D);
   printString(str);
 }
 
@@ -257,27 +267,30 @@ void FontManager::print3dBillboard(float x, float y, float z, const char *str, i
 
   // save the current modelview matrix
   context->push();
-  float sw = FONT_SCALE_3D * printWidth(str);
+  float sw = SCALE3D * printWidth(str);
+
   //Default align = -1 (Left)
   //(scalex is to undo any x axis scaling on position adjustments)
   if (align == 1) x -= sw/scale[0];     //Right
   if (align == 0) x -= sw*0.5/scale[0]; //Centre
-  z -= 0.025 / scale[2] * fontscale;
 
   context->translate3(x, y, z);
+  //fprintf(stderr, "(%f %f %f) %s\n", x, y, z, str);
 
-  // undo all rotations
-  // beware all scaling is lost as well
-  for( i=0; i<3; i++ )
-    for( j=0; j<3; j++ )
+  //Undoes all rotations
+  //All scaling is also lost
+  for(i=0; i<3; i++)
+  {
+    for(j=0; j<3; j++)
     {
-      if ( i==j )
+      if (i==j)
         context->MV[j][i] = 1.0;
       else
         context->MV[j][i] = 0.0;
     }
+  }
 
-  context->scale3(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
+  context->scale(fontscale * SCALE3D);
   printString(str);
   context->pop();
 }
@@ -288,7 +301,12 @@ int FontManager::printWidth(const char *string)
   // Sum character widths in string
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
-    len += font_charwidths[string[i]-32];
+  {
+    if (charset == FONT_VECTOR)
+      len += font_charwidths[string[i]-32];
+    else
+      len += linefont_charwidths[string[i]-32];
+  }
 
   // Additional pixel of spacing for each character
   float w = len + slen;

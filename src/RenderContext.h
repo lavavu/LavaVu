@@ -62,6 +62,9 @@ public:
   //2d scaling for downsample
   float scale2d = 1.0;
 
+  //Copy of model size from view
+  float model_size;
+
   RenderContext()
   {
     MV = linalg::identity;
@@ -75,6 +78,7 @@ public:
   void init();
   void push();
   void pop();
+  void scale(float factor);
   void scale3(float x, float y, float z);
   void translate3(float x, float y, float z);
   void useDefaultShader(bool is2d=true, bool flat=false);

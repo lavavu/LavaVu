@@ -40,7 +40,6 @@
 
 //Hershey Simplex font
 //http://paulbourke.net/dataformats/hershey/
-
 int simplex[95][112] = {
     0,16, /* Ascii 32 */
    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -625,15 +624,15 @@ void GenerateLineFontCharacters(std::vector<float>& vertices)
   for (int i=0; i<95; i++)
   {
     //First two numbers are vertex count and char width
-    //linefont_counts[i] = simplex[i][0];
+    int verts = simplex[i][0];
     linefont_offsets[i] = offset;
     linefont_charwidths[i] = simplex[i][1];
-    for (int j=2; j<112; j+=2)
+    for (int j=2; j<2+verts*2; j+=2)
     {
       if (simplex[i][j] == -1)
         continue;
-      //Add vertices for line-segment pairs unless last vertex or next vert is -1
-      if (j<110 && simplex[i][j+2] > -1)
+      //Add vertices for line-segment pairs except last vertex in section (no more or next vert is -1)
+      if (j<verts*2 && simplex[i][j+2] > -1)
       {
         vertices.push_back(simplex[i][j]);
         vertices.push_back(simplex[i][j+1]);
