@@ -3532,21 +3532,15 @@ class Viewer(dict):
         for f in sorted(imagelist):
             outfile = outputPath+f
             expfile = expectedPath+f
-            results.append(self.testimage(expfile, outfile, tolerance))
+            results.append(self.testimage(expfile, outfile, tolerance, clear))
 
         #Combined result
         overallResult = all(results)
         if not overallResult:
             raise RuntimeError("Image tests failed due to one or more image comparisons above tolerance level!")
-        if clear:
-            try:
-                for f in imagelist:
-                    os.remove(f)
-            except:
-                pass
         print("-------------\nTests Passed!\n-------------")
 
-    def testimage(self, expfile, outfile, tolerance=TOL_DEFAULT):
+    def testimage(self, expfile, outfile, tolerance=TOL_DEFAULT, clear=False):
         """
         Compare two images
 
@@ -3606,6 +3600,13 @@ class Viewer(dict):
             print("%s: %s Image comp errors %f, within tolerance %f"\
                   " of ref image."\
                 % (passed, outfile, diff, tolerance))
+            #Delete image if passed?
+            try:
+                if clear:
+                    os.remove(outfile)
+            except:
+                pass
+
         return result
 
     def window(self, menu=True):
