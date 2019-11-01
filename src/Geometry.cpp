@@ -1615,7 +1615,7 @@ void Geometry::labels()
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
-        float shift = session.fonts.printWidth("XX")*session.fonts.SCALE3D/view->scale[1]; //Vertical shift
+        float shift = session.fonts.printWidth("W.")*session.fonts.SCALE3D/view->scale[1]; //Vertical shift
         char alignchar = ' ';
         char alignchar2 = ' ';
         if (labstr.length() > 1) alignchar = labstr.at(0);

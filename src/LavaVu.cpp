@@ -2490,7 +2490,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 
     std::string blank = "";
     lg->label(blank);
-    labelstr = align + "  " + labelstr + "  ";
+    labelstr = align + " " + labelstr + " ";
     lg->label(labelstr);
   }
 }
