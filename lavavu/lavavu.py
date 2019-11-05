@@ -1374,6 +1374,45 @@ class Object(dict):
             self.parent.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
         return isobj
 
+    def swapyz(self):
+        """
+        Swap Y and Z coordinates of 3d data (vertices, normals, vectors)
+        """
+        return self.swapv(1, 2)
+
+    def swapxy(self):
+        """
+        Swap X and Y coordinates of 3d data (vertices, normals, vectors)
+        """
+        return self.swapv(0, 1)
+
+    def swapxz(self):
+        """
+        Swap X and Z coordinates of 3d data (vertices, normals, vectors)
+        """
+        return self.swapv(0, 2)
+
+    def swapv(self, a, b):
+        """
+        Swap coordinates of 3d data (vertices, normals, vectors)
+        This replaces the swapyz property/feature that only applied to OBJ import
+        """
+        if a == b or a < 0 or b < 0 or a > 2 or b > 2:
+            print("Invalid a, b, must be in [0,2] and not equal", a, b)
+            return
+        for V in self.data.vertices:
+            if V.size == 0: continue
+            V[:,[1, 2]] = V[:,[2, 1]]
+        for V in self.data.vectors:
+            if V.size == 0: continue
+            V[:,[1, 2]] = V[:,[2, 1]]
+        for V in self.data.normals:
+            if V.size == 0: continue
+            V[:,[1, 2]] = V[:,[2, 1]]
+        #Update bounds
+        self.parent.bounds()
+        #self.parent.reset()
+
     def help(self, cmd=""):
         """
         Get help on an object method or property

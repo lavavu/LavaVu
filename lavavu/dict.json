@@ -2097,22 +2097,22 @@
       false
     ]
   },
-  "swapyz": {
-    "default": false,
+  "trisplit": {
+    "default": 0,
     "target": "global",
-    "type": "boolean",
-    "desc": "Enable imported model y/z axis swap",
+    "type": "integer",
+    "desc": "Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data.",
     "strict": true,
     "redraw": 0,
     "control": [
       false
     ]
   },
-  "trisplit": {
+  "trilimit": {
     "default": 0,
     "target": "global",
-    "type": "integer",
-    "desc": "Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data.",
+    "type": "real",
+    "desc": "Imported model triangle edge size limit. Triangles will be split until edges below this threashold.",
     "strict": true,
     "redraw": 0,
     "control": [

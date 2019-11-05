@@ -1415,13 +1415,13 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   }
 }
 
-void readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* tris, bool verbose)
+bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* tris, bool verbose)
 {
   //std::cerr << "Applying material : " << material.name << std::endl;
   if (material.name.length() == 0)
   {
     std::cerr << "Skipping invalid material\n";
-    return;
+    return true;
   }
 
   //Use the diffuse property as the colour/texture
@@ -1448,6 +1448,7 @@ void readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
     //Add per-object texture
     Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
     tris->setTexture(obj, texture);
+    return false;
   }
   else
   {
@@ -1459,6 +1460,7 @@ void readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
     if (c.a == 0.0) c.a = 255;
     //std::cout << c << std::endl;
     tris->read(obj, 1, lucRGBAData, &c.value);
+    return c.a == 255;
   }
 }
 
@@ -1505,21 +1507,25 @@ void LavaVu::readOBJ(const FilePath& fn)
     tris->add(tobj);
 
     //Load first material as default for object
+    bool opaque = true;
     if (shapes[i].mesh.material_ids.size() > 0 &&
         shapes[i].mesh.material_ids[0] >= 0 &&
         (int)materials.size() > shapes[i].mesh.material_ids[0])
-      readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, tris, verbose);
+      opaque = readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, tris, verbose);
 
     //Default is to load the indexed triangles and provided normals
     //Can be overridden by setting trisplit (-T#)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
     int trisplit = session.global("trisplit");
-    bool swapY = session.global("swapyz");
+    float trilimit = session.global("trilimit");
+    if (trilimit > 0 and trisplit == 0) trisplit = 1;
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     //Load
     int voffset = 0;
     unsigned int current_material_id = 0;
+
+    //TODO: load point data (vertices only)
     for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
     {
       //Get the material, if it has changed, load the new data and add an element
@@ -1538,7 +1544,7 @@ void LavaVu::readOBJ(const FilePath& fn)
           //printf("%d current material %d == %d\n", f, current_material_id, material_id);
           //TODO: only add new container if a new texture is loaded?
           tris->add(tobj); //Start new container
-          readOBJ_material(fn, materials[material_id], tobj, tris, verbose);
+          opaque = readOBJ_material(fn, materials[material_id], tobj, tris, verbose);
           voffset = 0;
           current_material_id = material_id;
         }
@@ -1554,13 +1560,7 @@ void LavaVu::readOBJ(const FilePath& fn)
         //printf("%d %d %d\n", ids[0].vertex_index, ids[1].vertex_index, ids[2].vertex_index);
         for (int c=0; c<3; c++)
         {
-          if (swapY)
-          {
-            float vert[3] = {attrib.vertices[vi[c]], attrib.vertices[vi[c]+2], attrib.vertices[vi[c]+1]};
-            tris->read(tobj, 1, lucVertexData, vert);
-          }
-          else
-            tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi[c]]);
+          tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi[c]]);
           tris->read(tobj, 1, lucIndexData, &voffset);
           voffset++;
           if (attrib.texcoords.size())
@@ -1570,13 +1570,7 @@ void LavaVu::readOBJ(const FilePath& fn)
             //Some files skip the normal index, so assume it is the same as vertex index
             int nidx = 3*ids[c].normal_index;
             if (nidx < 0) nidx = 3*ids[c].vertex_index;
-            if (swapY)
-            {
-              float norm[3] = {attrib.normals[nidx], attrib.normals[nidx+2], attrib.normals[nidx+1]};
-              tris->read(tobj, 1, lucNormalData, norm);
-            }
-            else
-              tris->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
+            tris->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
           }
 
           //Extended vertex spec with colour (R,G,B float)
@@ -1601,7 +1595,7 @@ void LavaVu::readOBJ(const FilePath& fn)
         float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
         float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
         float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
-        tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, swapY, true);
+        tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, true, opaque ? 0.0 : trilimit);
       }
       else
       {
@@ -1609,7 +1603,7 @@ void LavaVu::readOBJ(const FilePath& fn)
                    &attrib.vertices[vi[0]],
                    &attrib.vertices[vi[1]],
                    &attrib.vertices[vi[2]],
-                   trisplit, swapY);
+                   trisplit, false, opaque ? 0.0 : trilimit);
       }
 
     }
