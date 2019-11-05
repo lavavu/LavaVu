@@ -63,18 +63,22 @@ void QuadSurfaces::update()
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
 
+  //Add key elements to sort list
+  sorted.clear();
+  sorted = geom;
+
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
   float distanceRange[2];
   view->getMinMaxDistance(min, max, distanceRange);
 
   unsigned int quadverts = 0;
-  for (unsigned int i=0; i<geom.size(); i++)
+  for (unsigned int i=0; i<sorted.size(); i++)
   {
-    unsigned int quads = geom[i]->gridElements2d();
+    unsigned int quads = sorted[i]->gridElements2d();
     quadverts += quads * 4;
-    if (quads == 0) quadverts += geom[i]->elementCount();
-    unsigned int v = geom[i]->count();
+    if (quads == 0) quadverts += sorted[i]->elementCount();
+    unsigned int v = sorted[i]->count();
     if (v < 4) continue;
     total += v; //Actual vertices
 
@@ -82,18 +86,18 @@ void QuadSurfaces::update()
     debug_print("Surface %d, quads %d hidden? %s\n", i, quads, (hidden ? "yes" : "no"));
 
     //Get corners of strip
-    float* posmin = geom[i]->render->vertices[0];
-    float* posmax = geom[i]->render->vertices[v - 1];
+    float* posmin = sorted[i]->render->vertices[0];
+    float* posmax = sorted[i]->render->vertices[v - 1];
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
                     posmin[2] + (posmax[2] - posmin[2]) * 0.5f
                    };
 
     //Calculate distance from viewing plane
-    geom[i]->distance = view->eyeDistance(pos);
-    if (geom[i]->distance < distanceRange[0]) distanceRange[0] = geom[i]->distance;
-    if (geom[i]->distance > distanceRange[1]) distanceRange[1] = geom[i]->distance;
-    //printf("%d) %p %f %f %f distance = %f\n", i, geom[i].get(), pos[0], pos[1], pos[2], geom[i]->distance);
+    sorted[i]->distance = view->eyeDistance(pos);
+    if (sorted[i]->distance < distanceRange[0]) distanceRange[0] = sorted[i]->distance;
+    if (sorted[i]->distance > distanceRange[1]) distanceRange[1] = sorted[i]->distance;
+    //printf("%d) %p %f %f %f distance = %f\n", i, sorted[i].get(), pos[0], pos[1], pos[2], sorted[i]->distance);
   }
   if (total == 0) return;
   t2 = clock();
@@ -101,7 +105,7 @@ void QuadSurfaces::update()
   t1 = clock();
 
   //Sort (descending)
-  std::sort(geom.begin(), geom.end(), GeomPtrCompare());
+  std::sort(sorted.begin(), sorted.end(), GeomPtrCompare());
   t2 = clock();
   debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
@@ -118,6 +122,12 @@ void QuadSurfaces::sort()
 
 void QuadSurfaces::draw()
 {
+  //Lock the update mutex and copy the sorted vector
+  //Allows further sorting to continue in background while rendering
+  {
+    std::lock_guard<std::mutex> guard(loadmutex);
+    geom = sorted;
+  }
   //Elements at same depth: draw both
   //(mainly for backwards compatibility)
   glDepthFunc(GL_LEQUAL);

@@ -809,6 +809,7 @@ public:
 
 class QuadSurfaces : public Triangles
 {
+  std::vector<Geom_Ptr> sorted;
 public:
   QuadSurfaces(Session& session);
   virtual ~QuadSurfaces();
