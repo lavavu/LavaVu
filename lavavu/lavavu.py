@@ -3934,7 +3934,7 @@ class Viewer(dict):
 
         #Colour string parse
         array = numpy.array([0.0, 0.0, 0.0, 0.0], dtype=numpy.float32)
-        self.app.colourArrayFloat(colour, array)
+        self.app.colourArrayFloat(str(colour), array)
         return array
 
 #Wrapper for list of geomdata objects
