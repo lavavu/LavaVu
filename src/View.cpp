@@ -123,7 +123,13 @@ bool View::init(bool force, float* newmin, float* newmax)
     {
       min[i] = newmin[i];
       max[i] = newmax[i];
-      dims[i] = fabs(max[i] - min[i]);
+      if (max[i] <= min[i]+FLT_EPSILON)
+      {
+        dims[i] = 0.0;
+        max[i] = min[i];
+      }
+      else
+        dims[i] = fabs(max[i] - min[i]);
 
       if (properties["follow"])
       {
@@ -148,6 +154,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     initialised = false;
     return false;
   }
+
   //Copy to render context for use in font scaling
   session.context.model_size = model_size;
 
