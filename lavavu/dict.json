@@ -304,7 +304,7 @@
     ],
     "target": "object",
     "type": "integer[3]",
-    "desc": "width/height/depth override for geometry",
+    "desc": "Width,Height,Depth override for geometry. Usually this data will be determined from the numpy array shape when loaded from python but setting this property overrides the shape, unless it doesn't match the data size. Note this property is the reverse of the numpy array shape (Depth,Height,Width) or (Height,Width).",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -1451,7 +1451,7 @@
     "default": "%.5g",
     "target": "colourbar",
     "type": "string",
-    "desc": "Format specifier for tick values, eg: %.3[f/e/g] standard, scientific, both",
+    "desc": "Format specifier for label values, eg: %.3[f/e/g] standard, scientific, both",
     "strict": true,
     "redraw": 0,
     "control": [
