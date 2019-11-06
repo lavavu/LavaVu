@@ -20,7 +20,16 @@ function WindowInteractor(id, uid, port) {
   this.instant = true; //false; //Use image.src to issue commands, combines into single request;
   this.post = false; //Set this to use POST instead of GET
 
+  //Standalone? Always request images at the full window size
+  this.fixedsize = false;
+  if (uid == 0) {
+    this.fixedsize = true;
+    var that = this;
+    window.onresize = function() {that.resize();};
+  }
+
   //Connection attempts via this function, pass url
+  this.baseurl = null;
   var that = this;
   var connect = function(url) {
     var xhttp = new XMLHttpRequest();
@@ -45,7 +54,7 @@ function WindowInteractor(id, uid, port) {
     }
     //Catch errors, we expect some as not all urls will work
     try {
-      xhttp.open('GET', url + "/connect?" + new Date().getTime(), true);
+      xhttp.open('GET', url + "/connect?url=" + url + "&ts=" + new Date().getTime(), true);
       xhttp.send();
     } catch (err) {
       console.log(err.message);
@@ -54,8 +63,8 @@ function WindowInteractor(id, uid, port) {
 
   //Possible connection modes:
   // 1) No port provided, assume running on same port/address as current page
-  // 2) Port provided, running on this port, accssible via hostname:port
-  // 3) Port provided, running on this port, accssible via hostname/proxy/port (jupyter-server-proxy)
+  // 2) Port provided, running on this port, accessible via hostname:port
+  // 3) Port provided, running on this port, accessible via hostname/proxy/port (jupyter-server-proxy)
   // 4) Port provided, running on this port, accessible via localhost:port (google colab auto-translated proxy)
 
   //Call connect function for each url
@@ -94,6 +103,13 @@ function WindowInteractor(id, uid, port) {
   }
 }
 
+WindowInteractor.prototype.resize = function() {
+  var that = this;
+  if (that.resizeTimer)
+    clearTimeout(that.resizeTimer);
+  that.resizeTimer = setTimeout(function() {that.get_image();}, 250);
+}
+
 WindowInteractor.prototype.init = function() {
   console.log("WindowInteractor: " + this.id + " baseurl: " + this.baseurl);
 
@@ -101,6 +117,9 @@ WindowInteractor.prototype.init = function() {
 
   //No window
   if (!this.img) return;
+
+  //Save baseurl on img for menu popup function
+  this.img.baseurl = this.baseurl;
 
   //Load frame image and run command in single action
 
@@ -114,6 +133,7 @@ WindowInteractor.prototype.init = function() {
     console.log("Window initialised, id: " + that.id);
     //Clear onload
     that.img.onload = null;
+
     //Update the box size by getting state
     that.get_state();
   });
@@ -134,25 +154,23 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
   if (cmd.charAt(0) != '{')
     cmd = cmd.replace(/\n/g,';');
 
+  //Base64 encode to avoid issues with jupyterlab and command urls
+  var url = this.baseurl + "/icommand=" + '_' + window.btoa(cmd) + this.image_args();
+
   //Use IMG.SRC to issue the command and retrieve new image in single action
   if (this.instant && this.img) {
-    cmd = '_' + window.btoa(cmd); //Base64 encode to avoid issues with jupyterlab and command urls
-    var url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime();
     //this.img.onload = null; //This breaks interact while timestepper animating
     this.img.onload = final_callback;
     this.img.src = url;
   //Use HTTP POST or GET to issue command and IMG.SRC to get image
   } else {
     var xhttp = new XMLHttpRequest();
-    var url = this.baseurl;
     var params = undefined;
     if (this.post) {
-      xhttp.open('POST', url, true);
+      xhttp.open('POST', this.baseurl, true);
       params = cmd;
       //console.log("POST: " + params);
     } else {
-      cmd = '_' + window.btoa(cmd); //Base64 encode to avoid issues with jupyterlab and command urls
-      url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime()
       xhttp.open('GET', url, true);
     }
     xhttp.onload = function() {
@@ -186,12 +204,23 @@ WindowInteractor.prototype.redisplay = function() {
   }
 }
 
+WindowInteractor.prototype.image_args = function() {
+  if (this.fixedsize) {
+    //Full screen minus image border (1px)
+    var W = window.innerWidth - 2;
+    var H = window.innerHeight - 2;
+    return "?width=" + W + "&height=" + H + "&ts=" + new Date().getTime()
+  } else {
+    return "?" + new Date().getTime();
+  }
+}
+
 WindowInteractor.prototype.get_image = function(onload) {
   if (!this.img) return;
   //console.log("get_img: " + this.id);
 
   //if (!this.img) this.img = document.getElementById('imgtarget_0');
-  var url = this.baseurl + "/image?" + new Date().getTime();
+  var url = this.baseurl + "/image" + this.image_args();
   if (this.img) {
     this.img.onload = onload;
     this.img.src = url;

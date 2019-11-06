@@ -1298,6 +1298,7 @@ Renderer.prototype.draw = function() {
     this.gl.uniform1f(this.program.uniforms["uBrightness"], props.brightness || 0.0);
     this.gl.uniform1f(this.program.uniforms["uContrast"], props.contrast || 1.0);
     this.gl.uniform1f(this.program.uniforms["uPower"], props.power || 1.0);
+    this.gl.uniform1f(this.program.uniforms["uBloom"], props.bloom || 0.0);
     //Density clip range
     var dclip = [vis.objects[this.id].minclip || 0.0, vis.objects[this.id].maxclip || 1.0];
     this.gl.uniform2fv(this.program.uniforms["uDenMinMax"], new Float32Array(dclip));

@@ -70,8 +70,10 @@ function menu_addctrl(menu, obj, viewer, prop, changefn) {
       if (obj[prop] < range[0]) obj[prop] = range[0];
       if (obj[prop] > range[1]) obj[prop] = range[1];
       menu.add(obj, prop, range[0], range[1], ctrl[1][2]).onFinishChange(changefn);
-    } else
+    } else {
       menu.add(obj, prop).onFinishChange(changefn);
+    }
+
   } else if (dtype === 'string' || dtype === 'boolean') {
     menu.add(obj, prop).onFinishChange(changefn);
   } else if (dtype === 'boolean') {
@@ -88,8 +90,6 @@ function menu_addctrl(menu, obj, viewer, prop, changefn) {
 }
 
 function menu_addctrls(menu, obj, viewer, onchange) {
-  var submenus = {};
-
   //Loop through every available property
   var extras = [];
   for (var prop in viewer.dict) {
@@ -286,6 +286,10 @@ function createMenu(viewer, onchange, webglmode, global) {
     gui.add(viewer.vis, "interactive").name("Interactive Render");
     gui.add(viewer.vis, "immediatesort").name("Immediate Sort");
     gui.add(viewer.vis, "sortenabled").name('Sort Enabled');
+  } else {
+    var url = viewer.canvas.imgtarget.baseurl;
+    if (url)
+      gui.add({"Popup Viewer" : function() {window.open(url, "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=1024,height=768");}}, 'Popup Viewer');
   }
 
   var g = gui.addFolder('Globals/Defaults');

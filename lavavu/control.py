@@ -97,8 +97,8 @@ basehtml = """
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <style>
-html, body, table {
-  padding: 0; margin: 5;
+html, body, table, form {
+  padding: 0; margin: 0;
   border: none;
   font-size: 9pt;
   font-family: sans-serif;
@@ -120,8 +120,8 @@ canvas {
 
 </head>
 
-<body onload="initPage(null, ---MENU---);" oncontextmenu="return false;">
----HIDDEN---
+<body onload="---INIT---" oncontextmenu="return false;">
+---CONTENT---
 </body>
 
 </html>
@@ -130,10 +130,10 @@ canvas {
 inlinehtml = """
 ---SCRIPTS---
 <div id="---ID---" style="display: block; width: ---WIDTH---px; height: ---HEIGHT---px;"></div>
----HIDDEN---
+---CONTENT---
 
 <script>
-initPage("---ID---", ---MENU---);
+---INIT---
 </script>
 """
 
@@ -231,6 +231,20 @@ def _webglboxcode(menu=True, lighttheme=True):
     """
     jslibs = [['gl-matrix-min.js'], ['OK-min.js', 'control.js', 'drawbox.js']]
     return _webglcode(fragmentShader + vertexShader, ['control.css', 'styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
+
+def _connectcode(target):
+    """
+    Returns base code to open a connection only, for obtaining correct connection url
+    (Only required if no interaction windows have been opened yet)
+    """
+    #If connection via window already opened, we don't need this
+    if len(winids) == 0:
+        initjs = '\n_wi[0] = new WindowInteractor(0, {uid}, {port});\n;'.format(uid=id(target), port=target.server.port)
+        #return _readfilehtml('control.js') + initjs
+        s = '<script>\n' + _readfilehtml('control.js') + initjs + '</script>\n'
+        return s
+    else:
+        return ""
 
 def _getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
@@ -462,7 +476,7 @@ class Window(_Container):
     Parameters
     ----------
     align : str
-        Set to "left/right" to align viewer window, default is left
+        Set to "left/right" to align viewer window, default is left. Set to None to skip.
     wrapper : str
         Set the style of the wrapper div, default is empty string so wrapper is enabled with no custom style
         Set to None to disable wrapper
@@ -474,7 +488,8 @@ class Window(_Container):
 
     def html(self):
         style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block; '
-        style += 'float: ' + self.align + ';'
+        if self.align is not None:
+            style += 'float: ' + self.align + ';'
         if self.wrapper is not None:
             style += ' margin-right: 10px;'
         html = ""
@@ -1244,7 +1259,7 @@ class TimeStepper(Range):
           } else {
             timer_---ELID--- = 0;
             startTimer_---ELID---();
-            btn.value="\\u23F9";
+            btn.value="\\u25FE";
           }
         }
         </script>
@@ -1440,7 +1455,7 @@ class _ControlFactory(object):
         self._target = weakref.ref(target)
         self.clear()
         self.interactor = False
-        self.output = ""
+        #self.output = ""
 
         #Save types of all control/containers
         def all_subclasses(cls):
@@ -1560,9 +1575,15 @@ class _ControlFactory(object):
         html += "</form>"
         #print('\n'.join([str(a)+":"+actions[a] for a in actions]))
 
+        #Auto-clear now content generated
+        #Prevents doubling up if cell executed again
+        self.clear()
+
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
-        self.output += html
+        #self.output += html
+
+        code = _webglboxcode(menu)
 
         #Display HTML inline or export
         if is_notebook() and filename is None:
@@ -1577,7 +1598,7 @@ class _ControlFactory(object):
             from IPython.display import display,HTML
             #Interaction requires some additional js/css/webgl
             #Insert stylesheet, shaders and combined javascript libraries
-            display(HTML(_webglboxcode(menu)))
+            display(HTML(code))
 
             #Try and prevent this getting cached
             timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -1588,29 +1609,29 @@ class _ControlFactory(object):
             #Output the controls and start interactor
             html += "<script>init('{0}');</script>".format(viewerid)
             display(HTML(actionjs + html))
-        else:
-            #Export html file
-            #Dump all output to control.html in current directory & htmlpath
-            full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
-            full_html += _webglboxcode(menu)
-            full_html += self.export_actions(actions) #Process actions
-            full_html += '</head>\n<body onload="init(\'{0}\');">\n'.format(viewerid)
-            full_html += html
-            full_html += "\n</body>\n</html>\n"
 
-            #Write the file, locally and in htmlpath
-            if filename is None:
-                filename = "control.html"
-            hfile = open(filename, "w")
-            hfile.write(full_html)
-            hfile.close()
+        else:
+            #Export standalone html
+            #return as string or write output to .html file in current directory
+            template = basehtml
+            template = template.replace('---SCRIPTS---', code + self.export_actions(actions)) #Process actions
+            template = template.replace('---INIT---', 'init(\'{0}\');'.format(viewerid))
+            template = template.replace('---CONTENT---', html)
+            full_html = template
+
+            if filename == '':
+                #Just return code
+                return full_html
+            else:
+                #Write the file
+                if filename is None:
+                    filename = "control.html"
+                hfile = open(filename, "w")
+                hfile.write(full_html)
+                hfile.close()
 
             if callable(fallback):
                 fallback(target)
-
-        #Auto-clear after show
-        #Prevents doubling up if cell executed again
-        self.clear()
 
     def export_actions(self, actions, uid=0, port=0, proxy=False):
         #Process actions

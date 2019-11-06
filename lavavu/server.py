@@ -7,6 +7,7 @@ from functools import partial
 import weakref
 import base64
 import json
+import socket
 
 #Python2/3 compatibility hacks
 try:
@@ -16,11 +17,15 @@ try:
     #from SimpleHTTPServer import HTTPServer
     from SocketServer import TCPServer as HTTPServer
     from urllib import unquote
+    from urlparse import urlparse
+    from urlparse import parse_qs
 except ImportError:
     # Python 3.x
     from socketserver import ThreadingMixIn
     from http.server import SimpleHTTPRequestHandler, HTTPServer
     from urllib.parse import unquote
+    from urllib.parse import urlparse
+    from urllib.parse import parse_qs
 
 """
 HTTP Server interface
@@ -75,9 +80,14 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
 
     def do_GET(self):
         lv = self._get_viewer()
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
 
         if self.path.find('image') > 0:
-            self.serveResponse(lv.jpeg(), 'image/jpeg')
+            if 'width' in query and 'height' in query:
+                self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0]))), 'image/jpeg')
+            else:
+                self.serveResponse(lv.jpeg(), 'image/jpeg')
 
         elif self.path.find('command=') > 0:
             pos1 = self.path.find('=')
@@ -90,7 +100,10 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
 
             #Serve image or just respond 200
             if self.path.find('icommand=') > 0:
-                self.serveResponse(lv.jpeg(), 'image/jpeg')
+                if 'width' in query and 'height' in query:
+                    self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0]))), 'image/jpeg')
+                else:
+                    self.serveResponse(lv.jpeg(), 'image/jpeg')
             else:
                 self.serveResponse(b'', 'text/plain')
 
@@ -99,6 +112,10 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self.serveResponse(bytearray(state, 'utf-8'), 'text/plain; charset=utf-8')
             #self.serveResponse(bytearray(state, 'utf-8'), 'text/plain')
         elif self.path.find('connect') > 0:
+            url = query['url'][0]
+            #Save first valid connection URL on the viewer
+            if len(lv._url) == 0:
+                lv._url = url
             uid = id(lv)
             self.serveResponse(bytearray(str(uid), 'utf-8'), 'text/plain; charset=utf-8')
         elif self.path.find('key=') > 0:
@@ -111,6 +128,11 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             cmds = unquote(self.path[1:pos2])
             lv.commands('mouse ' + cmds, True)
             self.serveResponse(b'', 'text/plain')
+        elif len(self.path) <= 1:
+            #Root requested, returns interactive view
+            w = lv.control.Window(align=None, wrapper=None)
+            code = lv.control.show(True, filename="")
+            self.serveResponse(bytearray(code, 'utf-8'), 'text/html; charset=utf-8')
         else:
             return SimpleHTTPRequestHandler.do_GET(self)
 
@@ -223,7 +245,11 @@ class Server(threading.Thread):
         self._cv = threading.Condition()
 
     def handle(self):
-        httpd.handle_request()
+        try:
+            httpd.handle_request()
+        except (socket.exception) as e:
+            #print(str(e))
+            pass
 
     def run(self):
         httpd = None
@@ -232,13 +258,12 @@ class Server(threading.Thread):
             # We "partially apply" our first argument to get the viewer object into LVRequestHandler
             handler = partial(LVRequestHandler, self.viewer)
             if self.ipv6:
-                import socket
                 HTTPServer.address_family = socket.AF_INET6
-                httpd = HTTPServer(('::', self.port), handler)
-                #httpd = ThreadingHTTPServer(('::', self.port), handler)
+                #httpd = HTTPServer(('::', self.port), handler)
+                httpd = ThreadingHTTPServer(('::', self.port), handler)
             else:
-                httpd = HTTPServer(('0.0.0.0', self.port), handler)
-                #httpd = ThreadingHTTPServer(('0.0.0.0', self.port), handler)
+                #httpd = HTTPServer(('0.0.0.0', self.port), handler)
+                httpd = ThreadingHTTPServer(('0.0.0.0', self.port), handler)
 
             #Sync with starting thread here to ensure server thread has initialised before it continues
             with self._cv:
@@ -273,9 +298,11 @@ def serve(viewer, port=None, ipv6=False, retries=100):
         s._cv.wait()
     return s
 
-#Ignore SIGPIPE altogether (does not work on windows)
-#from signal import signal, SIGPIPE, SIG_IGN
-#signal(SIGPIPE, SIG_IGN)
+#Ignore SIGPIPE altogether (does not apply on windows)
+import sys
+if sys.platform != 'win32':
+    from signal import signal, SIGPIPE, SIG_IGN
+    signal(SIGPIPE, SIG_IGN)
 
 """
 Main entry point - run server and open browser interface

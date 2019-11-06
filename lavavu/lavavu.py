@@ -2240,6 +2240,7 @@ class Viewer(dict):
         self.state = {}
         self._managed = False
         self.server = None
+        self._url = ""
         self._thread = None
         self._collections = {}
         self.validate = True #Property validation flag
@@ -3403,8 +3404,8 @@ class Viewer(dict):
                 ID = str(len(self.webglviews))
                 template = control.inlinehtml
                 template = template.replace('---ID---', ID)
-                template = template.replace('---MENU---', 'true' if menu else 'false')
-                template = template.replace('---HIDDEN---', control.hiddenhtml)
+                template = template.replace('---INIT---', 'initPage(\'{0}\', {1});'.format(ID, "true" if menu else "false"))
+                template = template.replace('---CONTENT---', control.hiddenhtml)
                 template = template.replace('---WIDTH---', str(resolution[0]))
                 template = template.replace('---HEIGHT---', str(resolution[1]))
                 html = template.replace('---SCRIPTS---', html)
@@ -3418,8 +3419,8 @@ class Viewer(dict):
             else:
                 #Write result to html file
                 template = control.basehtml
-                template = template.replace('---MENU---', 'true' if menu else 'false')
-                template = template.replace('---HIDDEN---', control.hiddenhtml)
+                template = template.replace('---INIT---', 'initPage(null, {0});'.format("true" if menu else "false"))
+                template = template.replace('---CONTENT---', control.hiddenhtml)
                 html = template.replace('---SCRIPTS---', html)
                 if not filename.lower().endswith('.html'):
                     filename += ".html"
@@ -3891,46 +3892,80 @@ class Viewer(dict):
             self.commands("interactive")
         self.render()
 
-    #TODO: TEST, on mac and with/without threading
-    def interact(self, resolution=None):
+    def interact(self, local=False, loop=False):
         """
-        Opens an external interactive window
-        Unless native=True is passed, will open an interactive web window
-        for interactive control via web browser
+        Opens an external interactive window in a separate web browser tab/window
 
-        This starts an event handling loop which blocks python execution until the window is closed
 
         Parameters
         ----------
-        resolution : tuple(int,int)
-            Window width and height in pixels, if not provided will use the global default
+        local : boolean
+            If local is True will use the webbrowser module to open a browser window.
+            If False, attempts to open a popup window and provides a link for the user to open the window
+        loop : boolean
+            If loop is True and run from a python script instead of a notebook,
+            this starts an event handling loop which blocks python execution until the window is closed
         """
         try:
-            #Start the server if not running
-            if not self.server:
-                self.serve()
-
-            if is_notebook():
-                if resolution is None: resolution = self.resolution
-                from IPython.display import display,Javascript
-                js = 'var win = window.open("http://localhost:{port}/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'.format(port=self.server.port, width=resolution[0], height=resolution[1])
-                display(Javascript(js))
-                #Need a small delay to let the injected javascript popup run
-                time.sleep(0.1)
-            else:
+            #Ensure connection open and provide url
+            url = self.connect()
+            if local:
                 import webbrowser
-                url = "http://localhost:{port}/interactive.html".format(port=self.server.port)
-                #webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
-                #OPEN CONTROL TOO/INSTEAD?
-                #url = "http://localhost:{port}/control.html".format(port=self.server.port)
                 webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
+
+            elif is_notebook():
+                from IPython.display import display,Javascript,HTML
+                eid = str(id(self)) + "_interact"
+                html = """<a href="#" id="{eid}" onclick='window.open("{url}", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'>Interactive View</a>"""
+                display(HTML(html.format(url=url, width=self.resolution[0], height=self.resolution[1], eid=eid)))
+                #Attempt to auto-click, but popup blockers may prevent this
+                #Skip if baseurl not yet set, prevents popup opening when viewing a saved copy of the notebook with stale javascript
+                js = """
+                if (_wi) {{
+                    var keys = Object.keys(_wi);
+                    if (keys.length && _wi[keys[0]].baseurl)
+                        document.getElementById('{eid}').click();
+                }}
+                """
+                display(Javascript(js.format(eid=eid)))
+
+            if loop and not is_notebook():
                 #Handle events until quit - allow interaction without exiting when run from python script
                 while not self.app.viewer.quitProgram:
                     time.sleep(self.app.TIMER_INC)
 
         except (Exception) as e:
-            print("Interactive launch error: " + str(e))
+            print("Interactive open error: " + str(e))
             pass
+
+    def connect(self):
+        """
+        Provides the link to open an external interactive window
+        """
+        #Start the server if not running
+        if not self.server:
+            self.serve()
+
+        if is_notebook():
+            from IPython.display import display,HTML,Javascript
+            #Do we already have the url?
+            if len(self._url) == 0:
+                #Create a connection
+                js = control._connectcode(self)
+                #display(Javascript(js))
+                display(HTML(js))
+                #Wait for the connection
+                timeout = time.time() + 10 #10 second timeout
+                while len(self._url) == 0:
+                    if time.time() > timeout:
+                        break
+                    time.sleep(0.1)
+
+        if len(self._url):
+            return self._url
+
+        #Return default for local instance
+        return "http://localhost:{port}/".format(port=self.server.port)
 
     """
     Allows use as thread safe functions
