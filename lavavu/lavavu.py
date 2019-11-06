@@ -3004,8 +3004,10 @@ class Viewer(dict):
         if obj is None and ll < len(self.objects):
             obj = self.objects.list[ll]
         if obj is None:
-            if not "json" in filename and not "script" in filename:
-                print("WARNING: No objects added after file load: " + filename)
+            #Removed warning, it is fine to have no object after loading a file
+            #eg: volume slice, multiple OBJ load to single object
+            #if not "json" in filename and not "script" in filename:
+            #    print("WARNING: No objects added after file load: " + filename)
             return None
 
         #Setups up new object, all other args passed to properties dict
