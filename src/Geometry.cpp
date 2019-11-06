@@ -2999,4 +2999,24 @@ Geometry* createRenderer(Session& session, const std::string& what)
   return g;
 }
 
+void Geometry::contour(Geometry* lines, DrawingObject* source, DrawingObject* target, bool clearsurf)
+{
+  //Ensure data is loaded for this step
+  setup(view);
+  lines->setup(view);
+
+  //Isosurface extract
+  Contour cont(geom, lines, source, target, this);
+
+  //Clear the original data, allows converting object from a surface to lines
+  if (clearsurf)
+    clear(true);
+
+  reload = redraw = true;
+
+  //Optimise triangle vertices
+  lines->merge();
+  lines->reload = true;
+  lines->update();
+}
 

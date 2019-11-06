@@ -539,6 +539,7 @@ LavaVu.imageBuffer = new_instancemethod(_LavaVuPython.LavaVu_imageBuffer, None, 
 LavaVu.imageFromFile = new_instancemethod(_LavaVuPython.LavaVu_imageFromFile, None, LavaVu)
 LavaVu.imageJPEG = new_instancemethod(_LavaVuPython.LavaVu_imageJPEG, None, LavaVu)
 LavaVu.imagePNG = new_instancemethod(_LavaVuPython.LavaVu_imagePNG, None, LavaVu)
+LavaVu.contour = new_instancemethod(_LavaVuPython.LavaVu_contour, None, LavaVu)
 LavaVu.isoSurface = new_instancemethod(_LavaVuPython.LavaVu_isoSurface, None, LavaVu)
 LavaVu.update = new_instancemethod(_LavaVuPython.LavaVu_update, None, LavaVu)
 LavaVu.close = new_instancemethod(_LavaVuPython.LavaVu_close, None, LavaVu)

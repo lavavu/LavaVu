@@ -3719,6 +3719,34 @@ std::vector<unsigned char> LavaVu::imagePNG(int width, int height, int depth)
   return d;
 }
 
+DrawingObject* LavaVu::contour(DrawingObject* target, DrawingObject* source, std::string properties, bool labels, bool clearsurf)
+{
+  //Create a contour from selected grid object
+  //If "clearsurf" is true, surface/grid data will be deleted leaving only the contour lines
+  if (!amodel || !source) return NULL;
+
+  if (!target)
+  {
+    //Create a new object for the surface
+    target = new DrawingObject(session, source->name() + "_contours", properties);
+    addObject(target);
+    std::vector<std::string> copyprops = {"isovalues", "isovalue", "isowalls", "colour"};
+    for (auto prop : copyprops)
+      if (!target->properties.has(prop) && source->properties.has(prop))
+        target->properties.data[prop] = source->properties[prop];
+    //Labels disabled?
+    if (!labels)
+      target->properties.data["format"] = "";
+  }
+
+  Geometry* grids = amodel->getRenderer(lucGridType);
+  Lines* lines = (Lines*)amodel->getRenderer(lucLineType);
+  if (grids && lines)
+    grids->contour(lines, source, target, clearsurf);
+  target->properties.data["renderer"] = "lines";
+  return target;
+}
+
 DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol)
 {
   //Create an isosurface from selected volume object

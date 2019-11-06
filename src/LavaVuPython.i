@@ -219,6 +219,7 @@ public:
   std::vector<unsigned char> imageJPEG(int width, int height, int quality=95);
   std::vector<unsigned char> imagePNG(int width, int height, int depth);
 
+  DrawingObject* contour(DrawingObject* target, DrawingObject* source, std::string properties, bool labels=false, bool clearsurf=false);
   DrawingObject* isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
   void update(DrawingObject* target, lucGeometryType type, bool compress=true);

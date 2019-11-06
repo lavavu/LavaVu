@@ -1325,6 +1325,57 @@ class Object(dict):
         cmid = self["colourmap"]
         return self.parent.getcolourmap(cmid, string)
 
+    def contours(self, isovalues=None, name=None, labels=True, convert=False, updatedb=False, compress=True, **kwargs):
+        """
+        Generate a contours from a surface/grid data set using the marching squares algorithm
+
+        Parameters
+        ----------
+        isovalues : number,list
+            Isovalues to draw contour lines on, number or list
+        name : str
+            Name of the created object, automatically assigned if not provided
+        labels : bool
+            Label one of the contour lines for each of the interval values, positioning of these is automatic but not always ideal
+        convert : bool
+            Setting this flag to True will replace the existing surface grid object with the
+            newly created contours by deleting the grid data and loading the line
+            data into the preexisting object
+        updatedb : bool
+            Setting this flag to True will write the newly created/modified data
+            to the database when done
+        compress : boolean
+            Use zlib compression when writing the geometry data
+        **kwargs :
+            Initial set of properties passed to the created object
+
+        Returns
+        -------
+        obj : Object
+            The contour object created/converted
+        """
+        #Generate and return contour lines object, 
+        #pass properties as kwargs (eg: isovalues=[])
+        if isovalues is not None:
+            kwargs["isovalues"] = isovalues
+
+        #Create lines, If requested, write the new data to the database
+        objref = None
+        if convert: objref = self.ref
+        ref = self.parent.contours(objref, self.ref, _convert_args(kwargs), labels, convert)
+
+        #Get the created/updated object
+        if ref == None:
+            print("Error creating contours")
+            return ref
+        cobj = self.parent.Object(ref)
+
+        #Re-write modified types to the database
+        if updatedb:
+            self.parent.app.update(cobj.ref, LavaVuPython.lucGridType, compress)
+            self.parent.app.update(cobj.ref, LavaVuPython.lucLineType, compress)
+        return cobj
+
     def isosurface(self, isovalues=None, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         """
         Generate an isosurface from a volume data set using the marching cubes algorithm
@@ -1903,6 +1954,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     def web(self, *args, **kwargs):
         return self._lavavu_call('web', True, *args, **kwargs)
+
+    def contour(self, *args, **kwargs):
+        return self._lavavu_call('contour', True, *args, **kwargs)
 
     def isoSurface(self, *args, **kwargs):
         return self._lavavu_call('isoSurface', True, *args, **kwargs)
@@ -3879,6 +3933,9 @@ class Viewer(dict):
     """
     Allows use as thread safe functions
     """
+    def contours(self, dstref, srcref, properties, labels, clearsurf):
+        return self.app.contour(dstref, srcref, properties, labels, clearsurf)
+
     def isosurface(self, dstref, srcref, properties, clearvol):
         return self.app.isoSurface(dstref, srcref, properties, clearvol)
 

@@ -42,6 +42,7 @@
 #include "ViewerTypes.h"
 #include "Shaders.h"
 #include "TimeStep.h"
+#include "Contour.h"
 #include "base64.h"
 
 #ifndef Geometry__
@@ -49,6 +50,13 @@
 
 //Types based on triangle renderer
 #define TriangleBased(type) (type == lucTriangleType || type == lucGridType || type == lucShapeType || type == lucVectorType || type == lucTracerType)
+
+typedef struct
+{
+   float value;
+   float pos[3];
+   float colourval;
+} IVertex;
 
 // Point indices + distance for sorting
 typedef struct
@@ -653,6 +661,8 @@ public:
     while (hidden.size() < geom.size())
       hidden.push_back(allhidden);
   }
+
+  void contour(Geometry* lines, DrawingObject* source, DrawingObject* target,  bool clearsurf);
 };
 
 class Triangles : public Geometry

@@ -33,8 +33,8 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifndef IsoSurface__
-#define IsoSurface__
+#ifndef Contour__
+#define Contour__
 #include "Include.h"
 #include "Geometry.h"
 
@@ -42,53 +42,51 @@
 #define J_AXIS 1
 #define K_AXIS 2
 
-template <typename T> class array3d 
+template <typename T> class array2d 
 {
 public:
-  array3d(size_t x=0, size_t y=0, size_t z=0, T const & t=T())
-         : x(x), y(y), z(z), data(x*y*z, t) {}
+  array2d(size_t x=0, size_t y=0, T const & t=T())
+         : x(x), y(y), data(x*y, t) {}
 
-  T & at(size_t i, size_t j, size_t k)
+  T & at(size_t i, size_t j)
   {
-    return data[i*y*z + j*z + k];
+    return data[i*y + j];
   }
 
-  T const at(size_t i, size_t j, size_t k) const
+  T const at(size_t i, size_t j) const
   {
-    return data[i*y*z + j*z + k];
+    return data[i*y + j];
   }
 
 private:
-  size_t x, y, z;
+  size_t x, y;
   std::vector<T> data;
 };
 
-typedef array3d<IVertex> vertices;
+typedef array2d<IVertex> vertices2;
 
-class Isosurface
+class Contour
 {
 public:
   float                        isovalue;
   unsigned int                 resolution[3];
   float                        min[3];
   float                        max[3];
-  unsigned int                 nx;
-  unsigned int                 ny;
-  unsigned int                 nz;
-  unsigned int subsample;
-  Triangles* surfaces;
+  unsigned int                 nI;
+  unsigned int                 nJ;
+  Geometry* lines;
   DrawingObject* target;
   FloatValues* colourVals;
-  vertices* vertex;
+  vertices2* vertex;
+  std::string labelformat;
+  int printedIndex = -1;
+  int coordIndex = 0;
 
-  Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* draw, DrawingObject* target, Volumes* vol, unsigned int subsample=1);
+  Contour(std::vector<Geom_Ptr>& geom, Geometry* lines, DrawingObject* draw, DrawingObject* target, Geometry* source);
 
-  void MarchingCubes();
-  void DrawWalls();
-  void MarchingRectangles(IVertex** points, char squareType);
-  void WallElement(IVertex** points);
   void VertexInterp(IVertex* point, IVertex* vertex1, IVertex* vertex2);
-  void CreateTriangle(IVertex* point1, IVertex* point2, IVertex* point3);
+  void MarchingRectangles();
+  void addVertex(char edge, int aIndex, int bIndex);
 };
 
-#endif //IsoSurface__
+#endif //Contour__
