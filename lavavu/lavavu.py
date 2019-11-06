@@ -757,9 +757,11 @@ class Object(dict):
         #Tracers? Use the size if not provided on vertex data load
 
         #Dims set or already match provided data?
+        D = (0, 0)
         if not self._checkDims(data.size/3):
             #Dims = vertex count
-            self["dims"] = (data.size/3, 1)
+             D = (data.size//3, 1)
+        return D[0], D[1], 0
 
     def _loadVector(self, data, geomdtype, D=3):
         """
@@ -4318,10 +4320,18 @@ class DrawData(object):
                 length = int(numpy.prod(dims))
                 #print(typename,"DIMS:",dims,"SIZE:",array.size, length)
                 if length == array.size:
-                    #Need to reverse dims for numpy shape (ONLY FOR VOLUMES/VALUE DATA)
+                    #Need to reverse dims for numpy shape
+                    #BUT, for vertices and other 3D data, keep the last dimension as 3
                     #numpy shape = (depth, height, width, d) or (height, width, d) or (height, width)
-                    shape = dims
-                    if typename not in datatypes: #== "values":
+                    shape = []
+                    if typename in datatypes and typename != 'values' and dimensions[typename] > 1:
+                        if len(dims) > 2:
+                            shape = dims[0:len(dims)-1][::-1]
+                            shape += [dimensions[typename]]
+                        else:
+                            shape = dims
+                    else:
+                        #Reversed dims for shape
                         shape = dims[::-1]
                     array = array.reshape(shape)
                 elif array.shape[0] == array.size and dims[-1] <= 3:
@@ -4370,10 +4380,15 @@ class DrawData(object):
         array = self._obj._convert(array)
 
         #Attempt to set the dims based on the provided array shape
-        if "dims" in self._obj and len(array.shape) > 0:
-            dims = self._obj["dims"]
-            #Need to reverse dims from numpy shape
-            newdims = array.shape[::-1]
+        dims = [0,0,0]
+        if self.data.width > 1:
+            dims = [self.data.depth, self.data.height, self.data.width]
+        elif "dims" in self._obj:
+           dims = self._obj["dims"][::-1]
+        #if "dims" in self._obj and len(array.shape) > 0:
+        if len(array.shape) > 0:
+            #Get dims from numpy shape
+            newdims = array.shape
             length = numpy.prod(dims)
 
             #If the expected data is 2d/3d?
@@ -4386,11 +4401,13 @@ class DrawData(object):
                     newdims = newdims[:-1]
 
             #Specified "dims" does not match data size, adjust the properties
+            #print("NEWDIMS:", newdims)
             if length != array.size and len(newdims) == 3:
-                self._obj["dims"] = newdims
-                self.data.width = newdims[0]
+                self._obj["dims"] = newdims[::-1]
+                self.data.width = newdims[2]
                 self.data.height = newdims[1]
-                self.data.depth = newdims[2]
+                self.data.depth = newdims[0]
+                #print("SET NEWDIMS: w h d ", self.data.width, self.data.height, self.data.depth)
 
         if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
