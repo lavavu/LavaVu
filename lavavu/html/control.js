@@ -217,9 +217,14 @@ WindowInteractor.prototype.image_args = function() {
       var H = window.innerHeight - 2;
       return "?width=" + W + "&height=" + H + "&ts=" + new Date().getTime()
     } else if (this.fixedsize == 2) {
-      //Image size (use width only and preserve aspect ratio)
+      //Image size (use width only and preserve aspect ratio if dimensions are equal)
       var W = this.img.width;
-      return "?width=" + W + "&ts=" + new Date().getTime()
+      var H = this.img.height;
+      if (W == H) {
+        return "?width=" + W + "&ts=" + new Date().getTime()
+      } else {
+        return "?width=" + W + "&height=" + H + "&ts=" + new Date().getTime()
+      }
     }
   } else {
     return "?" + new Date().getTime();
