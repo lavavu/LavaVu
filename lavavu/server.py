@@ -83,11 +83,16 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
         parsed = urlparse(self.path)
         query = parse_qs(parsed.query)
 
-        if self.path.find('image') > 0:
+        def img_response():
             if 'width' in query and 'height' in query:
                 self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0]))), 'image/jpeg')
+            elif 'width' in query:
+                self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), 0)), 'image/jpeg')
             else:
                 self.serveResponse(lv.jpeg(), 'image/jpeg')
+
+        if self.path.find('image') > 0:
+            img_response()
 
         elif self.path.find('command=') > 0:
             pos1 = self.path.find('=')
@@ -100,10 +105,7 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
 
             #Serve image or just respond 200
             if self.path.find('icommand=') > 0:
-                if 'width' in query and 'height' in query:
-                    self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0]))), 'image/jpeg')
-                else:
-                    self.serveResponse(lv.jpeg(), 'image/jpeg')
+                img_response()
             else:
                 self.serveResponse(b'', 'text/plain')
 

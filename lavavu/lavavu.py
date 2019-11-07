@@ -3280,6 +3280,17 @@ class Viewer(dict):
             return self.app.image(filename, 0, 0, quality, transparent)
         return self.app.image(filename, resolution[0], resolution[1], quality, transparent)
 
+    def _getres(self, resolution):
+        #Use viewer default if none provided
+        if not resolution or len(resolution) < 2 or resolution[0] <= 0:
+            resolution = self.resolution
+        #Calculate height if only width provided
+        elif resolution[1] <= 0:
+            #Set the height based on viewer aspect
+            aspect = self.resolution[1] / self.resolution[0]
+            resolution = (resolution[0], int(resolution[0] * aspect))
+        return resolution
+
     def frame(self, resolution=None, quality=90):
         """
         Get an image frame, returns current display as base64 encoded jpeg data url
@@ -3297,7 +3308,7 @@ class Viewer(dict):
             encoded image as string data
         """
         #Jpeg encoded frame data
-        if not resolution: resolution = self.resolution
+        resolution = self._getres(resolution)
         return self.app.image("", resolution[0], resolution[1], quality)
 
     def jpeg(self, resolution=None, quality=90):
@@ -3317,7 +3328,7 @@ class Viewer(dict):
             encoded image as byte array
         """
         #Jpeg encoded frame data
-        if not resolution: resolution = self.resolution
+        resolution = self._getres(resolution)
         return bytearray(self.app.imageJPEG(resolution[0], resolution[1], quality))
 
     def png(self, resolution=None):
@@ -3335,7 +3346,7 @@ class Viewer(dict):
             encoded image as byte array
         """
         #PNG encoded frame data
-        if not resolution: resolution = self.resolution
+        resolution = self._getres(resolution)
         return bytearray(self.app.imagePNG(resolution[0], resolution[1]))
 
     def display(self, resolution=(0,0), transparent=False):
@@ -3715,16 +3726,26 @@ class Viewer(dict):
 
         return result
 
-    def window(self, menu=True):
+    def window(self, menu=True, fill=False):
         """
         Create and display an interactive viewer instance
 
         This shows an active viewer window to the visualisation
         that can be controlled with the mouse or html widgets
 
+        Parameters
+        ----------
+        menu : boolean
+            Adds a menu to the top right allowing control of vis parameters, defaults to on
+        fill : boolean
+            By default the window will be of a fixed size (set by the Viewer resolution)
+            If fill is set to true, the window will take up the maximum available space and images will be requested
+            to match the resulting resolution.
         """
-        #TODO: support resolution set / full size of div, requires updating viewer frame size
-        self.control.Window()
+        if fill:
+            self.control.FillWindow()
+        else:
+            self.control.Window()
         self.control.show(menu)
 
     def redisplay(self):

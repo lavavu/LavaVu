@@ -515,6 +515,49 @@ class Window(_Container):
         #html += '<div style="clear: both;">\n'
         return html
 
+class FillWindow(_Container):
+    """
+    Creates an interaction window with an image of the viewer frame 
+    and webgl controller for rotation/translation
+
+    Unlike Window, which uses the size of the returned image to set the interaction canvas size,
+    FillWindow creates an interaction canvas that fills the parent element width completely.
+    Images from the renderer are requested to match that size without rescaling.
+
+    Parameters
+    ----------
+    minwidth : int
+        Minimum width of the image
+    minheight : int
+        Minimum height of the image
+    """
+    def __init__(self, viewer, minwidth=100, minheight=50):
+        super(FillWindow, self).__init__(viewer)
+        self.minwidth = minwidth
+        self.minheight = minheight
+
+    def html(self):
+        style = 'height: 100%; width: 100%; position: relative; display: inline-block; '
+        style += 'min-width: ' + str(self.minwidth) + '; '
+        style += 'min-height: ' + str(self.minheight) + '; '
+        html = ""
+        html += '<div>\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style + 'margin: 0px; border: 1px solid #aaa; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
+        html += """
+           <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
+             <select onchange="_wi['---VIEWERID---'].box.mode = this.value;">
+               <option>Rotate</option>
+               <option>Translate</option>
+               <option>Zoom</option>
+             </select>
+             <input type="button" value="Reset" onclick="_wi['---VIEWERID---'].execute('reset');">
+           </div>"""
+        html += '</div>\n'
+
+        #Display any contained controls
+        html += super(FillWindow, self).html()
+        return html
+
 class Panel(Window):
     """Creates a control panel with an interactive viewer window and a set of controls
     placed to the left with the viewer aligned to the right

@@ -21,9 +21,9 @@ function WindowInteractor(id, uid, port) {
   this.post = false; //Set this to use POST instead of GET
 
   //Standalone? Always request images at the full window size
-  this.fixedsize = false;
+  this.fixedsize = 0;
   if (uid == 0) {
-    this.fixedsize = true;
+    this.fixedsize = 1;
     var that = this;
     window.onresize = function() {that.resize();};
   }
@@ -122,6 +122,11 @@ WindowInteractor.prototype.init = function() {
   this.img.baseurl = this.baseurl;
 
   //Load frame image and run command in single action
+  console.log(this.img.width + ' x ' + this.img.height);
+  //If initial img size > 64x64 (default image => grey 64x64 square)
+  //then use the image size as in the image requests
+  if (this.img.width > 64 && this.img.height > 64)
+    this.fixedsize = 2; //2 == use image size
 
   //Initial image
   //(Init WebGL bounding box interaction on load)
@@ -206,10 +211,16 @@ WindowInteractor.prototype.redisplay = function() {
 
 WindowInteractor.prototype.image_args = function() {
   if (this.fixedsize) {
-    //Full screen minus image border (1px)
-    var W = window.innerWidth - 2;
-    var H = window.innerHeight - 2;
-    return "?width=" + W + "&height=" + H + "&ts=" + new Date().getTime()
+    if (this.fixedsize == 1) {
+      //Full screen minus image border (1px)
+      var W = window.innerWidth - 2;
+      var H = window.innerHeight - 2;
+      return "?width=" + W + "&height=" + H + "&ts=" + new Date().getTime()
+    } else if (this.fixedsize == 2) {
+      //Image size (use width only and preserve aspect ratio)
+      var W = this.img.width;
+      return "?width=" + W + "&ts=" + new Date().getTime()
+    }
   } else {
     return "?" + new Date().getTime();
   }
