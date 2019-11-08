@@ -222,14 +222,17 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
   {
     if (tex->source || !tex->fn.empty())
     {
+      //printf("Load texture from existing data\n");
       tex->load();
     }
     else if (texture && !texture->empty())
     {
+      //printf("Load texture from cached copy on drawing object\n");
       tex = texture;
     }
     else if (properties.has("texture"))
     {
+      //printf("Load texture from property\n");
       std::string texfn = properties["texture"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
@@ -259,7 +262,11 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
         properties.data["texture"] = "";
       }
     }
+    //else
+    //  printf("Not empty, but found nothing to load!\n");
   }
+  //else
+  //  printf("Not loading, is empty\n");
 
   GL_Error_Check;
   return tex->use();

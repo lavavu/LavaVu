@@ -1042,7 +1042,7 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucLuminanceData, width, height, depth)
 
-    def texture(self, data=None, flip=True, bgr=False):
+    def texture(self, data=None, flip=True, filter=2, bgr=False):
         """
         Load or clear texture data for object
 
@@ -1058,6 +1058,8 @@ class Object(dict):
         flip : boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
+        filter : int
+            type of filtering, 0=None/nearest, 1=linear, 2=mipmap linear
         bgr : boolean
             rgb data is in BGR/BGRA format instead of RGB/RGBA
         """
@@ -1079,9 +1081,9 @@ class Object(dict):
         if data.dtype == numpy.float32:
             data = self._convert(data, numpy.uint8)
         if data.dtype == numpy.uint32:
-            self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, bgr)
+            self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, filter, bgr)
         elif data.dtype == numpy.uint8:
-            self.parent.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, bgr)
+            self.parent.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, filter, bgr)
 
     def labels(self, data):
         """
@@ -2017,8 +2019,13 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     def clearValues(self, *args, **kwargs):
         return self._lavavu_call('clearValues', True, *args, **kwargs)
-    """
 
+    def textureUInt(self, *args, **kwargs):
+        return self._lavavu_call('textureUInt', True, *args, **kwargs)
+
+    def textureUChar(self, *args, **kwargs):
+        return self._lavavu_call('textureUChar', True, *args, **kwargs)
+    """
     ####################################
 
     def display(self, *args, **kwargs):

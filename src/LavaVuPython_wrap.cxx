@@ -25029,7 +25029,8 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(
   unsigned int arg6 ;
   unsigned int arg7 ;
   bool arg8 ;
-  bool arg9 ;
+  int arg9 ;
+  bool arg10 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -25044,7 +25045,116 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(
   int ecode7 = 0 ;
   bool val8 ;
   int ecode8 = 0 ;
-  bool val9 ;
+  int val9 ;
+  int ecode9 = 0 ;
+  bool val10 ;
+  int ecode10 = 0 ;
+  
+  if ((nobjs < 9) || (nobjs > 9)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_textureUChar" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_textureUChar" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    npy_intp size[1] = {
+      -1 
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(swig_obj[2],
+      NPY_UBYTE,
+      &is_new_object3);
+    if (!array3 || !require_dimensions(array3, 1) ||
+      !require_size(array3, size, 1)) SWIG_fail;
+    arg3 = (unsigned char*) array_data(array3);
+    arg4 = (int) array_size(array3,0);
+  }
+  ecode5 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "LavaVu_textureUChar" "', argument " "5"" of type '" "unsigned int""'");
+  } 
+  arg5 = static_cast< unsigned int >(val5);
+  ecode6 = SWIG_AsVal_unsigned_SS_int(swig_obj[4], &val6);
+  if (!SWIG_IsOK(ecode6)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "LavaVu_textureUChar" "', argument " "6"" of type '" "unsigned int""'");
+  } 
+  arg6 = static_cast< unsigned int >(val6);
+  ecode7 = SWIG_AsVal_unsigned_SS_int(swig_obj[5], &val7);
+  if (!SWIG_IsOK(ecode7)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "LavaVu_textureUChar" "', argument " "7"" of type '" "unsigned int""'");
+  } 
+  arg7 = static_cast< unsigned int >(val7);
+  ecode8 = SWIG_AsVal_bool(swig_obj[6], &val8);
+  if (!SWIG_IsOK(ecode8)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "LavaVu_textureUChar" "', argument " "8"" of type '" "bool""'");
+  } 
+  arg8 = static_cast< bool >(val8);
+  ecode9 = SWIG_AsVal_int(swig_obj[7], &val9);
+  if (!SWIG_IsOK(ecode9)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUChar" "', argument " "9"" of type '" "int""'");
+  } 
+  arg9 = static_cast< int >(val9);
+  ecode10 = SWIG_AsVal_bool(swig_obj[8], &val10);
+  if (!SWIG_IsOK(ecode10)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode10), "in method '" "LavaVu_textureUChar" "', argument " "10"" of type '" "bool""'");
+  } 
+  arg10 = static_cast< bool >(val10);
+  {
+    try {
+      (arg1)->textureUChar(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  unsigned char *arg3 = (unsigned char *) 0 ;
+  int arg4 ;
+  unsigned int arg5 ;
+  unsigned int arg6 ;
+  unsigned int arg7 ;
+  bool arg8 ;
+  int arg9 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 = 0 ;
+  unsigned int val5 ;
+  int ecode5 = 0 ;
+  unsigned int val6 ;
+  int ecode6 = 0 ;
+  unsigned int val7 ;
+  int ecode7 = 0 ;
+  bool val8 ;
+  int ecode8 = 0 ;
+  int val9 ;
   int ecode9 = 0 ;
   
   if ((nobjs < 8) || (nobjs > 8)) SWIG_fail;
@@ -25090,11 +25200,11 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(
     SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "LavaVu_textureUChar" "', argument " "8"" of type '" "bool""'");
   } 
   arg8 = static_cast< bool >(val8);
-  ecode9 = SWIG_AsVal_bool(swig_obj[7], &val9);
+  ecode9 = SWIG_AsVal_int(swig_obj[7], &val9);
   if (!SWIG_IsOK(ecode9)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUChar" "', argument " "9"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUChar" "', argument " "9"" of type '" "int""'");
   } 
-  arg9 = static_cast< bool >(val9);
+  arg9 = static_cast< int >(val9);
   {
     try {
       (arg1)->textureUChar(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
@@ -25121,7 +25231,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -25215,7 +25325,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_3(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -25303,26 +25413,30 @@ fail:
 
 SWIGINTERN PyObject *_wrap_LavaVu_textureUChar(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[9] = {
+  PyObject *argv[10] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_textureUChar",0,8,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_textureUChar",0,9,argv))) SWIG_fail;
   --argc;
   if (argc == 6) {
-    return _wrap_LavaVu_textureUChar__SWIG_2(self, argc, argv);
+    return _wrap_LavaVu_textureUChar__SWIG_3(self, argc, argv);
   }
   if (argc == 7) {
-    return _wrap_LavaVu_textureUChar__SWIG_1(self, argc, argv);
+    return _wrap_LavaVu_textureUChar__SWIG_2(self, argc, argv);
   }
   if (argc == 8) {
+    return _wrap_LavaVu_textureUChar__SWIG_1(self, argc, argv);
+  }
+  if (argc == 9) {
     return _wrap_LavaVu_textureUChar__SWIG_0(self, argc, argv);
   }
   
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_textureUChar'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::textureUChar(DrawingObject *,unsigned char *,int,unsigned int,unsigned int,unsigned int,bool,bool)\n"
+    "    LavaVu::textureUChar(DrawingObject *,unsigned char *,int,unsigned int,unsigned int,unsigned int,bool,int,bool)\n"
+    "    LavaVu::textureUChar(DrawingObject *,unsigned char *,int,unsigned int,unsigned int,unsigned int,bool,int)\n"
     "    LavaVu::textureUChar(DrawingObject *,unsigned char *,int,unsigned int,unsigned int,unsigned int,bool)\n"
     "    LavaVu::textureUChar(DrawingObject *,unsigned char *,int,unsigned int,unsigned int,unsigned int)\n");
   return 0;
@@ -25339,7 +25453,8 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_0(PyObject *SWIGUNUSEDPARM(s
   unsigned int arg6 ;
   unsigned int arg7 ;
   bool arg8 ;
-  bool arg9 ;
+  int arg9 ;
+  bool arg10 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -25354,7 +25469,116 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_0(PyObject *SWIGUNUSEDPARM(s
   int ecode7 = 0 ;
   bool val8 ;
   int ecode8 = 0 ;
-  bool val9 ;
+  int val9 ;
+  int ecode9 = 0 ;
+  bool val10 ;
+  int ecode10 = 0 ;
+  
+  if ((nobjs < 9) || (nobjs > 9)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_textureUInt" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_textureUInt" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    npy_intp size[1] = {
+      -1 
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(swig_obj[2],
+      NPY_UINT,
+      &is_new_object3);
+    if (!array3 || !require_dimensions(array3, 1) ||
+      !require_size(array3, size, 1)) SWIG_fail;
+    arg3 = (unsigned int*) array_data(array3);
+    arg4 = (int) array_size(array3,0);
+  }
+  ecode5 = SWIG_AsVal_unsigned_SS_int(swig_obj[3], &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "LavaVu_textureUInt" "', argument " "5"" of type '" "unsigned int""'");
+  } 
+  arg5 = static_cast< unsigned int >(val5);
+  ecode6 = SWIG_AsVal_unsigned_SS_int(swig_obj[4], &val6);
+  if (!SWIG_IsOK(ecode6)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "LavaVu_textureUInt" "', argument " "6"" of type '" "unsigned int""'");
+  } 
+  arg6 = static_cast< unsigned int >(val6);
+  ecode7 = SWIG_AsVal_unsigned_SS_int(swig_obj[5], &val7);
+  if (!SWIG_IsOK(ecode7)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "LavaVu_textureUInt" "', argument " "7"" of type '" "unsigned int""'");
+  } 
+  arg7 = static_cast< unsigned int >(val7);
+  ecode8 = SWIG_AsVal_bool(swig_obj[6], &val8);
+  if (!SWIG_IsOK(ecode8)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "LavaVu_textureUInt" "', argument " "8"" of type '" "bool""'");
+  } 
+  arg8 = static_cast< bool >(val8);
+  ecode9 = SWIG_AsVal_int(swig_obj[7], &val9);
+  if (!SWIG_IsOK(ecode9)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUInt" "', argument " "9"" of type '" "int""'");
+  } 
+  arg9 = static_cast< int >(val9);
+  ecode10 = SWIG_AsVal_bool(swig_obj[8], &val10);
+  if (!SWIG_IsOK(ecode10)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode10), "in method '" "LavaVu_textureUInt" "', argument " "10"" of type '" "bool""'");
+  } 
+  arg10 = static_cast< bool >(val10);
+  {
+    try {
+      (arg1)->textureUInt(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  unsigned int *arg3 = (unsigned int *) 0 ;
+  int arg4 ;
+  unsigned int arg5 ;
+  unsigned int arg6 ;
+  unsigned int arg7 ;
+  bool arg8 ;
+  int arg9 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 = 0 ;
+  unsigned int val5 ;
+  int ecode5 = 0 ;
+  unsigned int val6 ;
+  int ecode6 = 0 ;
+  unsigned int val7 ;
+  int ecode7 = 0 ;
+  bool val8 ;
+  int ecode8 = 0 ;
+  int val9 ;
   int ecode9 = 0 ;
   
   if ((nobjs < 8) || (nobjs > 8)) SWIG_fail;
@@ -25400,11 +25624,11 @@ SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_0(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "LavaVu_textureUInt" "', argument " "8"" of type '" "bool""'");
   } 
   arg8 = static_cast< bool >(val8);
-  ecode9 = SWIG_AsVal_bool(swig_obj[7], &val9);
+  ecode9 = SWIG_AsVal_int(swig_obj[7], &val9);
   if (!SWIG_IsOK(ecode9)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUInt" "', argument " "9"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "LavaVu_textureUInt" "', argument " "9"" of type '" "int""'");
   } 
-  arg9 = static_cast< bool >(val9);
+  arg9 = static_cast< int >(val9);
   {
     try {
       (arg1)->textureUInt(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
@@ -25431,7 +25655,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -25525,7 +25749,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_textureUInt__SWIG_3(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -25613,26 +25837,30 @@ fail:
 
 SWIGINTERN PyObject *_wrap_LavaVu_textureUInt(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[9] = {
+  PyObject *argv[10] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_textureUInt",0,8,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_textureUInt",0,9,argv))) SWIG_fail;
   --argc;
   if (argc == 6) {
-    return _wrap_LavaVu_textureUInt__SWIG_2(self, argc, argv);
+    return _wrap_LavaVu_textureUInt__SWIG_3(self, argc, argv);
   }
   if (argc == 7) {
-    return _wrap_LavaVu_textureUInt__SWIG_1(self, argc, argv);
+    return _wrap_LavaVu_textureUInt__SWIG_2(self, argc, argv);
   }
   if (argc == 8) {
+    return _wrap_LavaVu_textureUInt__SWIG_1(self, argc, argv);
+  }
+  if (argc == 9) {
     return _wrap_LavaVu_textureUInt__SWIG_0(self, argc, argv);
   }
   
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_textureUInt'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::textureUInt(DrawingObject *,unsigned int *,int,unsigned int,unsigned int,unsigned int,bool,bool)\n"
+    "    LavaVu::textureUInt(DrawingObject *,unsigned int *,int,unsigned int,unsigned int,unsigned int,bool,int,bool)\n"
+    "    LavaVu::textureUInt(DrawingObject *,unsigned int *,int,unsigned int,unsigned int,unsigned int,bool,int)\n"
     "    LavaVu::textureUInt(DrawingObject *,unsigned int *,int,unsigned int,unsigned int,unsigned int,bool)\n"
     "    LavaVu::textureUInt(DrawingObject *,unsigned int *,int,unsigned int,unsigned int,unsigned int)\n");
   return 0;

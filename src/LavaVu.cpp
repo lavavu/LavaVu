@@ -3470,24 +3470,24 @@ void LavaVu::clearTexture(DrawingObject* target)
   }
 }
 
-void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)
+void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
 {
   if (!amodel || !target) return;
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
-    container->loadTexture(target, array, width, height, channels, flip, bgr);
+    container->loadTexture(target, array, width, height, channels, flip, filter, bgr);
     reloadObject(target);
   }
 }
 
-void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)
+void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
 {
   if (!amodel || !target) return;
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
-    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, bgr);
+    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, filter, bgr);
     reloadObject(target);
   }
 }

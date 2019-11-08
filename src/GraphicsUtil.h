@@ -85,6 +85,8 @@
 //Get eye pos vector z by multiplying vertex by modelview matrix
 #define eyePlaneDistance_(M,V) -(M[0][2] * V[0] + M[1][2] * V[1] + M[2][2] * V[2] + M[3][2]);
 
+#define printRGB(v) printf("[%d,%d,%d]\n",v[0],v[1],v[2]);
+#define printRGBA(v) printf("[%d,%d,%d,%d]\n",v[0],v[1],v[2],v[3]);
 #define printVertex(v) printf("%9f,%9f,%9f\n",v[0],v[1],v[2]);
 // Print out a matrix
 #define printMatrix(mat) {              \

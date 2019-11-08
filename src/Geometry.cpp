@@ -1111,6 +1111,7 @@ void Geometry::setState(Geom_Ptr g)
   Properties& props = g->draw->properties;
 
   //Textured? - can be per element, so always execute
+  //printf("(%s) Use texture on %p : %p\n", GeomData::names[type].c_str(), g.get(), g->texture.get());
   TextureData* texture = draw->useTexture(g->texture);
   GL_Error_Check;
 
@@ -1118,7 +1119,7 @@ void Geometry::setState(Geom_Ptr g)
   if (draw == cached) return;
   cached = draw;
 
-  //printf("SETSTATE %s\n", g->draw->name().c_str());
+  //printf("SETSTATE %s TEXTURE %p\n", g->draw->name().c_str(), texture);
   bool lighting = props["lit"];
   //Don't light surfaces in 2d models
   if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal)
@@ -2071,7 +2072,8 @@ void Geometry::print(std::ostream& os)
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     os << GeomData::names[type] << " [" << i << "] - "
-       << (drawable(i) ? "shown" : "hidden") << std::endl;
+       << (drawable(i) ? "shown" : "hidden")
+       << " " << geom[i]->width << " x " << geom[i]->height << " x " << geom[i]->depth << std::endl;
   }
 }
 
@@ -2142,7 +2144,7 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   Geom_Ptr geomdata = getObjectStore(draw);
   if (geomdata)
   {
-    //printf("Set texture on %p to %s\n", geomdata.get(), tex->fn.full.c_str());
+    //printf("(%s) Set texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), tex.get());
     geomdata->texture = tex;
   }
 }
@@ -2164,7 +2166,8 @@ void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLu
   Geom_Ptr geomdata = getObjectStore(draw);
   if (geomdata)
   {
-    //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
+    //printf("(%s) Load texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), geomdata->texture.get());
+    //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
     //NOTE: must only load the data here, can't make OpenGL calls as can be called async
     geomdata->texture->filter = filter;
     geomdata->texture->bgr = bgr;
@@ -2825,6 +2828,13 @@ void Glyphs::update()
 
 void Glyphs::draw()
 {
+  if (geom.size() > 0 && (geom[0]->texture->texture || geom[0]->texture->source))
+  {
+    tris->setTexture(geom[0]->draw, geom[0]->texture);
+    lines->setTexture(geom[0]->draw, geom[0]->texture);
+    points->setTexture(geom[0]->draw, geom[0]->texture);
+  }
+
   if (lines->total)
     lines->draw();
 
