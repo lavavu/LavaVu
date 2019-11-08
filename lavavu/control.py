@@ -542,7 +542,7 @@ class FillWindow(_Container):
         style += 'min-height: ' + str(self.minheight) + '; '
         html = ""
         html += '<div>\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style + 'margin: 0px; border: 1px solid #aaa; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style + 'margin: 0px; border: 0px; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
         html += """
            <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
              <select onchange="_wi['---VIEWERID---'].box.mode = this.value;">
