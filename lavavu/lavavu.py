@@ -2102,10 +2102,16 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #self._kwargs["usequeue"] = True #Switch on command queuing
 
         #Render event handling loop!
+        timer = 0
         while not self._closing:
             #Process interactive and timer events
-            if self.viewer.events():
-                self.viewer.execute()
+            FPS = self.viewer.timer_animate  #FPS for animate timer
+            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+            if timer >= self.TIMER_INC:
+                #Process this every TIMER_INC milliseconds
+                if self.viewer.events():
+                    self.viewer.execute()
+                timer = 0
 
             #Process commands that must be run on the render thread
             if len(self._q):
@@ -2125,9 +2131,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     method(*args, **kwargs)
                 method = None
 
-            FPS = self.viewer.timer_animate  #FPS for frame timer
-            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-            time.sleep(self.TIMER_INC)
+            #Sleep for 1 millisecond
+            time.sleep(0.001)
+            timer += 1
 
             #Detect window closed
             if self.viewer.quitProgram:
