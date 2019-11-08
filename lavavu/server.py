@@ -114,10 +114,11 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self.serveResponse(bytearray(state, 'utf-8'), 'text/plain; charset=utf-8')
             #self.serveResponse(bytearray(state, 'utf-8'), 'text/plain')
         elif self.path.find('connect') > 0:
-            url = query['url'][0]
-            #Save first valid connection URL on the viewer
-            if len(lv._url) == 0:
-                lv._url = url
+            if 'url' in query:
+                #Save first valid connection URL on the viewer
+                url = query['url'][0]
+                if len(lv._url) == 0:
+                    lv._url = url
             uid = id(lv)
             self.serveResponse(bytearray(str(uid), 'utf-8'), 'text/plain; charset=utf-8')
         elif self.path.find('key=') > 0:
