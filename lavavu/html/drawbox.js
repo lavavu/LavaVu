@@ -243,7 +243,7 @@ BoxRenderer.prototype.box = function(min, max) {
   this.elements = 24+24+6;
 }
 
-BoxRenderer.prototype.draw = function(webgl) {
+BoxRenderer.prototype.draw = function(webgl, nobox, noaxes) {
   if (!this.elements) return;
 
   if (this.program.attributes["aVertexPosition"] == undefined) return; //Require vertex buffer
@@ -263,17 +263,23 @@ BoxRenderer.prototype.draw = function(webgl) {
   //Line box render
   this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
   //Bounding box
-  this.gl.uniform4f(this.program.uniforms["uColour"], this.colour[0], this.colour[1], this.colour[2], this.colour[3]);
-  this.gl.drawElements(this.gl.LINES, 24, this.gl.UNSIGNED_SHORT, 0);
-  //10% box
+  if (!nobox) {
+    this.gl.uniform4f(this.program.uniforms["uColour"], this.colour[0], this.colour[1], this.colour[2], this.colour[3]);
+    this.gl.drawElements(this.gl.LINES, 24, this.gl.UNSIGNED_SHORT, 0);
+  }
+
+  //10% box (always draw)
   this.gl.drawElements(this.gl.LINES, 24, this.gl.UNSIGNED_SHORT, 24 * 2);
+
   //Axes (2 bytes per unsigned short)
-  this.gl.uniform4f(this.program.uniforms["uColour"], 1.0, 0.0, 0.0, 1.0);
-  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24) * 2);
-  this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 1.0, 0.0, 1.0);
-  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+2) * 2);
-  this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 0.0, 1.0, 1.0);
-  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+4) * 2);
+  if (!noaxes) {
+    this.gl.uniform4f(this.program.uniforms["uColour"], 1.0, 0.0, 0.0, 1.0);
+    this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24) * 2);
+    this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 1.0, 0.0, 1.0);
+    this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+2) * 2);
+    this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 0.0, 1.0, 1.0);
+    this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+4) * 2);
+  }
 
   //Disable attribs
   for (var key in this.program.attributes)
@@ -709,8 +715,14 @@ BoxViewer.prototype.draw = function() {
   this.webgl.view(this);
 
   //Render objects
-  this.border.draw(this.webgl);
+  this.border.draw(this.webgl, false, true);
 
+    //Remove translation and re-render axes
+    var tr = this.translate.slice();
+    this.translate = [0,0,-this.modelsize*1.25];
+    this.webgl.apply(this);
+    this.border.draw(this.webgl, true, false);
+    this.translate = tr;
 }
 
 BoxViewer.prototype.syncRotation = function() {
