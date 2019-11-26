@@ -660,8 +660,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
-  if (viewer->render_thread != std::this_thread::get_id())
-    abort_program("FATAL: must call command parse from render thread");
+  GL_Check_Thread(viewer->render_thread);
 
   //Parse the line
   PropertyParser parsed = PropertyParser();
@@ -836,6 +835,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       value = fval;
     session.globals[action] = value;
     printMessage("Set global %s to %.2f", action.c_str(), value);
+  }
+  else if (parsed.exists("cache"))
+  {
+    if (gethelp)
+    {
+      help += "Load all timesteps into cache\n\n"
+              "**Usage:** cache\n\n";
+      return false;
+    }
+    amodel->cacheLoad();
   }
   else if (parsed.exists("interactive"))
   {
@@ -2634,12 +2643,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Disables all sorting
       session.globals["sort"] = false;
       printMessage("Geometry sorting has been disabled");
+      redisplay = false;
     }
     else if (parsed["sort"] == "on")
     {
       //Enables sort on rotate mode
       session.globals["sort"] = true;
       printMessage("Sort geometry on rotation enabled");
+      redisplay = false;
     }
     else
     {
