@@ -315,7 +315,7 @@ int FontManager::printWidth(const char *string)
 
 #else //USE_FONTS
 void FontManager::init(std::string& path, RenderContext* context) {this->context = context;}
-Colour FontManager::setFont(Properties& properties, float scaling) {return Colour();}
+Colour FontManager::setFont(Properties& properties, float scaling, bool print3d) {return Colour();}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str, bool scale2d) {}
@@ -713,6 +713,8 @@ void ImageLoader::loadTIFF()
 
 int ImageLoader::build(ImageData* image)
 {
+  //std::cout << "LOAD TEXTURE: THREAD " << std::this_thread::get_id() << std::endl;
+
   if (!image && !source) return 0;
   if (!image) image = source;
   if (!texture)
