@@ -74,6 +74,12 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
         data_string = self.rfile.read(int(self.headers['Content-Length']))
         self.serveResponse(b'', 'text/plain')
         #cmds = str(data_string, 'utf-8') #python3 only
+        try: #Python3
+            from urllib.parse import unquote
+            data_string = unquote(data_string)
+        except: #Python2
+            from urllib import unquote
+            data_string = unquote(data_string).decode('utf8')
         cmds = str(data_string.decode('utf-8'))
         #Run viewer commands
         self._execute(cmds)
