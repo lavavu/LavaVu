@@ -431,6 +431,8 @@ void Volumes::update()
 
   if (session.global("sort"))
     sort();
+  else
+    sorted = geom;
 }
 
 void Volumes::render(Geom_Ptr g)
@@ -668,6 +670,7 @@ void Volumes::render(Geom_Ptr g)
   //Calibrate colourmap on data now so if colour bar drawn it will have correct range
   g->colourCalibrate();
   session.context.pop();
+  glUseProgram(0);
 }
 
 ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles)
