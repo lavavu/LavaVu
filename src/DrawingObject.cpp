@@ -102,7 +102,8 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
   {
     //Attempt to load by name
     std::string data = prop;
-    if (data.length() == 0) return NULL;
+    if (data.length() == 0)
+      return NULL;
 
     //Search defined colourmaps by name
     for (unsigned int i=0; i < session.colourMaps->size(); i++)
@@ -132,6 +133,8 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     //Load the data array
     current->loadPaletteJSON(prop);
   }
+  else if (prop.is_null())
+    return NULL;
 
   if (current)
     //Replace property data with name of loaded map

@@ -379,6 +379,18 @@ function Merge(obj1, obj2) {
       obj1[p] = obj2[p];
     }
   }
+
+  //Clear any keys in obj1 that are not in obj2
+  for (var p in obj1) {
+    //console.log(p + " ==> " + typeof(p));
+    var exists = p in obj2;
+    if (!obj1.hasOwnProperty(p)) continue; //Ignore built in keys
+    if (!exists && obj1[p].constructor != Object && obj1[p].constructor != Array) {
+      //Just delete
+      delete obj1[p]
+    }
+  }
+
   return obj1;
 }
 
@@ -490,9 +502,9 @@ BoxViewer.prototype.loadFile = function(source) {
     if (this.vis.colourmaps[c].name != src.colourmaps[c].name || 
         this.vis.colourmaps[c].colours.length != src.colourmaps[c].colours.length) {
       //Delete the colourmap folder for this map, will be re-created
-      if (this.cgui && this.cgui.folders[this.vis.colourmaps[c].name]) {
-        this.cgui.removeFolder(this.cgui.folders[this.vis.colourmaps[c].name]);
-        this.cgui.folders[this.vis.colourmaps[c].name] = undefined;
+      if (this.cgui && this.cgui.__folders[this.vis.colourmaps[c].name]) {
+        this.cgui.removeFolder(this.cgui.__folders[this.vis.colourmaps[c].name]);
+        this.cgui.__folders[this.vis.colourmaps[c].name] = undefined;
       }
       //Clear all the colours so new data will replace in merge
       this.vis.colourmaps[c].colours = undefined;
@@ -589,7 +601,7 @@ BoxViewer.prototype.loadFile = function(source) {
             if (this.vis.objects[o].name == target) {
               if (idx != null && idx >= 0)
                 val = val[idx];
-              //console.log("SET " + id + " : ['" + property + "'] VALUE TO " + val);
+              //console.log(target + " ==> SET " + id + " : ['" + property + "'] VALUE TO " + val);
               //console.log("TAG: " + children[i].tagName);
               if (children[i].type == 'checkbox')
                 children[i].checked = val;

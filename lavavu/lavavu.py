@@ -1133,6 +1133,7 @@ class Object(dict):
             data = None
         else:
             if data is None:
+                self.parent._get() #Ensure in sync
                 cmid = self["colourmap"]
                 if cmid:
                     #Just return the existing map

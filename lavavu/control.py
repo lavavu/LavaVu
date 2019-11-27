@@ -1234,19 +1234,6 @@ class ColourMaps(_MultiControl):
         self.gradient.label = self.label
         self.add(self.gradient) #Add control list
 
-    def onchange(self):
-        #Find the saved palette entry and load it
-        script = """
-        var el = document.getElementById('---PALLID---_canvas'); 
-        var sel = document.getElementById('---ELID---');
-        if (sel.selectedIndex > 0) {
-          el.selectedIndex = sel.selectedIndex-1;
-          el.currentmap = el.colourmaps[el.selectedIndex];
-          el.gradient.read(el.currentmap.colours);
-        }
-        """
-        return script + super(ColourMaps, self).onchange()
-
     def controls(self):
         html = self.list.controls() + self.gradient.controls()
         html = html.replace('---PALLID---', str(self.gradient.elid))
