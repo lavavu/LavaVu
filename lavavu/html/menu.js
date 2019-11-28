@@ -61,17 +61,39 @@ function menu_addctrl(menu, obj, viewer, prop, changefn) {
     //Select from list of options
     menu.add(obj, prop, ctrl[2]).onFinishChange(changefn);
 
-  } else if ((dtype.indexOf('real') >= 0 || dtype.indexOf('integer') >= 0) && typeof(obj[prop]) == 'number') {
+  } else if ((dtype.indexOf('real') >= 0 || dtype.indexOf('integer') >= 0)) { // && typeof(obj[prop]) == 'number') {
+
     //Ranged?
     var range = menu_getrange(obj, ctrl);
-    //console.log("GOT RANGE " + prop + " " + JSON.stringify(range));
-    if (range) {
-      //Check value within range
-      if (obj[prop] < range[0]) obj[prop] = range[0];
-      if (obj[prop] > range[1]) obj[prop] = range[1];
-      menu.add(obj, prop, range[0], range[1], ctrl[1][2]).onFinishChange(changefn);
-    } else {
-      menu.add(obj, prop).onFinishChange(changefn);
+    var addnumeric = function(menu, obj, prop, range, changefn) {
+      if (range) {
+        if (obj[prop] < range[0]) obj[prop] = range[0];
+        if (obj[prop] > range[1]) obj[prop] = range[1];
+        return menu.add(obj, prop, range[0], range[1], ctrl[1][2]).onFinishChange(changefn);
+      } else {
+        return menu.add(obj, prop).onFinishChange(changefn);
+      }
+    }
+
+    //Array quantities
+    var dims = 1;
+    var p0 = dtype.indexOf('[');
+    var p1 = dtype.indexOf(']');
+    if (p0 >= 0 && p1 >= 0)
+      dims = parseInt(dtype.slice(p0+1, p1));
+    if (dims > 1) {
+      //2d, 3d ?
+      for (var d=0; d<dims; d++) {
+        //console.log("Adding DIM " + d);
+        var added = addnumeric(menu, obj[prop], "" + d, range, changefn)
+        added.name(prop + '[' + d + ']');
+      }
+
+    //Only add if a number, anything else will cause dat.gui to error
+    } else if (typeof(obj[prop]) == 'number') {
+      //1d
+      console.log("Adding ", prop, typeof(obj[prop]));
+      addnumeric(menu, obj, prop, range, changefn)
     }
 
   } else if (dtype === 'string' || dtype === 'boolean') {
@@ -344,7 +366,7 @@ function createColourMapMenu(viewer, onchange, webglmode) {
     //Add a colourmap from list of defaults
     cmapaddfn = function(value) {
       if (!value || !value.length) return;
-      viewer.command("colourmap " + value + " " + value);
+      viewer.command("select; colourmap " + value + " " + value);
       viewer.gui.close();
     };
 

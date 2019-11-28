@@ -1528,17 +1528,14 @@ class _ControlFactory(object):
                 #Has selections
                 return self.List(property, *args, **kwargs)
             if "integer" in T or "real" in T:
-                if len(ctrl) > 1 and len(ctrl[1]) == 3:
-                    #Has range
-                    return self.Range(property, *args, **kwargs)
+                hasrange = len(ctrl) > 1 and len(ctrl[1]) == 3
+                #Multi-dimensional?
+                if "[2]" in T:
+                    return self.Range2D(property, *args, **kwargs) if hasrange else self.Number2D(property, *args, **kwargs)
+                elif "[3]" in T:
+                    return self.Range3D(property, *args, **kwargs) if hasrange else self.Number3D(property, *args, **kwargs)
                 else:
-                    #Has range
-                    if "[2]" in T:
-                       return self.Number2D(property, *args, **kwargs)
-                    elif "[3]" in T:
-                       return self.Number3D(property, *args, **kwargs)
-                    else:
-                        return self.Number(property, *args, **kwargs)
+                    return self.Range(property, *args, **kwargs) if hasrange else self.Number(property, *args, **kwargs)
             elif T == "string":
                 return self.Entry(property, *args, **kwargs)
             elif T == "boolean":
