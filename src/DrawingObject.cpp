@@ -172,7 +172,8 @@ void DrawingObject::setup()
       {
         //std::cout << "MOVING PROPERTY TO COLOURMAP: " << p << " : " << properties[p] << std::endl;
         colourMap->properties.data[p] = properties[p];
-        properties.data.erase(p);
+        //Just copy, don't delete from object so it remains present for editing
+        //properties.data.erase(p);
       }
     }
   }
