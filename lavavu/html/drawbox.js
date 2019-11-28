@@ -382,10 +382,9 @@ function Merge(obj1, obj2) {
 
   //Clear any keys in obj1 that are not in obj2
   for (var p in obj1) {
-    //console.log(p + " ==> " + typeof(p));
-    var exists = p in obj2;
     if (!obj1.hasOwnProperty(p)) continue; //Ignore built in keys
-    if (!exists && obj1[p].constructor != Object && obj1[p].constructor != Array) {
+    if (p in obj2) continue;
+    if (typeof(obj1[p]) != 'object') {
       //Just delete
       delete obj1[p]
     }
