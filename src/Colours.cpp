@@ -61,38 +61,45 @@ void Colour::fromJSON(json& jvalue)
 {
   //Will accept integer colour or [r,g,b,a] array or 
   // string containing x11 name or hex #rrggbb or html rgba(r,g,b,a) 
-  if (jvalue.is_number())
+  try
   {
-    value = jvalue;
-  }
-  else if (jvalue.is_array())
-  {
-    float R = jvalue[0];
-    float G = jvalue[1];
-    float B = jvalue[2];
-    float A = 1.0;
-    if (jvalue.size() > 3) A = jvalue[3];
-    if (R <= 1.0 && G <= 1.0 && B <= 1.0)
+    if (jvalue.is_number())
     {
-      r = _FTOC(R);
-      g = _FTOC(G);
-      b = _FTOC(B);
+      value = jvalue;
     }
-    else
+    else if (jvalue.is_array())
     {
-      r = R;
-      g = G;
-      b = B;
-    }
+      float R = jvalue[0];
+      float G = jvalue[1];
+      float B = jvalue[2];
+      float A = 1.0;
+      if (jvalue.size() > 3) A = jvalue[3];
+      if (R <= 1.0 && G <= 1.0 && B <= 1.0)
+      {
+        r = _FTOC(R);
+        g = _FTOC(G);
+        b = _FTOC(B);
+      }
+      else
+      {
+        r = R;
+        g = G;
+        b = B;
+      }
 
-    //Parse alpha separately, allows [0-255] RGB + [0,1] A
-    a = A <= 1.0 ? _FTOC(A) : A;
+      //Parse alpha separately, allows [0-255] RGB + [0,1] A
+      a = A <= 1.0 ? _FTOC(A) : A;
+    }
+    else if (jvalue.is_string())
+    {
+      fromString(jvalue);
+    }
+    //std::cout << "COLOUR: " << std::setw(2) << jvalue << " ==> " << *this << std::endl;
   }
-  else if (jvalue.is_string())
+  catch (std::exception& e)
   {
-    fromString(jvalue);
+    std::cerr << "Failed to parse json colour: " << jvalue << " : " << e.what() << std::endl;
   }
-  //std::cout << "COLOUR: " << std::setw(2) << jvalue << " ==> " << *this << std::endl;
 }
 
 void Colour::fromString(const std::string& str)

@@ -732,21 +732,26 @@ void View::importProps(bool force)
   if (properties.has("translate"))
   {
     json trans = properties["translate"];
-    setTranslation(trans[0], trans[1], trans[2]);
+    if (trans.is_array())
+      setTranslation(trans[0], trans[1], trans[2]);
   }
 
   if (properties.has("focus"))
   {
     json foc = properties["focus"];
-    focus(foc[0], foc[1], foc[2]);
+    if (foc.is_array())
+      focus(foc[0], foc[1], foc[2]);
   }
 
   if (properties.has("scale"))
   {
     json sc = properties["scale"];
-    scale[0] = sc[0];
-    scale[1] = sc[1];
-    scale[2] = sc[2];
+    if (sc.is_array())
+    {
+      scale[0] = sc[0];
+      scale[1] = sc[1];
+      scale[2] = sc[2];
+    }
   }
 
   //float newmin[3];

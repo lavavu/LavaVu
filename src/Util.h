@@ -497,12 +497,19 @@ public:
 
   std::string get(std::string key, unsigned int idx=0)
   {
-    if (ignoreCase)
-      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-    if (props.find(key) != props.end())
+    try
     {
-      if (idx < props[key].size())
-        return props[key][idx];
+      if (ignoreCase)
+        std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+      if (props.find(key) != props.end())
+      {
+        if (idx < props[key].size())
+          return props[key][idx];
+      }
+    }
+    catch (std::exception& e)
+    {
+      std::cout << "Error : " << e.what() << std::endl;
     }
     return std::string("");
   }

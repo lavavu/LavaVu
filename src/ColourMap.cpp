@@ -672,6 +672,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
   float tickValue;
   unsigned int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
+  if (!tickValues.is_array()) tickValues = json::array({tickValues});
   if (tickValues.size() > ticks) ticks = tickValues.size();
   bool printTicks = colourbarprops["printticks"];
   std::string format = colourbarprops["format"];
@@ -734,7 +735,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
           tickValue = minimum + scaledPos * (maximum - minimum);
         }
       }
-      else
+      else if (tickValues[i-1].is_number())
       {
         /* User specified value */
         /* Calculate scaled position from value */
