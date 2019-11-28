@@ -1858,10 +1858,10 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
 
 void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
-  //Set width & height if provided
-  if (width) geomdata->width = width;
-  if (height) geomdata->height = height;
-  if (depth) geomdata->depth = depth;
+  //Set width & height if provided (but don't overwrite if already set, can be changed after load but must be done explicitly)
+  if (width && !geomdata->width) geomdata->width = width;
+  if (height && !geomdata->height) geomdata->height = height;
+  if (depth && !geomdata->depth) geomdata->depth = depth;
 
   //Read the data
   if (n > 0)
@@ -1891,10 +1891,10 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, const void* data, s
 Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::string label, int width, int height, int depth)
 {
   //Read into given label - for value data only
-  //Set width & height if provided
-  if (width) geom->width = width;
-  if (height) geom->height = height;
-  if (depth) geom->depth = depth;
+  //Set width & height if provided (but don't overwrite if already set, can be changed after load but must be done explicitly)
+  if (width && !geom->width) geom->width = width;
+  if (height && !geom->height) geom->height = height;
+  if (depth && !geom->depth) geom->depth = depth;
 
   //Find labelled value store
   Values_Ptr store = geom->valueContainer(label);
