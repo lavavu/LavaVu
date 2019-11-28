@@ -90,7 +90,12 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      true
+      true,
+      null,
+      [
+        "vector",
+        "line"
+      ]
     ]
   },
   "fontscale": {
@@ -997,7 +1002,7 @@
     "default": 0.0,
     "target": "object(volume)",
     "type": "real",
-    "desc": "Isovalue for dynamic isosurface",
+    "desc": "Isovalue for dynamic isosurface (normalised to [0,1] over actual data range)",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -1550,7 +1555,7 @@
     "default": [],
     "target": "colourmap",
     "type": "colours",
-    "desc": "Colour list (or string), see [Colour map lists] for more information",
+    "desc": "Colour list (or string), X11 colour names, rgb(a) colours or html hex colours",
     "strict": false,
     "redraw": 2,
     "control": [
@@ -1568,7 +1573,7 @@
     "strict": true,
     "redraw": 2,
     "control": [
-      false
+      true
     ]
   },
   "locked": {
@@ -1677,7 +1682,12 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      false
+      true,
+      [
+        0.0,
+        20.0,
+        0.1
+      ]
     ]
   },
   "near": {
@@ -2241,7 +2251,9 @@
     "desc": "Point render maximum count before auto sub-sampling",
     "strict": true,
     "redraw": 0,
-    "control": null
+    "control": [
+      true
+    ]
   },
   "pointdistsample": {
     "default": 0,
