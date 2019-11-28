@@ -639,8 +639,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   //Save in history
-  if (!gethelp)
+  if (!gethelp && cmd != "display" && cmd != "asyncsort" && cmd != "history" && cmd != "idle")
+  {
     history.push_back(cmd);
+    //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
+  }
 
   //If the command contains only one double-quote, append until another received before parsing as a single string
   size_t n = std::count(cmd.begin(), cmd.end(), '"');
@@ -659,7 +662,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
   }
 
-  //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
   GL_Check_Thread(viewer->render_thread);
 
   //Parse the line
@@ -2081,9 +2083,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Set colourmap on object\n\n"
-              "**Usage:** colourmap object [colourmap / data]\n\n"
-              "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
+      help += "Set colourmap on object or create a new colourmap\n\n"
+              "**Usage:** colourmap [colourmap / data]\n"
+              "If an object is selected, the colourmap will be set on that object, otherwise a new colourmap will be created\n\n"
               "colourmap (integer/string) : the index or name of the colourmap to apply (see: \"list colourmaps\")\n"
               "data (string) : data to load into selected object's colourmap, if no colourmap one will be added\n";
       return false;
