@@ -415,7 +415,8 @@ BoxViewer.prototype.exportView = function(nocam) {
     this.view.rotate = this.getRotation();
     this.view.focus = this.focus;
     this.view.translate = this.translate;
-    this.view.scale = this.scale;
+    //Allows scale editing in UI by commenting this
+    //this.view.scale = this.scale;
   }
   /*
    * If we overwrite these, changes from menu will not apply
