@@ -2243,12 +2243,13 @@ int Model::jsonRead(std::string data)
     ColourMap* dest = NULL;
     if (cmaps[i].count("name") > 0)
     {
-      json name = cmaps[i]["name"];
-      if (!name.is_string())
+      json jname = cmaps[i]["name"];
+      if (!jname.is_string())
       {
-        std::cerr << "Error: colourmap name must be a string, skipping: " << name << std::endl;
+        std::cerr << "Error: colourmap name must be a string, skipping: " << jname << std::endl;
         continue;
       }
+      std::string name = jname;
       dest = findColourMap(name);
       if (!dest)
         dest = addColourMap(name);
@@ -2285,13 +2286,14 @@ int Model::jsonRead(std::string data)
   if (len < inobjects.size()) len = inobjects.size();
   for (unsigned int i=0; i < inobjects.size(); i++)
   {
-    json name = inobjects[i]["name"];
-    if (!name.is_string())
+    json jname = inobjects[i]["name"];
+    if (!jname.is_string())
     {
-      std::cerr << "Error: object name must be a string, skipping: " << name << std::endl;
+      std::cerr << "Error: object name must be a string, skipping: " << jname << std::endl;
       continue;
     }
-    DrawingObject* dest = findObject((std::string)name);
+    std::string name = jname;
+    DrawingObject* dest = findObject(name);
     if (!dest)
     {
       dest = new DrawingObject(session, name);
