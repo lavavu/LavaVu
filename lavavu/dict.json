@@ -541,11 +541,51 @@
       true
     ]
   },
-  "xmin": {
-    "default": 1.0,
+  "clipmin": {
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
     "target": "object",
-    "desc": "Object clipping, minimum x",
+    "type": "real[3]",
+    "desc": "Object clipping minimum [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true,
+      [
+        0.0,
+        1.0,
+        0.01
+      ]
+    ]
+  },
+  "clipmax": {
+    "default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "target": "object",
+    "type": "real[3]",
+    "desc": "Object clipping maximum [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true,
+      [
+        0.0,
+        1.0,
+        0.01
+      ]
+    ]
+  },
+  "xmin": {
+    "default": 0.0,
+    "target": "object",
     "type": "real",
+    "desc": "(legacy) Object clipping, minimum x",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -558,10 +598,10 @@
     ]
   },
   "ymin": {
-    "default": 1.0,
+    "default": 0.0,
     "target": "object",
-    "desc": "Object clipping, maximum y",
     "type": "real",
+    "desc": "(legacy) Object clipping, maximum y",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -574,10 +614,10 @@
     ]
   },
   "zmin": {
-    "default": 1.0,
+    "default": 0.0,
     "target": "object",
-    "desc": "Object clipping, minimum z",
     "type": "real",
+    "desc": "(legacy) Object clipping, minimum z",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -590,10 +630,10 @@
     ]
   },
   "xmax": {
-    "default": 0.0,
+    "default": 1.0,
     "target": "object",
-    "desc": "Object clipping, maximum x",
     "type": "real",
+    "desc": "(legacy) Object clipping, maximum x",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -606,10 +646,10 @@
     ]
   },
   "ymax": {
-    "default": 0.0,
+    "default": 1.0,
     "target": "object",
-    "desc": "Object clipping, maximum y",
     "type": "real",
+    "desc": "(legacy) Object clipping, maximum y",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -622,10 +662,10 @@
     ]
   },
   "zmax": {
-    "default": 0.0,
+    "default": 1.0,
     "target": "object",
-    "desc": "Object clipping, maximum z",
     "type": "real",
+    "desc": "(legacy) Object clipping, maximum z",
     "strict": true,
     "redraw": 0,
     "control": [

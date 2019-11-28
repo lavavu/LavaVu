@@ -1260,18 +1260,37 @@ void Geometry::setState(Geom_Ptr g)
     Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
     if (props["clip"])
     {
-      bool xminset = props.has("xmin") || props.hasglobal("xmin");
-      bool yminset = props.has("ymin") || props.hasglobal("ymin");
-      bool zminset = props.has("zmin") || props.hasglobal("zmin");
-      bool xmaxset = props.has("xmax") || props.hasglobal("xmax");
-      bool ymaxset = props.has("ymax") || props.hasglobal("ymax");
-      bool zmaxset = props.has("zmax") || props.hasglobal("zmax");
-      clipMin = Vec3d(xminset ? (float)props["xmin"] : -HUGE_VALF,
-                      yminset ? (float)props["ymin"] : -HUGE_VALF,
-                      zminset && view->is3d ? (float)props["zmin"] : -HUGE_VALF);
-      clipMax = Vec3d(xmaxset ? (float)props["xmax"] : HUGE_VALF,
-                      ymaxset ? (float)props["ymax"] : HUGE_VALF,
-                      zmaxset && view->is3d ? (float)props["zmax"] : HUGE_VALF);
+      //New combined clipping props
+      if (props.has("clipmin") || props.hasglobal("clipmin"))
+      {
+        Properties::toArray<float>(props["clipmin"], clipMin.ref(), 3);
+      }
+      else
+      {
+        //Legacy clipping props
+        bool xminset = props.has("xmin") || props.hasglobal("xmin");
+        bool yminset = props.has("ymin") || props.hasglobal("ymin");
+        bool zminset = props.has("zmin") || props.hasglobal("zmin");
+        clipMin = Vec3d(xminset ? (float)props["xmin"] : -HUGE_VALF,
+                        yminset ? (float)props["ymin"] : -HUGE_VALF,
+                        zminset && view->is3d ? (float)props["zmin"] : -HUGE_VALF);
+      }
+
+      //New combined clipping props
+      if (props.has("clipmax") || props.hasglobal("clipmax"))
+      {
+        Properties::toArray<float>(props["clipmax"], clipMax.ref(), 3);
+      }
+      else
+      {
+        //Legacy clipping props
+        bool xmaxset = props.has("xmax") || props.hasglobal("xmax");
+        bool ymaxset = props.has("ymax") || props.hasglobal("ymax");
+        bool zmaxset = props.has("zmax") || props.hasglobal("zmax");
+        clipMax = Vec3d(xmaxset ? (float)props["xmax"] : HUGE_VALF,
+                        ymaxset ? (float)props["ymax"] : HUGE_VALF,
+                        zmaxset && view->is3d ? (float)props["zmax"] : HUGE_VALF);
+      }
 
       if (props["clipmap"])
       {
@@ -1283,13 +1302,13 @@ void Geometry::setState(Geom_Ptr g)
         clipMax += dmin;
       }
 
-      /*/Fix if any values NaN
+      //Fix if any values NaN
       for (int i=0; i<3; i++)
       {
         if (std::isnan(clipMin[i])) clipMin[i] = -HUGE_VALF;
         if (std::isnan(clipMax[i])) clipMax[i] = HUGE_VALF;
       }
-      printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
+      /*printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
              session.min[2], session.max[0], session.max[1], session.max[2]);
       printf("Clipping %s %f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(),
              clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
