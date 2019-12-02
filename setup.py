@@ -215,12 +215,10 @@ if __name__ == "__main__":
         #32 or 64 bit python interpreter?
         if sys.maxsize > 2**32:
             LIBS = 'lib64'
-            src = 'https://ffmpeg.zeranoe.com/builds/win64/'
-            dst = 'src/windows/lib32/'
+            arc = '64'
         else:
             LIBS = 'lib32'
-            src = 'https://ffmpeg.zeranoe.com/builds/win32/'
-            dst = 'src/windows/lib32/'
+            arc = '32'
 
         #Download, extract and install ffmpeg files
         ffmpeg_dlls = []
@@ -230,8 +228,10 @@ if __name__ == "__main__":
             import vutils
             import zipfile
             import shutil
-            fn1 = 'ffmpeg-4.2.1-win64-shared'
-            fn2 = 'ffmpeg-4.2.1-win64-dev'
+            src = 'https://ffmpeg.zeranoe.com/builds/win' + arc
+            fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
+            fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
+            dst = 'src/windows/lib' + arc + '/'
             outfn = vutils.download(src + '/shared/' + fn1 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
