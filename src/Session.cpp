@@ -270,6 +270,8 @@ void Session::init(std::string& binpath)
   }
 
   //Load the geometry class map
+  //classMap: map of renderer aliases to actual renderer names
+  //typeMap: map of renderer aliases to primitive types
   json r = properties["renderers"]["default"];
   lucGeometryType t = lucMinType;
   for (auto g : r)

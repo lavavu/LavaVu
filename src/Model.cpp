@@ -224,6 +224,8 @@ Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& rende
 
   //Create a renderer if none found...
   //std::cout << "DEFAULT RENDERER NOT FOUND: (so create) " << GeomData::names[type] << std::endl;
+  if (session.globals.count("renderlist"))
+    return NULL; //Do not create new renderers when renderlist set
   Geometry* g = createRenderer(session, GeomData::names[type]);
   geometry.push_back(g);
   return g;
@@ -306,6 +308,16 @@ Geometry* Model::lookupObjectRenderer(DrawingObject* obj, lucGeometryType type)
   }
 
   //std::cout << "RENDERER NOT FOUND: (will create to use) " << name << std::endl;
+  if (session.globals.count("renderlist"))
+  {
+    //Do not create new renderers when renderlist set
+    //Get the base type and return renderer for that
+    //If not found, return point renderer
+    Geometry* g = NULL;
+    g = getRenderer(type);
+    if (!g) g = getRenderer(lucPointType);
+    return g;
+  }
   Geometry* g = createRenderer(session, name);
   geometry.push_back(g);
   return g;
