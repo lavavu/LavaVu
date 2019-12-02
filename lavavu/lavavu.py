@@ -49,7 +49,7 @@ import threading
 import time
 import weakref
 
-from vutils import is_ipython, is_notebook, getname
+from vutils import is_ipython, is_notebook, getname, download, inject, hidecode, style, cellstyle, cellwidth
 
 #import swig module
 import LavaVuPython
@@ -114,6 +114,34 @@ def _convert_args(dictionary):
        Ensure all elements can be converted by using custom encoder
     """
     return str(json.dumps(dictionary, cls=_CustomEncoder))
+
+def _convert(data, dtype=None):
+    #Prepare a data set
+    if not isinstance(data, numpy.ndarray):
+        #Convert to numpy array first
+        data = numpy.asarray(data)
+
+    #Always convert float64 to float32
+    if data.dtype == numpy.float64:
+        data = data.astype(numpy.float32)
+
+    #Transform to requested data type if provided
+    if data.dtype == numpy.float32 and dtype == numpy.uint8:
+        #Convert float[0,1] to uint8 * 255
+        if numpy.amin(data) >= 0.0 and numpy.amax(data) <= 1.0:
+            data *= 255.0
+        data = data.astype(numpy.uint8)
+    elif dtype != None and data.dtype != dtype:
+        data = data.astype(dtype)
+
+    #Masked array? Set fill value to NaN
+    if numpy.ma.is_masked(data):
+        if data.fill_value != numpy.nan:
+            print("Warning: setting masked array fill to NaN, was: ", data.fill_value)
+            numpy.ma.set_fill_value(data, numpy.nan)
+        data = data.filled()
+
+    return data
 
 def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     """
@@ -649,37 +677,9 @@ class Object(dict):
         else:
             self.vertices(data)
 
-    def _convert(self, data, dtype=None):
-        #Prepare a data set
-        if not isinstance(data, numpy.ndarray):
-            #Convert to numpy array first
-            data = numpy.asarray(data)
-
-        #Always convert float64 to float32
-        if data.dtype == numpy.float64:
-            data = data.astype(numpy.float32)
-
-        #Transform to requested data type if provided
-        if data.dtype == numpy.float32 and dtype == numpy.uint8:
-            #Convert float[0,1] to uint8 * 255
-            if numpy.amin(data) >= 0.0 and numpy.amax(data) <= 1.0:
-                data *= 255.0
-            data = data.astype(numpy.uint8)
-        elif dtype != None and data.dtype != dtype:
-            data = data.astype(dtype)
-
-        #Masked array? Set fill value to NaN
-        if numpy.ma.is_masked(data):
-            if data.fill_value != numpy.nan:
-                print("Warning: setting masked array fill to NaN, was: ", data.fill_value)
-                numpy.ma.set_fill_value(data, numpy.nan)
-            data = data.filled()
-
-        return data
-
     def _loadScalar(self, data, geomdtype, width=0, height=0, depth=0):
         #Passes a scalar dataset (float/uint8/uint32)
-        data = self._convert(data)
+        data = _convert(data)
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         if data.dtype == numpy.float32:
@@ -775,7 +775,7 @@ class Object(dict):
         Set D=2 to load 2d data (eg: tex coords) all steps except adding the 3rd dimension are the same
         """
         #Passes a vector dataset (float)
-        data = self._convert(data, numpy.float32)
+        data = _convert(data, numpy.float32)
 
         #Detection of structure based on shape
         shape = data.shape
@@ -900,7 +900,7 @@ class Object(dict):
         label : str
             Label for this data set
         """
-        data = self._convert(data, numpy.float32)
+        data = _convert(data, numpy.float32)
 
         #Use the shape as dims if not provided
         width, height, depth = self._valueDimsFromShape(data)
@@ -969,7 +969,7 @@ class Object(dict):
         """
 
         #Accepts only uint32 indices
-        data = self._convert(data, numpy.uint32)
+        data = _convert(data, numpy.uint32)
         if offset > 0:
             #Convert indices to offset 0 before loading by subtracting offset
             data = numpy.subtract(data, offset)
@@ -988,7 +988,7 @@ class Object(dict):
         """
 
         #Accepts only uint8 rgb triples
-        data = self._convert(data, numpy.uint8)
+        data = _convert(data, numpy.uint8)
 
         #Detection of split r,g,b arrays from shape
         #If data provided as separate r,g,b columns, re-arrange (Must be > 3 elements to detect correctly)
@@ -1011,7 +1011,7 @@ class Object(dict):
         """
 
         #Accepts only uint8 rgba
-        data = self._convert(data, numpy.uint8)
+        data = _convert(data, numpy.uint8)
 
         #Detection of split r,g,b arrays from shape
         #If data provided as separate r,g,b,a columns, re-arrange (Must be > 4 elements to detect correctly)
@@ -1035,7 +1035,7 @@ class Object(dict):
         """
 
         #Accepts only uint8 luminance values
-        data = self._convert(data, numpy.uint8)
+        data = _convert(data, numpy.uint8)
 
         #Use the shape as dims if not provided
         width, height, depth = self._valueDimsFromShape(data)
@@ -1068,7 +1068,7 @@ class Object(dict):
             self.parent.app.clearTexture(self.ref)
             return
 
-        data = self._convert(data)
+        data = _convert(data)
         if len(data.shape) < 2:
             raise ValueError(data.shape + " : Must pass a 2D or 3D data set")
         if len(data.shape) < 3:
@@ -1079,7 +1079,7 @@ class Object(dict):
 
         #Convert floating point data
         if data.dtype == numpy.float32:
-            data = self._convert(data, numpy.uint8)
+            data = _convert(data, numpy.uint8)
         if data.dtype == numpy.uint32:
             self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, filter, bgr)
         elif data.dtype == numpy.uint8:
@@ -4449,7 +4449,7 @@ class DrawData(object):
         """
 
         #Convert to numpy
-        array = self._obj._convert(array)
+        array = _convert(array)
 
         #Attempt to set the dims based on the provided array shape
         dims = [0,0,0]
@@ -4891,149 +4891,6 @@ def printH5(h5):
         print(h5[key])
     for item in h5.attrs.keys():
         print(item + ":", h5.attrs[item])
-
-def download(url, filename=None, overwrite=False, quiet=False):
-    """
-    Download a file from an internet URL
-
-    Parameters
-    ----------
-    url : str
-        URL to request the file from
-    filename : str
-        Filename to save, default is to keep the same name in current directory
-    overwrite : boolean
-        Always overwrite file if it exists, default is to never overwrite
-
-    Returns
-    -------
-    filename : str
-        Actual filename written to local filesystem
-    """
-    #Python 3 moved modules
-    try:
-        from urllib.request import urlopen, URLError, HTTPError
-        from urllib.parse import urlparse
-        from urllib.parse import quote
-    except ImportError:
-        from urllib2 import urlopen, URLError, HTTPError
-        from urllib import quote
-        from urlparse import urlparse
-
-    if filename is None:
-        filename = url[url.rfind("/")+1:]
-
-    if overwrite or not os.path.exists(filename):
-        #Encode url path
-        o = urlparse(url)
-        o = o._replace(path=quote(o.path))
-        url = o.geturl()
-        if not quiet: print("Downloading: " + filename)
-        try:
-            f = urlopen(url)
-            with open(filename, "wb") as out:
-                out.write(f.read())
-        except (Exception) as e:
-            print(str(e), url)
-            raise(e)
-
-    else:
-        if not quiet:
-            print(filename + " exists, skipped downloading.")
-
-    return filename
-
-def inject(html):
-    """
-    Inject HTML into a notebook cell
-    """
-    if not is_notebook():
-        return
-    from IPython.display import display,HTML
-    display(HTML(html))
-
-def injectjs(js):
-    """
-    Inject Javascript into a notebook cell
-    """
-    inject('<script>' + js + '</script>')
-
-def hidecode():
-    """
-    Allow toggle of code cells
-    """
-    inject('''<script>
-    var code_show = '';
-    var menu_edited = false;
-    function code_toggle() {
-      var code_cells = document.getElementsByClassName('CodeMirror');
-      if (code_cells.length == 0) return;
-
-      if (code_show == 'none')
-        code_show = '';
-      else
-        code_show = 'none';
-
-      for (var x=0; x<code_cells.length; x++) {
-        var el = code_cells[x].parentElement;
-        el.style.display = code_show;
-
-        //Show cell code on double click
-        var p = el.parentElement.parentElement;
-        p.ondblclick = function() {
-          var pel = this.parentElement;
-          var all = pel.getElementsByTagName('*');
-          for (var i = 0; i < all.length; i++) {
-            if (all[i].classList.contains('CodeMirror')) {
-              all[i].parentElement.style.display = '';
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    if (!menu_edited) {
-      menu_edited = true;
-      var mnu = document.getElementById("view_menu");
-      console.log(mnu)
-      if (mnu) {
-        var element = document.createElement('li');
-        element.id = 'toggle_toolbar';
-        element.title = 'Show/Hide code cells'
-        element.innerHTML = "<a href='javascript:code_toggle()'>Toggle Code Cells</a>"
-        mnu.appendChild(element);
-      }
-    }
-    code_toggle();
-    </script>
-    The code for this notebook is hidden <a href="#" onclick="code_toggle()">Click here</a> to show/hide code.''')
-
-def style(css):
-    """
-    Inject stylesheet
-    """
-    inject("<style>" + css + "</style>")
-
-def cellstyle(css):
-    """
-    Override the notebook cell styles
-    """
-    style("""
-    div.container {{
-        {css}
-    }}
-    """.format(css=css))
-
-def cellwidth(width='99%'):
-    """
-    Override the notebook cell width
-    """
-    cellstyle("""
-    width:{width} !important;
-    margin-left:1%;
-    margin-right:auto;
-    """.format(width=width))
 
 def _docmd(doc):
     """Convert a docstring to markdown"""
