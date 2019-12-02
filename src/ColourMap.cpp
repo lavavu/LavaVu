@@ -688,7 +688,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
   for (unsigned int i = 0; i < ticks+2; i++)
   {
     /* Get tick value */
-    float scaledPos;
+    float scaledPos = 0.0;
     if (i==0)
     {
       /* Start tick */
