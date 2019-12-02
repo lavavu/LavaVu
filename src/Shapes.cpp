@@ -68,7 +68,6 @@ void Shapes::update()
       //Plotting points as spheres/cuboids, set some defaults
       float scale0 = (float)props["scalepoints"];
       float diam = (float)props["pointsize"] / 8.0 * scale0;
-      if (props.has("radius")) diam = 2.0 * (float)props["radius"];
       dims[0] = dims[1] = dims[2] = diam;
       //Lower default sphere quality
       //quality = props.getInt("segments", 16);
@@ -78,6 +77,10 @@ void Shapes::update()
       if (dynamic_cast<Cuboids*>(this))
         shape = 1;
     }
+
+    //Use radius to set size
+    if (props.has("radius"))
+      dims[0] = dims[1] = dims[2] = 2.0 * (float)props["radius"];
 
     //Disable vertex normals for cuboids...
     props.data["vertexnormals"] = (shape != 1);
