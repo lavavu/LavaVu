@@ -34,11 +34,6 @@
   }
 }
 
-%init 
-%{
-import_array();
-%}
-
 %shared_ptr(GeomData)
 
 namespace std 
@@ -235,4 +230,21 @@ public:
 };
 
 std::string rawImageWrite(unsigned char* array, int height, int width, int depth, std::string path, int jpegquality=0);
+
+class VideoEncoder
+{
+public:
+  std::string filename = "";
+  VideoEncoder(const std::string& fn, int fps, int quality=3);
+  ~VideoEncoder();
+
+  //OutputInterface
+  virtual void open(unsigned int w, unsigned int h);
+  virtual void close();
+  virtual void resize(unsigned int new_width, unsigned int new_height);
+  virtual void display();
+
+  //Custom frame write
+  void copyframe(unsigned char* array, int len);
+};
 

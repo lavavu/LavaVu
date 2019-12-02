@@ -556,5 +556,21 @@ LavaVu_swigregister(LavaVu)
 def rawImageWrite(array, path, jpegquality=0):
     return _LavaVuPython.rawImageWrite(array, path, jpegquality)
 rawImageWrite = _LavaVuPython.rawImageWrite
+class VideoEncoder(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    filename = _swig_property(_LavaVuPython.VideoEncoder_filename_get, _LavaVuPython.VideoEncoder_filename_set)
+
+    def __init__(self, fn, fps, quality=3):
+        _LavaVuPython.VideoEncoder_swiginit(self, _LavaVuPython.new_VideoEncoder(fn, fps, quality))
+    __swig_destroy__ = _LavaVuPython.delete_VideoEncoder
+VideoEncoder.open = new_instancemethod(_LavaVuPython.VideoEncoder_open, None, VideoEncoder)
+VideoEncoder.close = new_instancemethod(_LavaVuPython.VideoEncoder_close, None, VideoEncoder)
+VideoEncoder.resize = new_instancemethod(_LavaVuPython.VideoEncoder_resize, None, VideoEncoder)
+VideoEncoder.display = new_instancemethod(_LavaVuPython.VideoEncoder_display, None, VideoEncoder)
+VideoEncoder.copyframe = new_instancemethod(_LavaVuPython.VideoEncoder_copyframe, None, VideoEncoder)
+VideoEncoder_swigregister = _LavaVuPython.VideoEncoder_swigregister
+VideoEncoder_swigregister(VideoEncoder)
+
 
 

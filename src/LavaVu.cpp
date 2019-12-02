@@ -3011,15 +3011,7 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int 
   if (!encoder)
   {
     if (filename.length() == 0) 
-      filename = session.counterFilename() + ".mp4";
-    FilePath fp(filename);
-#ifndef HAVE_LIBAVCODEC
-    //Just use the base filename when saving frames only
-    filename = fp.base;
-#else
-    if (fp.ext.length() == 0) 
-      filename += ".mp4"; //Default to mp4
-#endif
+      filename = session.counterFilename();
 
     //Set outwidth/height if provided
     if (width > 0) viewer->outwidth = width;
@@ -3030,7 +3022,7 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int 
     if (!viewer->outheight) viewer->outheight = viewer->height;
     //printf("OUTPUT DIMS %d x %d\n", viewer->outwidth, viewer->outheight);
     viewer->outputON(viewer->outwidth, viewer->outheight, 3, true);
-    encoder = new VideoEncoder(filename.c_str(), fps, quality);
+    encoder = new VideoEncoder(filename, fps, quality);
     encoder->open(viewer->getOutWidth(), viewer->getOutHeight());
     viewer->addOutput(encoder);
     viewer->outputOFF();

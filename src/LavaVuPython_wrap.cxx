@@ -3032,34 +3032,35 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_Model swig_types[4]
 #define SWIGTYPE_p_OpenGLViewer swig_types[5]
 #define SWIGTYPE_p_Session swig_types[6]
-#define SWIGTYPE_p_View swig_types[7]
-#define SWIGTYPE_p_allocator_type swig_types[8]
-#define SWIGTYPE_p_char swig_types[9]
-#define SWIGTYPE_p_difference_type swig_types[10]
-#define SWIGTYPE_p_int swig_types[11]
-#define SWIGTYPE_p_lucGeometryDataType swig_types[12]
-#define SWIGTYPE_p_lucGeometryType swig_types[13]
-#define SWIGTYPE_p_p_PyObject swig_types[14]
-#define SWIGTYPE_p_p_float swig_types[15]
-#define SWIGTYPE_p_p_unsigned_char swig_types[16]
-#define SWIGTYPE_p_p_unsigned_int swig_types[17]
-#define SWIGTYPE_p_size_type swig_types[18]
-#define SWIGTYPE_p_std__allocatorT_float_t swig_types[19]
-#define SWIGTYPE_p_std__allocatorT_std__shared_ptrT_GeomData_t_t swig_types[20]
-#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[21]
-#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[22]
-#define SWIGTYPE_p_std__allocatorT_unsigned_char_t swig_types[23]
-#define SWIGTYPE_p_std__invalid_argument swig_types[24]
-#define SWIGTYPE_p_std__shared_ptrT_GeomData_t swig_types[25]
-#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[26]
-#define SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t swig_types[27]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[28]
-#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[29]
-#define SWIGTYPE_p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t swig_types[30]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[31]
-#define SWIGTYPE_p_value_type swig_types[32]
-static swig_type_info *swig_types[34];
-static swig_module_info swig_module = {swig_types, 33, 0, 0, 0, 0};
+#define SWIGTYPE_p_VideoEncoder swig_types[7]
+#define SWIGTYPE_p_View swig_types[8]
+#define SWIGTYPE_p_allocator_type swig_types[9]
+#define SWIGTYPE_p_char swig_types[10]
+#define SWIGTYPE_p_difference_type swig_types[11]
+#define SWIGTYPE_p_int swig_types[12]
+#define SWIGTYPE_p_lucGeometryDataType swig_types[13]
+#define SWIGTYPE_p_lucGeometryType swig_types[14]
+#define SWIGTYPE_p_p_PyObject swig_types[15]
+#define SWIGTYPE_p_p_float swig_types[16]
+#define SWIGTYPE_p_p_unsigned_char swig_types[17]
+#define SWIGTYPE_p_p_unsigned_int swig_types[18]
+#define SWIGTYPE_p_size_type swig_types[19]
+#define SWIGTYPE_p_std__allocatorT_float_t swig_types[20]
+#define SWIGTYPE_p_std__allocatorT_std__shared_ptrT_GeomData_t_t swig_types[21]
+#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[22]
+#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[23]
+#define SWIGTYPE_p_std__allocatorT_unsigned_char_t swig_types[24]
+#define SWIGTYPE_p_std__invalid_argument swig_types[25]
+#define SWIGTYPE_p_std__shared_ptrT_GeomData_t swig_types[26]
+#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[27]
+#define SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t swig_types[28]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[29]
+#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[30]
+#define SWIGTYPE_p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t swig_types[31]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[32]
+#define SWIGTYPE_p_value_type swig_types[33]
+static swig_type_info *swig_types[35];
+static swig_module_info swig_module = {swig_types, 34, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -28518,6 +28519,417 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_VideoEncoder_filename_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"VideoEncoder_filename_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_filename_set" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "VideoEncoder_filename_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "VideoEncoder_filename_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  if (arg1) (arg1)->filename = *arg2;
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_filename_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_filename_get" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  result = (std::string *) & ((arg1)->filename);
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_VideoEncoder__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::string *arg1 = 0 ;
+  int arg2 ;
+  int arg3 ;
+  int res1 = SWIG_OLDOBJ ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  VideoEncoder *result = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    res1 = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_VideoEncoder" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_VideoEncoder" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_VideoEncoder" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_VideoEncoder" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    try {
+      result = (VideoEncoder *)new VideoEncoder((std::string const &)*arg1,arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_VideoEncoder, SWIG_POINTER_NEW |  0 );
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_VideoEncoder__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::string *arg1 = 0 ;
+  int arg2 ;
+  int res1 = SWIG_OLDOBJ ;
+  int val2 ;
+  int ecode2 = 0 ;
+  VideoEncoder *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    res1 = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_VideoEncoder" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_VideoEncoder" "', argument " "1"" of type '" "std::string const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_VideoEncoder" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      result = (VideoEncoder *)new VideoEncoder((std::string const &)*arg1,arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_VideoEncoder, SWIG_POINTER_NEW |  0 );
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_VideoEncoder(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"new_VideoEncoder",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_new_VideoEncoder__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_new_VideoEncoder__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_VideoEncoder'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    VideoEncoder::VideoEncoder(std::string const &,int,int)\n"
+    "    VideoEncoder::VideoEncoder(std::string const &,int)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_VideoEncoder(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_VideoEncoder" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_open(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"VideoEncoder_open",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_open" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "VideoEncoder_open" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "VideoEncoder_open" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    try {
+      (arg1)->open(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_close(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_close" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  {
+    try {
+      (arg1)->close();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_resize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  unsigned int arg2 ;
+  unsigned int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"VideoEncoder_resize",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_resize" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "VideoEncoder_resize" "', argument " "2"" of type '" "unsigned int""'");
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "VideoEncoder_resize" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    try {
+      (arg1)->resize(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_display(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_display" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  {
+    try {
+      (arg1)->display();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_VideoEncoder_copyframe(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  VideoEncoder *arg1 = (VideoEncoder *) 0 ;
+  unsigned char *arg2 = (unsigned char *) 0 ;
+  int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyArrayObject *array2 = NULL ;
+  int is_new_object2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"VideoEncoder_copyframe",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_VideoEncoder, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "VideoEncoder_copyframe" "', argument " "1"" of type '" "VideoEncoder *""'"); 
+  }
+  arg1 = reinterpret_cast< VideoEncoder * >(argp1);
+  {
+    npy_intp size[1] = {
+      -1 
+    };
+    array2 = obj_to_array_contiguous_allow_conversion(swig_obj[1],
+      NPY_UBYTE,
+      &is_new_object2);
+    if (!array2 || !require_dimensions(array2, 1) ||
+      !require_size(array2, size, 1)) SWIG_fail;
+    arg2 = (unsigned char*) array_data(array2);
+    arg3 = (int) array_size(array2,0);
+  }
+  {
+    try {
+      (arg1)->copyframe(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object2 && array2)
+    {
+      Py_DECREF(array2); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object2 && array2)
+    {
+      Py_DECREF(array2); 
+    }
+  }
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *VideoEncoder_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!SWIG_Python_UnpackTuple(args,(char *)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_VideoEncoder, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *VideoEncoder_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  return SWIG_Python_InitShadowInstance(args);
+}
+
 static PyMethodDef SwigMethods[] = {
 	 { "SWIG_PyInstanceMethod_New", SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { "delete_SwigPyIterator", _wrap_delete_SwigPyIterator, METH_O, NULL},
@@ -28869,6 +29281,17 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_swigregister", LavaVu_swigregister, METH_VARARGS, NULL},
 	 { "LavaVu_swiginit", LavaVu_swiginit, METH_VARARGS, NULL},
 	 { "rawImageWrite", _wrap_rawImageWrite, METH_VARARGS, NULL},
+	 { "VideoEncoder_filename_set", _wrap_VideoEncoder_filename_set, METH_VARARGS, NULL},
+	 { "VideoEncoder_filename_get", _wrap_VideoEncoder_filename_get, METH_O, NULL},
+	 { "new_VideoEncoder", _wrap_new_VideoEncoder, METH_VARARGS, NULL},
+	 { "delete_VideoEncoder", _wrap_delete_VideoEncoder, METH_O, NULL},
+	 { "VideoEncoder_open", _wrap_VideoEncoder_open, METH_VARARGS, NULL},
+	 { "VideoEncoder_close", _wrap_VideoEncoder_close, METH_O, NULL},
+	 { "VideoEncoder_resize", _wrap_VideoEncoder_resize, METH_VARARGS, NULL},
+	 { "VideoEncoder_display", _wrap_VideoEncoder_display, METH_O, NULL},
+	 { "VideoEncoder_copyframe", _wrap_VideoEncoder_copyframe, METH_VARARGS, NULL},
+	 { "VideoEncoder_swigregister", VideoEncoder_swigregister, METH_VARARGS, NULL},
+	 { "VideoEncoder_swiginit", VideoEncoder_swiginit, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 
@@ -28882,6 +29305,7 @@ static swig_type_info _swigt__p_LavaVu = {"_p_LavaVu", "LavaVu *", 0, 0, (void*)
 static swig_type_info _swigt__p_Model = {"_p_Model", "Model *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpenGLViewer = {"_p_OpenGLViewer", "OpenGLViewer *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_VideoEncoder = {"_p_VideoEncoder", "VideoEncoder *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_View = {"_p_View", "View *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_allocator_type = {"_p_allocator_type", "allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
@@ -28917,6 +29341,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_Model,
   &_swigt__p_OpenGLViewer,
   &_swigt__p_Session,
+  &_swigt__p_VideoEncoder,
   &_swigt__p_View,
   &_swigt__p_allocator_type,
   &_swigt__p_char,
@@ -28952,6 +29377,7 @@ static swig_cast_info _swigc__p_LavaVu[] = {  {&_swigt__p_LavaVu, 0, 0, 0},{0, 0
 static swig_cast_info _swigc__p_Model[] = {  {&_swigt__p_Model, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpenGLViewer[] = {  {&_swigt__p_OpenGLViewer, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_VideoEncoder[] = {  {&_swigt__p_VideoEncoder, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_View[] = {  {&_swigt__p_View, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_allocator_type[] = {  {&_swigt__p_allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
@@ -28987,6 +29413,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_Model,
   _swigc__p_OpenGLViewer,
   _swigc__p_Session,
+  _swigc__p_VideoEncoder,
   _swigc__p_View,
   _swigc__p_allocator_type,
   _swigc__p_char,
@@ -29704,9 +30131,6 @@ SWIG_init(void) {
   SWIG_InstallConstants(d,swig_const_table);
   
   SWIG_Python_SetConstant(d, "SHARED_PTR_DISOWN",SWIG_From_int(static_cast< int >(0)));
-  
-  import_array();
-  
   
   import_array();
   

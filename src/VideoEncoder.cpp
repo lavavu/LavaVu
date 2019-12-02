@@ -29,14 +29,37 @@
 #include "VideoEncoder.h"
 #include "GraphicsUtil.h"
 
-VideoEncoder::VideoEncoder(const char *filename, int fps, int quality) : filename(filename), fps(fps), quality(quality)
+VideoEncoder::VideoEncoder(const std::string& fn, int fps, int quality) : filename(fn), fps(fps), quality(quality)
 {
+    FilePath fp(filename);
+#ifndef HAVE_LIBAVCODEC
+    //Just use the base filename when saving frames only
+    filename = fp.base;
+#else
+    if (fp.ext.length() == 0)
+      filename += ".mp4"; //Default to mp4
+#endif
 }
 
 VideoEncoder::~VideoEncoder()
 {
   //If not already closed, close recording
-  if (buffer) close();
+  if (width && height)
+    close();
+}
+
+void VideoEncoder::copyframe(unsigned char* array, int len)
+{
+  if (!buffer)
+    alloc();
+  if (!buffer || buffer->width * buffer->height * buffer->channels != (unsigned)len)
+    std::cerr << len << " Invalid frame size for video buffer " << width << " x " << height << " x " << channels << std::endl;
+  else
+    buffer->copy(array);
+
+
+  buffer->write("temp.png");
+  display();
 }
 
 #ifndef HAVE_LIBAVCODEC
@@ -57,6 +80,7 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 
 void VideoEncoder::close()
 {
+  width = height = 0;
   frame = 0;
 }
 
@@ -358,6 +382,7 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
   oc->oformat = defaultCodec(filename.c_str());
 
   /* Codec override, use h264 for mp4 if available */
+  //Always used if available, unless extension is .mpg, in which case we fall back to mpeg1
   if (filename.find(".mp4") != std::string::npos && avcodec_find_encoder(AV_CODEC_ID_H264))
     oc->oformat->video_codec = AV_CODEC_ID_H264; //h.264
 
@@ -443,6 +468,8 @@ void VideoEncoder::close()
 
   /* free the stream */
   av_free(oc);
+
+  width = height = 0;
 }
 
 void VideoEncoder::resize(unsigned int new_width, unsigned int new_height)

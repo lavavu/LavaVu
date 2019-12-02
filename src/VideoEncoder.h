@@ -115,9 +115,9 @@ extern "C"
 
 class VideoEncoder : public OutputInterface
 {
-  std::string filename = "";
 public:
-  VideoEncoder(const char *filename, int fps, int quality=VIDEO_HIGHQ);
+  std::string filename = "";
+  VideoEncoder(const std::string& fn, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();
 
   //OutputInterface
@@ -125,6 +125,8 @@ public:
   virtual void close();
   virtual void resize(unsigned int new_width, unsigned int new_height);
   virtual void display();
+
+  void copyframe(unsigned char* array, int len);
 
 protected:
   int fps;

@@ -13,7 +13,7 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 
 """
 
-__all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
+__all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image', 'Video',
            'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp',
            'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
@@ -3553,43 +3553,6 @@ class Viewer(dict):
             print("Video output error: " + str(e))
             pass
 
-    def player(self, filename):
-        """
-        Shows a video inline within an ipython notebook.
-
-        If IPython is not running, just returns
-
-
-        Parameters
-        ----------
-        filename : str
-            Path and name of the file to play
-        """
-
-        try:
-            if is_notebook():
-                from IPython.display import display,HTML
-                html = """
-                <video controls loop>
-                  <source src="{fn1}">
-                  <source src="{fn2}">
-                Sorry, your browser doesn't support embedded videos, 
-                </video><br>
-                <a href="{fn2}">Download Video</a>
-                """
-                #Jupyterlab adds it's own timestamp but notebook doesn't
-                #don't know a way to detect jupyterlab, so provide source url with and without
-                #Browser should load the first working url
-                import uuid
-                uid = uuid.uuid1()
-                #Append a UUID based on host ID and current time
-                filename_ts = filename + "?" + str(uid)
-                html = HTML(html.format(fn1=filename_ts, fn2=filename))
-                display(html)
-        except (Exception) as e:
-            print("Video output error: " + str(e))
-            pass
-
     def rawimage(self, resolution=(640, 480), channels=3):
         """
         Return raw image data
@@ -4499,6 +4462,43 @@ class DrawData(object):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
+def player(filename):
+    """
+    Shows a video inline within an ipython notebook.
+
+    If IPython is not running, just returns
+
+
+    Parameters
+    ----------
+    filename : str
+        Path and name of the file to play
+    """
+
+    try:
+        if is_notebook():
+            from IPython.display import display,HTML
+            html = """
+            <video controls loop>
+              <source src="{fn1}">
+              <source src="{fn2}">
+            Sorry, your browser doesn't support embedded videos, 
+            </video><br>
+            <a href="{fn2}">Download Video</a>
+            """
+            #Jupyterlab adds it's own timestamp but notebook doesn't
+            #don't know a way to detect jupyterlab, so provide source url with and without
+            #Browser should load the first working url
+            import uuid
+            uid = uuid.uuid1()
+            #Append a UUID based on host ID and current time
+            filename_ts = filename + "?" + str(uid)
+            html = HTML(html.format(fn1=filename_ts, fn2=filename))
+            display(html)
+    except (Exception) as e:
+        print("Video output error: " + str(e))
+        pass
+
 #Class for managing video animation recording
 class Video(object):
     """
@@ -4515,18 +4515,25 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer, filename="", resolution=(0,0), framerate=30, quality=1):
+    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=1):
         self.resolution = resolution
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
         self.filename = filename
+        if not viewer:
+            self.encoder = LavaVuPython.VideoEncoder(filename, framerate, quality);
 
     def start(self):
         """
         Start recording, all rendered frames will be added to the video
         """
-        self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality, self.resolution[0], self.resolution[1])
+        if self.encoder:
+            if self.resolution[0] <= 0: self.resolution[0] = 1280
+            if self.resolution[1] <= 0: self.resolution[1] = 720
+            self.encoder.open(self.resolution[0], self.resolution[1])
+        else:
+            self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality, self.resolution[0], self.resolution[1])
         #Clear existing image frames
         if os.path.isdir(self.filename):
             for f in glob.glob(self.filename + "/frame_*.jpg"):
@@ -4537,7 +4544,11 @@ class Video(object):
         Stop recording, final frames will be written and file closed, ready to play. 
         No further frames will be added to the video
         """
-        self.viewer.app.encodeVideo()
+        if self.encoder:
+            self.encoder.close()
+            self.filename = self.encoder.filename
+        else:
+            self.viewer.app.encodeVideo()
         #Check if encoded video is a directory (not built with video encoding support)
         #if so attempt to encode with ffmpeg
         if os.path.isdir(self.filename):
@@ -4555,11 +4566,31 @@ class Video(object):
             except (Exception) as e:
                 print("Video encoding failed: ", str(e), "\nlog:\n", log)
 
+    def write(self, image):
+        """
+        Add a frame to the video (when writing custom video frames rather than rendering them within lavavu)
+
+        Parameters
+        ----------
+        image : list or array or Image
+            Pass a list or numpy uint8 array of rgba values or an Image object
+            values are loaded as 8 bit unsigned integer values
+        """
+        if self.encoder:
+            if isinstance(image, Image):
+                image = image.data
+            else:
+                image = _convert(image, numpy.uint8)
+            if image.size == self.resolution[0] * self.resolution[1] * 4:
+                image = image.reshape(self.resolution[0], self.resolution[1], 4)
+                image = image[::,::,:3] #Remove alpha channel
+            self.encoder.copyframe(image.ravel())
+
     def play(self):
         """
         Show the video in an inline player if in an interative notebook
         """
-        self.viewer.player(self.filename)
+        player(self.filename)
 
     def __enter__(self):
         self.start()
@@ -4664,7 +4695,7 @@ class Image(object):
                 print("Base image and source image have incompatible bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
         return source
 
-    def paste(self, source, resolution=(640,480), position=(0,0)):
+    def paste(self, source, resolution=None, position=(0,0)):
         """
         Render another image to a specified position with this image
 
@@ -4673,19 +4704,35 @@ class Image(object):
         source : array or lavavu.Viewer
             Numpy array containing raw image data to paste or a Viewer instance to source the frame from
         resolution : tuple(int,int)
-            Sub-image width and height in pixels, if not provided source must be a numpy array of the correct dimensions
+            Sub-image width and height in pixels, if not provided and source is a numpy array will get dimensions from shape,
+            otherwise will use default viewer dimensions
         position : tuple(int,int)
             Sub-image x,y offset in pixels
 
         """
+        try:
+            #Get array from PIL images
+            from PIL import Image as PILImage
+            if isinstance(source, PILImage.Image):
+                source = numpy.array(source)
+        except (ImportError) as e:
+            pass
+
+        #Use passed resolution or viewer resolution
         if not isinstance(source, numpy.ndarray):
+            if not resolution: resolution = source.resolution
             source = source.rawimage(resolution, self.data.shape[2]).data
 
         resolution = (source.shape[1], source.shape[0])
         dest = (resolution[0] + position[0], resolution[1] + position[1])
 
         if self.data.shape[0] < dest[1] or self.data.shape[1] < dest[0]:
-            raise ValueError("Base image too small for operation!" + str(self.data.shape) + " < " + str(dest))
+            #Crop the source if outside base image
+            #raise ValueError("Base image too small for operation!" + str(self.data.shape) + " < " + str(dest))
+            source = source[0: self.data.shape[0] - position[1], 0: self.data.shape[1] - position[0], :]
+            resolution = (source.shape[1], source.shape[0])
+            dest = (resolution[0] + position[0], resolution[1] + position[1])
+
         if self.data.shape[2] != source.shape[2]:
             #Attempt conversion
             source = self.convert(source)
