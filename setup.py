@@ -214,10 +214,8 @@ if __name__ == "__main__":
 
         #32 or 64 bit python interpreter?
         if sys.maxsize > 2**32:
-            LIBS = 'lib64'
             arc = '64'
         else:
-            LIBS = 'lib32'
             arc = '32'
 
         #Download, extract and install ffmpeg files
@@ -231,11 +229,11 @@ if __name__ == "__main__":
             src = 'https://ffmpeg.zeranoe.com/builds/win' + arc
             fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
             fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
-            dst = 'src/windows/lib' + arc + '/'
-            outfn = vutils.download(src + '/shared/' + fn1 + '.zip')
+            LIBS = 'lib' + arc
+            outfn = vutils.download(os.path.join(src, 'shared', fn1 + '.zip'))
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
-            outfn = vutils.download(src + '/dev/' + fn2 + '.zip')
+            outfn = vutils.download(os.path.join(src, 'dev', fn2 + '.zip'))
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
             #Now copy into windows build dirs
@@ -243,14 +241,16 @@ if __name__ == "__main__":
             dllver = {'avformat' : '58', 'avcodec' : '58', 'avutil' : '56', 'swscale' : '5'}
             for lib in libs:
                 #Headers - move entire directories
-                shutil.move(fn2 + '/include/lib' + lib, 'src/windows/inc/')
+                shutil.move(os.path.join(fn2, 'include', 'lib' + lib), os.path.join('src', 'windows', 'inc'))
                 #Lib file
-                shutil.move(fn2 + '/lib/' + lib + '.lib', dst)
+                dst = os.path.join('src', 'windows', LIBS)
+                shutil.move(os.path.join(fn2, 'lib', lib + '.lib'), dst)
                 #Dll
-                shutil.move(fn1 + '/bin/' + lib + '-' + dllver[lib] + '.dll', dst + lib + '.dll')
+                dstdll = os.path.join(dst, lib + '.dll')
+                shutil.move(os.path.join(fn1, 'bin', lib + '-' + dllver[lib] + '.dll'), dstdll)
                 #Add to lib/dll list
                 ffmpeg_libs += [lib]
-                ffmpeg_dlls += [os.path.join('src', 'windows', LIBS, dst + lib + '.dll')]
+                ffmpeg_dlls += [dstdll]
 
             #If we got this far, enable video
             defines += [('VIDEO', 1)]
