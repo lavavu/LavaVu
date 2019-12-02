@@ -211,21 +211,66 @@ if __name__ == "__main__":
     #OS Specific
     if P == 'Windows':
         #Windows - includes all dependencies, (TODO: ffmpeg)
+
+        #32 or 64 bit python interpreter?
+        if sys.maxsize > 2**32:
+            LIBS = 'lib64'
+            src = 'https://ffmpeg.zeranoe.com/builds/win64/'
+            dst = 'src/windows/lib32/'
+        else:
+            LIBS = 'lib32'
+            src = 'https://ffmpeg.zeranoe.com/builds/win32/'
+            dst = 'src/windows/lib32/'
+
+        #Download, extract and install ffmpeg files
+        ffmpeg_dlls = []
+        ffmpeg_libs = []
+        try:
+            sys.path.append('lavavu')
+            import vutils
+            import zipfile
+            import shutil
+            fn1 = 'ffmpeg-4.2.1-win64-shared'
+            fn2 = 'ffmpeg-4.2.1-win64-dev'
+            outfn = vutils.download(src + '/shared/' + fn1 + '.zip')
+            with zipfile.ZipFile(outfn, 'r') as zip_ref:
+                zip_ref.extractall('.')
+            outfn = vutils.download(src + '/dev/' + fn2 + '.zip')
+            with zipfile.ZipFile(outfn, 'r') as zip_ref:
+                zip_ref.extractall('.')
+            #Now copy into windows build dirs
+            libs = ['avformat', 'avcodec', 'avutil', 'swscale']
+            dllver = {'avformat' : '58', 'avcodec' : '58', 'avutil' : '56', 'swscale' : '5'}
+            for lib in libs:
+                #Headers - move entire directories
+                shutil.move(fn2 + '/include/lib' + lib, 'src/windows/inc/')
+                #Lib file
+                shutil.move(fn2 + '/lib/' + lib + '.lib', dst)
+                #Dll
+                shutil.move(fn1 + '/bin/' + lib + '-' + dllver[lib] + '.dll', dst + lib + '.dll')
+                #Add to lib/dll list
+                ffmpeg_libs += [lib]
+                ffmpeg_dlls += [os.path.join('src', 'windows', LIBS, dst + lib + '.dll')]
+
+            #If we got this far, enable video
+            defines += [('VIDEO', 1)]
+
+        except (Exception) as e:
+            print("ffmpeg download/extract failed", str(e))
+            ffmpeg_dlls = []
+            ffmpeg_libs = []
+            pass
+
         srcs += ['src/png/lodepng.cpp']
         srcs += ['src/miniz/miniz.c']
         defines += [('HAVE_GLFW', '1')]
         #defines += [('HAVE_LIBPNG', 1)]
         inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
-        #32 or 64 bit python interpreter?
-        if sys.maxsize > 2**32:
-            LIBS = 'lib64'
-        else:
-            LIBS = 'lib32'
         lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
         ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
-        libs += ['opengl32', 'pthreadVC2', 'glfw3dll']
+        libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
         dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
-                os.path.join('src', 'windows', LIBS, 'glfw3.dll')]
+                os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
         install = [('', dlls)]
     else:
         #POSIX only - find external dependencies
