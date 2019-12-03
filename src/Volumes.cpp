@@ -485,6 +485,10 @@ void Volumes::render(Geom_Ptr g)
                     props.getFloat("ymax", 1.),
                     props.getFloat("zmax", 1.)
                    };
+  if (props.has("clipmin") || props.hasglobal("clipmin"))
+    Properties::toArray<float>(props["clipmin"], bbMin, 3);
+  if (props.has("clipmax") || props.hasglobal("clipmax"))
+    Properties::toArray<float>(props["clipmax"], bbMax, 3);
 
   prog->setUniform3f("uBBMin", bbMin);
   prog->setUniform3f("uBBMax", bbMax);
@@ -506,6 +510,8 @@ void Volumes::render(Geom_Ptr g)
   prog->setUniformi("uFilter", (bool)props["tricubicfilter"]);
   float dminmax[2] = {props["minclip"],
                       props["maxclip"]};
+  if (props.has("densityclip"))
+    Properties::toArray<float>(props["densityclip"], dminmax, 2);
   prog->setUniform2f("uDenMinMax", dminmax);
   GL_Error_Check;
 

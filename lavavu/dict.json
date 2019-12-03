@@ -1119,11 +1119,27 @@
       true
     ]
   },
+  "densityclip": {
+    "default": [0.0, 1.0],
+    "target": "object(volume)",
+    "type": "real[2]",
+    "desc": "Density range [min,max] to map, values outside the range are discarded",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true,
+      [
+        0.0,
+        1.0,
+        0.01
+      ]
+    ]
+  },
   "minclip": {
     "default": 0.0,
     "target": "object(volume)",
     "type": "real",
-    "desc": "Minimum density value to map, lower discarded",
+    "desc": "(legacy) Minimum density value to map, lower discarded",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -1139,7 +1155,7 @@
     "default": 1.0,
     "target": "object(volume)",
     "type": "real",
-    "desc": "Maximum density value to map, higher discarded",
+    "desc": "(legacy) Maximum density value to map, higher discarded",
     "strict": true,
     "redraw": 0,
     "control": [
