@@ -148,7 +148,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     }
 
     //Ensure all dims valid
-    if (!std::isfinite(dims[i])
+    if (!std::isfinite(dims[i]))
         dims[i] = 0;
   }
 
