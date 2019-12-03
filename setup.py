@@ -15,7 +15,7 @@ import platform
 import glob
 
 #Current version
-version = "1.4.7"
+version = "1.4.8"
 
 """
 To release a new verison:
@@ -29,6 +29,7 @@ To release a new verison:
     3) Rebuild to update version in library and rebuild docs
        (may need to reset notebooks to documentation versions)
        (docs repo is at: git@github.com:lavavu/Documentation.git)
+       (may need: `cd docs/src; pip install -r requirements.txt`)
 
     >>> make
     >>> make docs -B
