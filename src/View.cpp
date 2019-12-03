@@ -146,14 +146,12 @@ bool View::init(bool force, float* newmin, float* newmax)
       //Currently just a copy of focal point, no way to set this yet
       rotate_centre[i] = focal_point[i];
     }
-
-    //Ensure all dims valid
-    if (!std::isfinite(dims[i]))
-        dims[i] = 0;
   }
 
   //Save magnitude of dimensions
+  if (min[2] == max[2]) dims[2] = 0;
   model_size = sqrt(dotProduct(dims,dims));
+printf("MIN %f %f %f MAX %f %f %f DIMS %f %f %f MODEL SIZE%f\n", min[0], min[1], min[2], max[0], max[1], max[2], dims[0], dims[1], dims[2], model_size);
   if (model_size == 0 || !std::isfinite(model_size))
   {
     //Invalid bounds! Flag not initialised and wait until we have a model
