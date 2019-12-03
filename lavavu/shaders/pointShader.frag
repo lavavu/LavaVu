@@ -57,7 +57,7 @@ void main(void)
   if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
 
   //Textured?
-  if (uTextured)
+  if (uTextured && vTexCoord.y >= 0.0)
   {
     vec4 tColour;
     if (vTexCoord.x < 0.0)

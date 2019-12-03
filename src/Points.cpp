@@ -132,6 +132,7 @@ void Points::loadVertices()
     Colour colour;
     bool hasTexture = geom[s]->hasTexture();
     bool hasTexCoords = geom[s]->render->texCoords.size()/2 == geom[s]->count();
+    float nullTexCoord[2] = {0.0, -1.0};
     for (unsigned int i = 0; i < geom[s]->count(); i ++)
     {
       //Copy data to VBO entry
@@ -149,10 +150,14 @@ void Points::loadVertices()
         memcpy(ptr, &colour, sizeof(Colour));
         ptr += sizeof(Colour);
         //Optional texcoord
-        if (hasTexture && hasTexCoords)
-          memcpy(ptr, geom[s]->render->texCoords[i], sizeof(float) * 2);
         if (anyHasTexture)
+        {
+          if (hasTexture && hasTexCoords)
+            memcpy(ptr, geom[s]->render->texCoords[i], sizeof(float) * 2);
+          else
+            memcpy(ptr, nullTexCoord, sizeof(float) * 2);
           ptr += sizeof(float) * 2;
+        }
         //Optional per-object size/type
         if (attribs)
         {
