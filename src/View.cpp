@@ -146,6 +146,10 @@ bool View::init(bool force, float* newmin, float* newmax)
       //Currently just a copy of focal point, no way to set this yet
       rotate_centre[i] = focal_point[i];
     }
+
+    //Ensure all dims valid
+    if (!std::isfinite(dims[i])
+        dims[i] = 0;
   }
 
   //Save magnitude of dimensions
