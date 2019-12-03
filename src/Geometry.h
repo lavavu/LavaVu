@@ -747,6 +747,7 @@ public:
 class Points : public Geometry
 {
   SortData<PIndex> sorter;
+  bool anyHasTexture = false;
 public:
   Points(Session& session);
   virtual ~Points();

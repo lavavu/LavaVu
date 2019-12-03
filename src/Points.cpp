@@ -85,16 +85,17 @@ void Points::loadVertices()
 
   // VBO - copy normals/colours/positions to buffer object for quick display
   int datasize;
-  if (session.global("pointattribs"))
+  bool attribs = session.global("pointattribs");
+  if (attribs)
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
 
-  //Check first entry for texture
+  //Check for use of texture, if any elements use textures then entire buffer requires elements
   if (geom.size() == 0) return;
-  bool hasTexture = geom[0]->hasTexture();
-  bool hasTexCoords = geom[0]->render->texCoords.size()/2 == geom[0]->count();
-  if (hasTexture && hasTexCoords)
+  for (unsigned int s = 0; s < geom.size(); s++)
+    anyHasTexture = anyHasTexture || (geom[s]->hasTexture() && geom[s]->render->texCoords.size()/2 == geom[s]->count());
+  if (anyHasTexture)
     datasize += 2 * sizeof(float); //TexCoord 2 * float
 
   //Create intermediate buffer
@@ -125,7 +126,6 @@ void Points::loadVertices()
     //printf("psize %f * scaling %f = %f\n", psize0, scaling, psize0 * scaling);
     psize0 *= scaling;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
-    bool attribs = session.global("pointattribs");
     unsigned int sizeidx = geom[s]->valuesLookup(geom[s]->draw->properties["sizeby"]);
     bool usesize = geom[s]->valueData(sizeidx) != NULL;
     //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
@@ -150,10 +150,9 @@ void Points::loadVertices()
         ptr += sizeof(Colour);
         //Optional texcoord
         if (hasTexture && hasTexCoords)
-        {
           memcpy(ptr, geom[s]->render->texCoords[i], sizeof(float) * 2);
+        if (anyHasTexture)
           ptr += sizeof(float) * 2;
-        }
         //Optional per-object size/type
         if (attribs)
         {
@@ -458,10 +457,7 @@ void Points::draw()
     GLint aPointType = prog->attribs["aPointType"];
 
     int stride = 3 * sizeof(float) + sizeof(Colour);
-    //Just check first element - assume all using same texture (ie: colourmap texture)
-    bool hasTexture = geom[0]->hasTexture();
-    bool hasTexCoords = geom[0]->render->texCoords.size()/2 == geom[0]->count();
-    if (hasTexture && hasTexCoords)
+    if (anyHasTexture)
       stride += 2 * sizeof(float);
     bool attribs = session.global("pointattribs");
     if (attribs)
@@ -475,7 +471,7 @@ void Points::draw()
     offset += sizeof(Colour);
 
     //Generic vertex attributes, "aTexCoord", "aSize", "aPointType"
-    if (hasTexture && hasTexCoords)
+    if (anyHasTexture)
     {
       glEnableVertexAttribArray(aTexCoord);
       glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_TRUE, stride, (GLvoid*)(offset));
