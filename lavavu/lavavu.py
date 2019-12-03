@@ -15,7 +15,7 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 
 __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image', 'Video',
            'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp',
-           'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
+           'player', 'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
 #Module settings
@@ -3522,7 +3522,7 @@ class Viewer(dict):
         """
         return Video(self, filename, resolution, fps, quality)
 
-    def video_steps(self, filename="", fps=10, quality=1, resolution=(0,0)):
+    def video_steps(self, filename="", start=0, end=0, fps=10, quality=1, resolution=(0,0)):
         """
         Record a video of the model by looping through all time steps
 
@@ -3537,6 +3537,10 @@ class Viewer(dict):
         ----------
         filename : str
             Name of the file to save, if not provided a default will be used
+        start : int
+            First timestep to record, if not specified will use first available
+        end : int
+            Last timestep to record, if not specified will use last available
         fps : int
             Frames to output per second of video
         quality : int
@@ -3547,8 +3551,8 @@ class Viewer(dict):
         """
 
         try:
-            fn = self.app.video(filename, fps, resolution[0], resolution[1], 0, 0, quality)
-            self.player(fn)
+            fn = self.app.video(filename, fps, resolution[0], resolution[1], start, end, quality)
+            player(fn)
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass
@@ -4523,6 +4527,8 @@ class Video(object):
         self.filename = filename
         if not viewer:
             self.encoder = LavaVuPython.VideoEncoder(filename, framerate, quality);
+        else:
+            self.encoder = None
 
     def start(self):
         """

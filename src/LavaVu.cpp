@@ -3000,10 +3000,9 @@ std::string LavaVu::video(std::string filename, int fps, int width, int height, 
 {
   if (end <= 0) end = amodel->lastStep();
   debug_print("VIDEO: w %d h %d fps %d, %d --> %d\n", width, height, fps, start, end);
-  filename = encodeVideo(filename, fps, quality, width, height);
+  encodeVideo(filename, fps, quality, width, height);
   writeSteps(false, start, end);
-  encodeVideo(); //Write final step and stop encoding
-  return filename;
+  return encodeVideo(); //Write final step and stop encoding
 }
 
 std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int width, int height)
@@ -3026,17 +3025,18 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int 
     encoder->open(viewer->getOutWidth(), viewer->getOutHeight());
     viewer->addOutput(encoder);
     viewer->outputOFF();
-    return filename;
+    filename = encoder->filename;
   }
   else
   {
     //Delete the encoder, completes the video
+    filename = encoder->filename;
     delete encoder;
     encoder = NULL;
     viewer->outputOFF();
     viewer->removeOutput(); //Deletes the output attachment
   }
-  return "";
+  return filename;
 }
 
 void LavaVu::writeSteps(bool images, int start, int end)
