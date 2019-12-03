@@ -15,7 +15,7 @@ import platform
 import glob
 
 #Current version
-version = "1.4.9"
+version = "1.4.10"
 
 """
 To release a new verison:
@@ -254,7 +254,7 @@ if __name__ == "__main__":
                 ffmpeg_dlls += [dstdll]
 
             #If we got this far, enable video
-            defines += [('VIDEO', 1)]
+            defines += [('HAVE_LIBAVCODEC', '1'), ('HAVE_SWSCALE', '1')]
 
         except (Exception) as e:
             print("ffmpeg download/extract failed", str(e))
