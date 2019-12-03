@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     #OS Specific
     if P == 'Windows':
-        #Windows - includes all dependencies, (TODO: ffmpeg)
+        #Windows - includes all dependencies
 
         #32 or 64 bit python interpreter?
         if sys.maxsize > 2**32:
@@ -239,19 +239,17 @@ if __name__ == "__main__":
                 zip_ref.extractall('.')
             #Now copy into windows build dirs
             libs = ['avformat', 'avcodec', 'avutil', 'swscale']
-            dllver = {'avformat' : '58', 'avcodec' : '58', 'avutil' : '56', 'swscale' : '5'}
             for lib in libs:
                 #Headers - move entire directories
-                shutil.move(os.path.join(fn2, 'include', 'lib' + lib), os.path.join('src', 'windows', 'inc'))
+                dst = os.path.join('src', 'windows', 'inc')
+                if not os.path.exists(dst):
+                    shutil.move(os.path.join(fn2, 'include', 'lib' + lib), dst)
                 #Lib file
                 dst = os.path.join('src', 'windows', LIBS)
-                shutil.move(os.path.join(fn2, 'lib', lib + '.lib'), dst)
-                #Dll
-                dstdll = os.path.join(dst, lib + '.dll')
-                shutil.move(os.path.join(fn1, 'bin', lib + '-' + dllver[lib] + '.dll'), dstdll)
-                #Add to lib/dll list
+                shutil.copy(os.path.join(fn2, 'lib', lib + '.lib'), dst)
                 ffmpeg_libs += [lib]
-                ffmpeg_dlls += [dstdll]
+            #Just grab all the dlls
+            ffmpeg_dlls = glob.glob(os.path.join(fn1, 'bin', '*.dll'))
 
             #If we got this far, enable video
             defines += [('HAVE_LIBAVCODEC', '1'), ('HAVE_SWSCALE', '1')]

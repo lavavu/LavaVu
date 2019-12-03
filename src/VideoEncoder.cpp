@@ -196,7 +196,10 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
    timebase should be 1/framerate and timestamp increments should be
    identically 1. */
   std::cout << "Attempting to set framerate to " << fps << " fps " << std::endl;
-  st->time_base = (AVRational){ 1, fps };
+  AVRational tb;
+  tb.num = 1;
+  tb.den = fps;
+  st->time_base = tb;
   c->time_base = st->time_base;
   c->pix_fmt = AV_PIX_FMT_YUV420P;
   c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
