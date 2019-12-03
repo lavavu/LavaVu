@@ -122,7 +122,7 @@ WindowInteractor.prototype.init = function() {
   this.img.baseurl = this.baseurl;
 
   //Load frame image and run command in single action
-  console.log(this.img.width + ' x ' + this.img.height);
+  //console.log(this.img.width + ' x ' + this.img.height);
   //If initial img size > 64x64 (default image => grey 64x64 square)
   //then use the image size as in the image requests
   if (this.img.width > 64 && this.img.height > 64)
