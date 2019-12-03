@@ -15,7 +15,7 @@ import platform
 import glob
 
 #Current version
-version = "1.4.10"
+version = "1.4.11"
 
 """
 To release a new verison:
@@ -231,10 +231,10 @@ if __name__ == "__main__":
             fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
             fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
             LIBS = 'lib' + arc
-            outfn = vutils.download(os.path.join(src, 'shared', fn1 + '.zip'))
+            outfn = vutils.download(src + '/shared/' + fn1 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
-            outfn = vutils.download(os.path.join(src, 'dev', fn2 + '.zip'))
+            outfn = vutils.download(src + '/dev/' + fn2 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
             #Now copy into windows build dirs
