@@ -241,7 +241,7 @@ if __name__ == "__main__":
             libs = ['avformat', 'avcodec', 'avutil', 'swscale']
             for lib in libs:
                 #Headers - move entire directories
-                dst = os.path.join('src', 'windows', 'inc')
+                dst = os.path.join('src', 'windows', 'inc', 'lib' + lib)
                 if not os.path.exists(dst):
                     shutil.move(os.path.join(fn2, 'include', 'lib' + lib), dst)
                 #Lib file
