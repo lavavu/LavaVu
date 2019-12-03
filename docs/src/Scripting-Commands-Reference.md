@@ -15,7 +15,7 @@
 [rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [fov](#fov), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [fixbb](#fixbb), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
  - **[Object](#object-commands)**  
 
-[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [name](#name), [isosurface](#isosurface)
+[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [name](#name), [isosurface](#isosurface), [texture](#texture)
  - **[Display](#display-commands)**  
 
 [background](#background), [alpha](#alpha), [axis](#axis), [rulers](#rulers), [antialias](#antialias), [valuerange](#valuerange), [colourmap](#colourmap), [colourbar](#colourbar), [pointtype](#pointtype), [pointsample](#pointsample), [border](#border), [title](#title), [scale](#scale), [modelscale](#modelscale)
@@ -788,6 +788,11 @@
  >                     if not specified, will use 'isovalues' property  
 
 
+### texture
+
+ > Set or clear object texture data  
+
+
 ---
 ## Display commands:
 
@@ -842,11 +847,11 @@
 
 ### colourmap
 
- > Set colourmap on object  
+ > Set colourmap on object or create a new colourmap  
  >   
- > **Usage:** colourmap object [colourmap / data]  
+ > **Usage:** colourmap [colourmap / data]  
+ > If an object is selected, the colourmap will be set on that object, otherwise a new colourmap will be created  
  >   
- > object (integer/string) : the index or name of the object to set (see: "list objects")  
  > colourmap (integer/string) : the index or name of the colourmap to apply (see: "list colourmaps")  
  > data (string) : data to load into selected object's colourmap, if no colourmap one will be added  
 

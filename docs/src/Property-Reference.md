@@ -26,8 +26,9 @@
 |*renderers*       | object     | [{"labels":"labels"},{"particles":"points","pointcubes":"cuboids","points":"points","pointspheres":"spheres","sortedpoints":"points"},{"grid":"quads","quads":"quads"},{"basictriangles":"basictriangles","mesh":"basictriangles","sortedtriangles":"sortedtriangles","surface":"basictriangles","triangles":"sortedtriangles"},{"arrows":"vectors","vectors":"vectors"},{"streamlines":"tracers","tracers":"tracers"},{"lines":"lines","links":"lines","simplelines":"simplelines","sortedlines":"sortedlines"},{"cubes":"cuboids","cuboids":"cuboids","shapes":"shapes","spheres":"spheres"},{"volume":"volume","volumes":"volume"},{"fullscreen":"screen","screen":"screen"}] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
 |*renderlist*      | string     | ""             | Sets a list of renderers to create and order they are displayed. This allows overriding the default renderer order, defined by the object order. For valid types see "renderers" property.|
 |*subrenderers*    | string     | "sortedtriangles points simplelines" | List of renderers created for rendering primitives (points, lines, triangles) from more complex renderers (eg: vectors). Allows selection of different primitive rendering modes, globally or per object.|
-|*font*            | string     | "vector"       | Font typeface vector/small/fixed/sans/serif|
-|*fontscale*       | real       | 1.0            | Font scaling, note that only the 'vector' font scales well|
+|*font*            | string     | "vector"       | Font typeface vector (thicker, better for larger text) or line (better for small labels)|
+|*fontscale*       | real       | 1.0            | Font scaling, applied by multiplying with any existing calculated scaling.|
+|*fontsize*        | real       | 1.0            | Font size, absolute scaling that overrides all automatic calculations of the font size|
 |*fontcolour*      | colour     | [0,0,0,0]      | Font colour RGB(A)|
 
 ### timestep
@@ -54,29 +55,31 @@
 |*flat*            | boolean    | false          | Renders surfaces as flat shaded, lines/vectors/tracers as 2d, faster but no 3d or lighting|
 |*depthtest*       | boolean    | true           | Set to false to disable depth test when drawing object so always drawn regardless of 3d position|
 |*depthwrite*      | boolean    | true           | Set to false to disable depth buffer write when drawing object, so other objects behind it will still be drawn and will appear in front if drawn after this object|
-|*dims*            | integer[3] | [0,0,0]        | width/height/depth override for geometry|
+|*dims*            | integer[3] | [0,0,0]        | Width,Height,Depth override for geometry. Usually this data will be determined from the numpy array shape when loaded from python but setting this property overrides the shape, unless it doesn't match the data size. Note this property is the reverse of the numpy array shape (Depth,Height,Width) or (Height,Width).|
 |*rotatable*       | boolean    | false          | Set to true to apply the view rotation to this object|
-|*shift*           | real       | 0.0            | Apply a shift to object position by this amount multiplied by model size, to fix depth fighting when visualising objects drawn at same depth|
+|*shift*           | real       | 0.0            | Apply a shift to object position by this amount multiplied by model size*10^-7, to fix depth fighting when visualising objects drawn at same depth|
 |*colour*          | colour     | [0,0,0,255]    | Object colour RGB(A)|
 |*colourmap*       | string     | ""             | name of the colourmap to use|
 |*opacitymap*      | string     | ""             | name of the opacity colourmap to use|
-|*opacity*         | real [0,1] | 1.0            | Opacity of object where 0 is transparent and 1 is opaque|
-|*brightness*      | real [-1,1] | 0.0            | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)|
-|*contrast*        | real [0,2] | 1.0            | Contrast of object from 0 (none, grey) to 2 (max)|
-|*saturation*      | real [0,2] | 1.0            | Saturation of object from 0 (greyscale) to 2 (fully saturated)|
-|*ambient*         | real [0,1] | 0.4            | Ambient lighting level (background constant light)|
-|*diffuse*         | real [0,1] | 0.65           | Diffuse lighting level (shading light/dark)|
-|*specular*        | real [0,1] | 0.0            | Specular highlight lighting level (spot highlights)|
-|*shininess*       | real [0,1] | 0.5            | Specular shininess factor, controls size of highlight|
+|*opacity*         | real       | 1.0            | Opacity of object where 0 is transparent and 1 is opaque|
+|*brightness*      | real       | 0.0            | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)|
+|*contrast*        | real       | 1.0            | Contrast of object from 0 (none, grey) to 2 (max)|
+|*saturation*      | real       | 1.0            | Saturation of object from 0 (greyscale) to 2 (fully saturated)|
+|*ambient*         | real       | 0.4            | Ambient lighting level (background constant light)|
+|*diffuse*         | real       | 0.65           | Diffuse lighting level (shading light/dark)|
+|*specular*        | real       | 0.0            | Specular highlight lighting level (spot highlights)|
+|*shininess*       | real       | 0.5            | Specular shininess factor, controls size of highlight|
 |*lightpos*        | real[3]    | [0.1,-0.1,2.0] | Light position X Y Z relative to camera position (follows camera)|
 |*clip*            | boolean    | true           | Allow object to be clipped|
 |*clipmap*         | boolean    | true           | Clipping mapped to range normalised [0,1]|
-|*xmin*            | real [0,1] | 1.0            | Object clipping, minimum x|
-|*ymin*            | real [0,1] | 1.0            | Object clipping, maximum y|
-|*zmin*            | real [0,1] | 1.0            | Object clipping, minimum z|
-|*xmax*            | real [0,1] | 0.0            | Object clipping, maximum x|
-|*ymax*            | real [0,1] | 0.0            | Object clipping, maximum y|
-|*zmax*            | real [0,1] | 0.0            | Object clipping, maximum z|
+|*clipmin*         | real[3]    | [0.0,0.0,0.0]  | Object clipping minimum [x,y,z]|
+|*clipmax*         | real[3]    | [1.0,1.0,1.0]  | Object clipping maximum [x,y,z]|
+|*xmin*            | real       | 0.0            | (legacy) Object clipping, minimum x|
+|*ymin*            | real       | 0.0            | (legacy) Object clipping, maximum y|
+|*zmin*            | real       | 0.0            | (legacy) Object clipping, minimum z|
+|*xmax*            | real       | 1.0            | (legacy) Object clipping, maximum x|
+|*ymax*            | real       | 1.0            | (legacy) Object clipping, maximum y|
+|*zmax*            | real       | 1.0            | (legacy) Object clipping, maximum z|
 |*filters*         | object     | []             | Filter list|
 |*glyphs*          | integer [0,n] | 2              | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)|
 
@@ -125,6 +128,7 @@
 |*opaque*          | boolean    | false          | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied|
 |*optimise*        | boolean    | true           | Disable this flag to skip the mesh optimisation step|
 |*vertexnormals*   | boolean    | true           | Disable this flag to skip calculating vertex normals|
+|*smoothangle*     | int        | 90             | Angle between surface normals (in degrees) below which normals will be smoothed. Reduce this to preserve hard edges.|
 |*flip*            | boolean    | false          | Set this flag to reverse the surface faces (currently implemented for grids only)|
 
 ### object(volume)
@@ -135,14 +139,15 @@
 |*bloom*           | real       | 0.0            | Bloom effect, brightens colours, particularly around edges of transparent areas, by using a more additive blend equation. Setting this to ~0.5 will replicate the old (technically incorrect) volume shader blending for lavavu pre v1.5.|
 |*samples*         | integer    | 256            | Number of samples to take per ray cast, higher = better quality, but slower|
 |*density*         | real       | 5.0            | Density multiplier for volume data|
-|*isovalue*        | real       | 0.0            | Isovalue for dynamic isosurface|
+|*isovalue*        | real       | 0.0            | Isovalue for dynamic isosurface (normalised to [0,1] over actual data range)|
 |*isovalues*       | real[]     | []             | Isovalues to extract from volume into mesh isosurface|
-|*isoalpha*        | real [0,1] | 1.0            | Transparency value for isosurface|
+|*isoalpha*        | real       | 1.0            | Transparency value for isosurface|
 |*isosmooth*       | real       | 0.1            | Isosurface smoothing factor for normal calculation|
 |*isowalls*        | boolean    | true           | Connect isosurface enclosed area with walls|
 |*tricubicfilter*  | boolean    | false          | Apply a tricubic filter for increased smoothness|
-|*minclip*         | real       | 0.0            | Minimum density value to map, lower discarded|
-|*maxclip*         | real       | 1.0            | Maximum density value to map, higher discarded|
+|*densityclip*     | real[2]    | [0.0,1.0]      | Density range [min,max] to map, values outside the range are discarded|
+|*minclip*         | real       | 0.0            | (legacy) Minimum density value to map, lower discarded|
+|*maxclip*         | real       | 1.0            | (legacy) Maximum density value to map, higher discarded|
 |*compresstextures*| boolean    | false          | Compress volume textures where possible|
 |*texturesize*     | int[3]     | [0,0,0]        | Volume texture size limit (for crop)|
 |*textureoffset*   | int[3]     | [0,0,0]        | Volume texture offset (for crop)|
@@ -198,7 +203,7 @@
 |*ticks*           | integer    | 0              | Number of additional tick marks to draw besides start and end|
 |*tickvalues*      | real[]     | []             | Values of intermediate tick marks|
 |*printticks*      | boolean    | true           | Set to false to disable drawing of intermediate tick values|
-|*format*          | string     | "%.5g"         | Format specifier for tick values, eg: %.3[f/e/g] standard, scientific, both|
+|*format*          | string     | "%.5g"         | Format specifier for label values, eg: %.3[f/e/g] standard, scientific, both|
 |*scalevalue*      | real       | 1.0            | Multiplier to scale tick values|
 |*outline*         | integer    | 1.0            | Outline width to draw around colour bar|
 |*offset*          | real       | 0              | Margin to parallel edge in pixels or viewport size ratio|
@@ -212,7 +217,7 @@
 |*logscale*        | boolean    | false          | Set to true to use log scales|
 |*discrete*        | boolean    | false          | Set to true to apply colours as discrete values rather than gradient|
 |*interpolate*     | boolean    | true           | Set to false to disable interpolation between colours, nearest colour will always be applied|
-|*colours*         | colours    | []             | Colour list (or string), see [Colour map lists] for more information|
+|*colours*         | colours    | []             | Colour list (or string), X11 colour names, rgb(a) colours or html hex colours|
 |*range*           | real[2]    | [0.0,0.0]      | Fixed scale range, default is to automatically calculate range based on data min/max|
 |*locked*          | boolean    | false          | Set to true to lock colourmap ranges to current values|
 
@@ -263,14 +268,13 @@
 |*filestep*        | boolean    | false          | Turn on to automatically add and switch to a new timestep after loading a data file|
 |*hideall*         | boolean    | false          | Turn on to set initial state of all loaded objects to hidden|
 |*background*      | colour     | [0,0,0,255]    | Background colour RGB(A)|
-|*alpha*           | real [0,1] | 1.0            | Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with "opacity" prop|
+|*alpha*           | real       | 1.0            | Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with "opacity" prop|
 |*noload*          | boolean    | false          | Disables initial loading of object data from database, only object names loaded, use the "load" command to subsequently load selected object data|
 |*merge*           | boolean    | false          | Enable to load subsequent databases into the current model, if disabled then each database is loaded into a new model|
 |*pngalpha*        | boolean    | false          | Enable transparent png output|
-|*swapyz*          | boolean    | false          | Enable imported model y/z axis swap|
 |*trisplit*        | integer    | 0              | Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data.|
+|*trilimit*        | real       | 0              | Imported model triangle edge size limit. Triangles will be split until edges below this threashold.|
 |*globalcam*       | boolean    | false          | Enable global camera for all models (default is separate cam for each)|
-|*vectorfont*      | boolean    | false          | Always use vector font regardless of individual object properties|
 |*volchannels*     | integer    | 1              | Volume rendering output channels 1 (luminance) 3/4 (rgba)|
 |*volres*          | integer[3] | [256,256,256]  | Volume rendering data voxel resolution X Y Z|
 |*volmin*          | real[3]    | [0.0,0.0,0.0]  | Volume rendering min bound X Y Z|
@@ -288,4 +292,5 @@
 |*gpucache*        | boolean    | false          | Cache timestep varying data on gpu as well as ram (only if model size permits)|
 |*clearstep*       | boolean    | false          | Clear all time varying data from previous step on loading another|
 |*timestep*        | integer    | -1             | Holds the current model timestep, read only, -1 indicates no time varying data loaded|
+|*validate*        | boolean    | true           | Disable to turn off validation of property names from the dictionary. Allows setting/reading custom properties.|
 |*data*            | dict       | null           | Holds a dictionary of data sets in the current model by label, read only|
