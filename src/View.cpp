@@ -148,10 +148,13 @@ bool View::init(bool force, float* newmin, float* newmax)
     }
   }
 
+  //This should not be needed, but fixes issue with travis-ci python 2.7 where model_size ending up as 'inf'
+  if (min[2] == max[2])
+    dims[2] = 0;
   //Save magnitude of dimensions
-  if (min[2] == max[2]) dims[2] = 0;
   model_size = sqrt(dotProduct(dims,dims));
-printf("MIN %f %f %f MAX %f %f %f DIMS %f %f %f MODEL SIZE%f\n", min[0], min[1], min[2], max[0], max[1], max[2], dims[0], dims[1], dims[2], model_size);
+  //printf("MIN %f %f %f MAX %f %f %f DIMS %f %f %f MODEL SIZE%f\n", min[0], min[1], min[2], max[0], max[1], max[2], dims[0], dims[1], dims[2], model_size);
+
   if (model_size == 0 || !std::isfinite(model_size))
   {
     //Invalid bounds! Flag not initialised and wait until we have a model
