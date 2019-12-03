@@ -137,9 +137,11 @@ bool View::init(bool force, float* newmin, float* newmax)
         //(causes jitter when switching timesteps as camera follows default focal point)
         focal_point[i] = default_focus[i];
       }
-      else
+      else if (force || focal_point[i] == FLT_MIN)
+      {
         //Default focal point and rotation centre = model bounding box centre point
         focal_point[i] = min[i] + dims[i] / 2.0f;
+      }
 
       //Currently just a copy of focal point, no way to set this yet
       rotate_centre[i] = focal_point[i];
