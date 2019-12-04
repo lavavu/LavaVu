@@ -239,9 +239,11 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
 """
 HTTP Server manager class
 """
+ports = [] #List of ports
 class Server(threading.Thread):
     def __init__(self, viewer, port=None, ipv6=False, retries=100):
-        if port is None: port = 8080
+        if port is None:
+            port = 8080
         self._closing = False
         #Allow viewer to be garbage collected
         self.viewer = weakref.ref(viewer)
@@ -280,6 +282,9 @@ class Server(threading.Thread):
 
             # Handle requests
             #print("Using port: ", self.port)
+            #Maintain a list of used ports
+            global ports
+            ports += [self.port]
             # A timeout is needed for server to check periodically if closing
             httpd.timeout = 0.05 #50 millisecond timeout
             while self.viewer() is not None and not self._closing:

@@ -41,6 +41,7 @@ import math
 import sys
 import glob
 import control
+import server
 import numpy
 import re
 import copy
@@ -4482,13 +4483,18 @@ def player(filename):
     try:
         if is_notebook():
             from IPython.display import display,HTML
+            #try:
+            #    #Newer IPython versions have a Video display function
+            #    from IPython.display import Video
+            #    display(Video(filename))
+            #except (ImportError) as e:
             html = """
             <video controls loop>
               <source src="{fn1}">
               <source src="{fn2}">
+              <source src="http://localhost:{port}/{fn1}">
             Sorry, your browser doesn't support embedded videos, 
             </video><br>
-            <a href="{fn2}">Download Video</a>
             """
             #Jupyterlab adds it's own timestamp but notebook doesn't
             #don't know a way to detect jupyterlab, so provide source url with and without
@@ -4497,8 +4503,10 @@ def player(filename):
             uid = uuid.uuid1()
             #Append a UUID based on host ID and current time
             filename_ts = filename + "?" + str(uid)
-            html = HTML(html.format(fn1=filename_ts, fn2=filename))
+            html = HTML(html.format(fn1=filename_ts, fn2=filename, port=server.ports[-1] if len(server.ports) else 8080))
             display(html)
+            #Add download link
+            display(HTML('<a href="{fn}">Download Video</a>'.format(fn=filename)))
     except (Exception) as e:
         print("Video output error: " + str(e))
         pass
