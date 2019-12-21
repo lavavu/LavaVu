@@ -4,13 +4,16 @@ from setuptools import setup
 from setuptools.command.install import install
 from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
-from distutils.command.build import build
+from setuptools import Extension
+from setuptools import find_packages
 import distutils
+from distutils.command.build import build
+import distutils.sysconfig
+import distutils.ccompiler
+from distutils.errors import CompileError, LinkError
 import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
-from setuptools import Extension
-from setuptools import find_packages
 import platform
 import glob
 
@@ -90,6 +93,40 @@ if 'LV_LIB_DIRS' in os.environ:
 if 'LV_INC_DIRS' in os.environ:
     inc_dirs += os.environ['LV_INC_DIRS'].split(':')
 
+def build_sqlite3(sqlite3_path):
+    """Builds sqlite3 from included submodule
+    """
+
+    if not os.path.exists(os.path.join(sqlite3_path, 'sqlite3.c')):
+        #Attempt to get sqlite3 source submodule if not checked out
+        os.system("git submodule update --init")
+
+    # and try to compile it
+    compiler = distutils.ccompiler.new_compiler()
+    assert isinstance(compiler, distutils.ccompiler.CCompiler)
+    distutils.sysconfig.customize_compiler(compiler)
+
+    #Add any include dirs
+    compiler.add_include_dir(sqlite3_path)
+
+    try:
+        #compiled = compiler.compile([file_name])
+        compiler.link_shared_lib(
+            compiler.compile([os.path.join(sqlite3_path, 'sqlite3.c')]),
+            'sqlite3'
+        )
+    except CompileError:
+        print('sqlite3 compile error')
+        ret_val = None
+    except LinkError:
+        print('sqlite3 link error')
+        ret_val = None
+    else:
+        print('sqlite3 built')
+        ret_val = compiler.library_filename('sqlite3', lib_type='shared'),
+    return ret_val
+
+
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):
     """check if the C module can be built by trying to compile a small
@@ -97,10 +134,6 @@ def check_libraries(libraries, headers):
 
     import tempfile
     import shutil
-
-    import distutils.sysconfig
-    import distutils.ccompiler
-    from distutils.errors import CompileError, LinkError
 
     # write a temporary .c file to compile
     c_code = "int main(int argc, char* argv[]) { return 0; }"
@@ -147,18 +180,6 @@ if __name__ == "__main__":
     #Update version.cpp
     write_version()
 
-    sqlite3_path = os.path.join('src', 'sqlite3')
-    if not os.path.exists(os.path.join(sqlite3_path, 'sqlite3.c')):
-        #Attempt to get sqlite3 source submodule if not checked out
-        os.system("git submodule update --init")
-
-    sqlite3_lib = [['sqlite3', {
-                   'sources': [os.path.join(sqlite3_path, 'sqlite3.c')],
-                   'include_dirs': [sqlite3_path],
-                   'macros': None
-                   }
-                  ]]
-
     _debug = False
     #_debug = True
     srcs = ['src/LavaVuPython_wrap.cxx']
@@ -167,9 +188,8 @@ if __name__ == "__main__":
     srcs += glob.glob('src/jpeg/*.cpp')
     defines = [('USE_FONTS', '1')]
     cflags = []
-    libs = [] #['sqlite3']
+    libs = ['sqlite3']
     ldflags = []
-    inc_dirs += [sqlite3_path]
     rt_lib_dirs = []
     try:
         import numpy
@@ -212,6 +232,10 @@ if __name__ == "__main__":
     #OS Specific
     if P == 'Windows':
         #Windows - includes all dependencies
+        sqlite3_path = os.path.join('src', 'sqlite3')
+        sqlite3 = build_sqlite3(sqlite3_path)
+        inc_dirs += [sqlite3_path]
+        install += [('', sqlite3)]
 
         #32 or 64 bit python interpreter?
         if sys.maxsize > 2**32:
@@ -270,10 +294,17 @@ if __name__ == "__main__":
         libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
         dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
                 os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
-        install = [('', dlls)]
+        install += [('', dlls)]
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
+        #Use external sqlite3 if available, otherwise build
+        if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'])):
+            sqlite3_path = os.path.join('src', 'sqlite3')
+            sqlite3 = build_sqlite3(sqlite3_path)
+            inc_dirs += [sqlite3_path]
+            install += [('', sqlite3)]
+
         # Optional external libraries - check if installed
         if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
             defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
@@ -321,8 +352,8 @@ if __name__ == "__main__":
                 defines += [('HAVE_X11', '1')]
                 libs += ['GL', 'X11']
 
-            #Runtime libraries: set rpath:
-            rt_lib_dirs = lib_dirs
+            #Runtime libraries: set rpath: $ORIGIN includes current dir in search
+            rt_lib_dirs = ['$ORIGIN'] + lib_dirs
 
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
@@ -405,7 +436,6 @@ if __name__ == "__main__":
             'Framework :: Jupyter',
             'Framework :: IPython',
           ],
-          ext_modules = [lv],
-          libraries=sqlite3_lib
+          ext_modules = [lv]
           )
 
