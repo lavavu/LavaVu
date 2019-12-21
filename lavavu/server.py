@@ -58,8 +58,13 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self.end_headers()
             if data:
                 self.wfile.write(data)
-        except (IOError) as e:
-            if e.errno == errno.EPIPE:
+        #This specific error sometimes occurs on windows, ConnectionError is the base class and covers a few more
+        #except (IOError,ConnectionAbortedError) as e:
+        #    if isinstance(e,ConnectionAbortedError):
+        except (IOError,ConnectionError) as e:
+            if isinstance(e,ConnectionError):
+                pass
+            elif e.errno == errno.EPIPE:
                 # EPIPE error, ignore
                 pass
             else:
