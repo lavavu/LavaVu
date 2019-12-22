@@ -212,19 +212,22 @@ if __name__ == "__main__":
 
     #Parallel build
     num_jobs = 1
-    try:
-        num_jobs = os.cpu_count()
-    except AttributeError:
-        import multiprocessing
-        num_jobs = multiprocessing.cpu_count()
-    try:
-        from numpy.distutils.ccompiler import CCompiler_compile
-        import distutils.ccompiler
-        distutils.ccompiler.CCompiler.compile = CCompiler_compile
-        os.environ['NPY_NUM_BUILD_JOBS'] = str(num_jobs)
-        print('Using parallel build, jobs: ', num_jobs)
-    except ImportError:
-        print("Numpy not found, parallel compile not available")
+    if not 'arm' in platform.machine():
+        try:
+            num_jobs = os.cpu_count()
+        except AttributeError:
+            import multiprocessing
+            num_jobs = multiprocessing.cpu_count()
+
+    if num_jobs > 1:
+        try:
+            from numpy.distutils.ccompiler import CCompiler_compile
+            import distutils.ccompiler
+            distutils.ccompiler.CCompiler.compile = CCompiler_compile
+            os.environ['NPY_NUM_BUILD_JOBS'] = str(num_jobs)
+            print('Using parallel build, jobs: ', num_jobs)
+        except ImportError:
+            print("Numpy not found, parallel compile not available")
 
     #OS Specific
     if P == 'Windows':
