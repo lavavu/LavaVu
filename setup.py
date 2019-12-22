@@ -16,6 +16,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 import platform
 import glob
+import shutil
 
 #Current version
 version = "1.4.14"
@@ -97,11 +98,6 @@ def build_sqlite3(sqlite3_path):
     """Builds sqlite3 from included submodule
     """
 
-    if not os.path.exists(os.path.join(sqlite3_path, 'sqlite3.c')):
-        #Attempt to get sqlite3 source submodule if not checked out
-        os.system("git submodule update --init")
-
-    # and try to compile it
     compiler = distutils.ccompiler.new_compiler()
     assert isinstance(compiler, distutils.ccompiler.CCompiler)
     distutils.sysconfig.customize_compiler(compiler)
@@ -117,14 +113,12 @@ def build_sqlite3(sqlite3_path):
         )
     except CompileError:
         print('sqlite3 compile error')
-        ret_val = None
+        raise
     except LinkError:
         print('sqlite3 link error')
-        ret_val = None
-    else:
-        print('sqlite3 built')
-        ret_val = compiler.library_filename('sqlite3', lib_type='shared'),
-    return ret_val
+        raise
+    print('sqlite3 built')
+    return compiler.library_filename('sqlite3', lib_type='shared'),
 
 
 #From https://stackoverflow.com/a/28949827/866759
@@ -133,8 +127,6 @@ def check_libraries(libraries, headers):
     program against the passed library with passed headers"""
 
     import tempfile
-    import shutil
-
     # write a temporary .c file to compile
     c_code = "int main(int argc, char* argv[]) { return 0; }"
     #Add headers
@@ -180,15 +172,20 @@ if __name__ == "__main__":
     #Update version.cpp
     write_version()
 
+    sqlite3_path = os.path.join('src', 'sqlite3')
+    if not os.path.exists(os.path.join(sqlite3_path, 'sqlite3.c')):
+        #Attempt to get sqlite3 source submodule if not checked out
+        os.system("git submodule update --init")
+
     _debug = False
     #_debug = True
-    srcs = ['src/LavaVuPython_wrap.cxx']
-    srcs += glob.glob('src/*.cpp')
-    srcs += glob.glob('src/Main/*.cpp')
-    srcs += glob.glob('src/jpeg/*.cpp')
+    srcs = [os.path.join('src', 'LavaVuPython_wrap.cxx')]
+    srcs += glob.glob(os.path.join('src', '*.cpp'))
+    srcs += glob.glob(os.path.join('src', 'Main', '*.cpp'))
+    srcs += glob.glob(os.path.join('src', 'jpeg', '*.cpp'))
     defines = [('USE_FONTS', '1')]
     cflags = []
-    libs = ['sqlite3']
+    libs = []
     ldflags = []
     rt_lib_dirs = []
     try:
@@ -232,10 +229,11 @@ if __name__ == "__main__":
     #OS Specific
     if P == 'Windows':
         #Windows - includes all dependencies
-        sqlite3_path = os.path.join('src', 'sqlite3')
-        sqlite3 = build_sqlite3(sqlite3_path)
+
+        #VC++ can handle C or C++ without issues clang has,
+        #so just throw sqlite source in with the rest
         inc_dirs += [sqlite3_path]
-        install += [('', sqlite3)]
+        srcs += [os.path.join(sqlite3_path, 'sqlite3.c')]
 
         #32 or 64 bit python interpreter?
         if sys.maxsize > 2**32:
@@ -250,7 +248,6 @@ if __name__ == "__main__":
             sys.path.append('lavavu')
             import vutils
             import zipfile
-            import shutil
             src = 'https://ffmpeg.zeranoe.com/builds/win' + arc
             fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
             fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
@@ -284,23 +281,29 @@ if __name__ == "__main__":
             ffmpeg_libs = []
             pass
 
-        srcs += ['src/png/lodepng.cpp']
-        srcs += ['src/miniz/miniz.c']
+        srcs += [os.path.join('src', 'png', 'lodepng.cpp')]
+        srcs += [os.path.join('src', 'miniz', 'miniz.c')]
         defines += [('HAVE_GLFW', '1')]
         #defines += [('HAVE_LIBPNG', 1)]
-        inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
-        lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
-        ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
+        #inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
+        #lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
+        inc_dirs += [os.path.join('src', 'windows', 'inc')]
+        lib_dirs += [os.path.join('src', 'windows', LIBS)]
+        #ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
+        ldflags += ['/LIBPATH:' + os.path.join('src', 'windows', LIBS)]
         libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
         dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
                 os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
-        install += [('', dlls)]
+        install = [('', dlls)]
+        #Also copy dlls into . for develop / in-place installs
+        for d in dlls:
+            shutil.copy(d, '.')
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
         #Use external sqlite3 if available, otherwise build
+        libs += ['sqlite3']
         if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'])):
-            sqlite3_path = os.path.join('src', 'sqlite3')
             sqlite3 = build_sqlite3(sqlite3_path)
             inc_dirs += [sqlite3_path]
             install += [('', sqlite3)]
@@ -359,8 +362,7 @@ if __name__ == "__main__":
             #Mac OS X with Cocoa + CGL
             #srcs += ['src/Main/CocoaViewer.mm']
             #This hack is because setuptools can't handle .mm extension
-            from shutil import copyfile
-            copyfile('src/Main/CocoaViewer.mm', 'src/Main/CocoaViewer.m')
+            shutil.copyfile('src/Main/CocoaViewer.mm', 'src/Main/CocoaViewer.m')
             srcs += ['src/Main/CocoaViewer.m']
             cflags += ['-ObjC++'] #Now have to tell compiler it's objective c++ as .m file indicates objective c
             defines += [('HAVE_CGL', '1')]
