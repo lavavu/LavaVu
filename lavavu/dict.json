@@ -691,7 +691,7 @@
   "glyphs": {
     "default": 2,
     "target": "object",
-    "type": "integer [0,n]",
+    "type": "integer",
     "desc": "Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)",
     "strict": true,
     "redraw": 2,
@@ -711,7 +711,7 @@
   "segments": {
     "default": 32,
     "target": "object(shapes)",
-    "type": "integer [4,n]",
+    "type": "integer",
     "desc": "Triangulation quality for spheres, number of segments to draw (minimum 4)",
     "strict": true,
     "redraw": 2,
