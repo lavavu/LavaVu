@@ -117,8 +117,14 @@ def build_sqlite3(sqlite3_path):
     except LinkError:
         print('sqlite3 link error')
         raise
-    print('sqlite3 built')
-    return compiler.library_filename('sqlite3', lib_type='shared'),
+    fn = compiler.library_filename('sqlite3', lib_type='shared')
+    lfn = fn + '.0'
+    print('sqlite3 built ', fn)
+    try:
+        os.symlink(fn, lfn)
+    except (FileExistsError) as e:
+        pass
+    return fn, lfn
 
 
 #From https://stackoverflow.com/a/28949827/866759
@@ -309,6 +315,7 @@ if __name__ == "__main__":
         if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'])):
             sqlite3 = build_sqlite3(sqlite3_path)
             inc_dirs += [sqlite3_path]
+            rt_lib_dirs = [sys.exec_prefix] #Look in the exec prefix where python will install libs
             install += [('', sqlite3)]
 
         # Optional external libraries - check if installed
@@ -359,7 +366,7 @@ if __name__ == "__main__":
                 libs += ['GL', 'X11']
 
             #Runtime libraries: set rpath: $ORIGIN includes current dir in search
-            rt_lib_dirs = ['$ORIGIN'] + lib_dirs
+            rt_lib_dirs += ['$ORIGIN'] + lib_dirs
 
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
