@@ -97,7 +97,6 @@ if 'LV_INC_DIRS' in os.environ:
 def build_sqlite3(sqlite3_path):
     """Builds sqlite3 from included submodule
     """
-
     compiler = distutils.ccompiler.new_compiler()
     assert isinstance(compiler, distutils.ccompiler.CCompiler)
     distutils.sysconfig.customize_compiler(compiler)
@@ -106,26 +105,11 @@ def build_sqlite3(sqlite3_path):
     compiler.add_include_dir(sqlite3_path)
 
     try:
-        #compiled = compiler.compile([file_name])
-        compiler.link_shared_lib(
-            compiler.compile([os.path.join(sqlite3_path, 'sqlite3.c')]),
-            'sqlite3'
-        )
+        obj = compiler.compile([os.path.join(sqlite3_path, 'sqlite3.c')], 'build')
+        return obj
     except CompileError:
         print('sqlite3 compile error')
         raise
-    except LinkError:
-        print('sqlite3 link error')
-        raise
-    fn = compiler.library_filename('sqlite3', lib_type='shared')
-    lfn = fn + '.0'
-    print('sqlite3 built ', fn)
-    try:
-        os.symlink(fn, lfn)
-    except (FileExistsError) as e:
-        pass
-    return fn, lfn
-
 
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):
@@ -162,11 +146,11 @@ def check_libraries(libraries, headers):
             bin_file_name,
             libraries=libraries,
         )
-    except CompileError:
-        print('Libraries ' + str(libraries) + ' test compile error')
+    except (CompileError) as e:
+        print('Libraries ' + str(libraries) + ' test compile error', e)
         ret_val = False
-    except LinkError:
-        print('Libraries ' + str(libraries) + ' test link error')
+    except (LinkError) as e:
+        print('Libraries ' + str(libraries) + ' test link error', e)
         ret_val = False
     else:
         print('Libraries ' + str(libraries) + ' found and passed compile test')
@@ -175,6 +159,7 @@ def check_libraries(libraries, headers):
     return ret_val
 
 if __name__ == "__main__":
+    print("Running setup with args:", sys.argv)
     #Update version.cpp
     write_version()
 
@@ -194,6 +179,7 @@ if __name__ == "__main__":
     libs = []
     ldflags = []
     rt_lib_dirs = []
+    extra_objects = []
     try:
         import numpy
     except:
@@ -311,12 +297,16 @@ if __name__ == "__main__":
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
         #Use external sqlite3 if available, otherwise build
-        libs += ['sqlite3']
-        if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'])):
-            sqlite3 = build_sqlite3(sqlite3_path)
+        if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'], extra_inc_dirs=[sqlite3_path])):
+            #Don't compile when just running 'setup.py egg_info'
+            if len(sys.argv) < 2 or sys.argv[1] == 'egg_info':
+                sqlite3 = 'build/src/sqlite3/sqlite3.o'
+            else:
+                sqlite3 = build_sqlite3(sqlite3_path)
             inc_dirs += [sqlite3_path]
-            rt_lib_dirs = [sys.exec_prefix] #Look in the exec prefix where python will install libs
-            install += [('', sqlite3)]
+            extra_objects = sqlite3
+        else:
+            libs += ['sqlite3']
 
         # Optional external libraries - check if installed
         if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
@@ -397,6 +387,7 @@ if __name__ == "__main__":
                     runtime_library_dirs = rt_lib_dirs,
                     extra_compile_args = cflags,
                     extra_link_args = ldflags,
+                    extra_objects=extra_objects,
                     sources = srcs)
 
     with open('requirements.txt') as f:
