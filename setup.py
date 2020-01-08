@@ -112,7 +112,7 @@ def build_sqlite3(sqlite3_path):
         raise
 
 #From https://stackoverflow.com/a/28949827/866759
-def check_libraries(libraries, headers):
+def check_libraries(libraries, headers, extra_lib_dirs=[], extra_inc_dirs=[]):
     """check if the C module can be built by trying to compile a small
     program against the passed library with passed headers"""
 
@@ -135,9 +135,9 @@ def check_libraries(libraries, headers):
     distutils.sysconfig.customize_compiler(compiler)
 
     #Add any extra library or include dirs
-    for l in lib_dirs:
+    for l in lib_dirs + extra_lib_dirs:
         compiler.add_library_dir(l)
-    for p in inc_dirs:
+    for p in inc_dirs + extra_inc_dirs:
         compiler.add_include_dir(p)
 
     try:
