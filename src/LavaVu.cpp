@@ -793,9 +793,9 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   unsigned int bytes = 0;
   float volscale[3];
   int volres[3];
-#ifdef USE_ZLIB
   if (fn.type != "xrwu")
   {
+#ifdef USE_ZLIB
     gzFile f = gzopen(fn.full.c_str(), "rb");
     gzread(f, (char*)volres, sizeof(int)*3);
     gzread(f, (char*)volscale, sizeof(float)*3);
@@ -815,9 +815,12 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     }
     while (offset < bytes);
     gzclose(f);
+#else
+    std::cerr << "Require Zlib to read compressed XRW\n";
+    return;
+#endif
   }
   else
-#endif
   {
     std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
     file.seekg(0, std::ios::end);
