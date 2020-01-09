@@ -1229,7 +1229,7 @@ void Geometry::setState(Geom_Ptr g)
   //Apply global 'opacity' only if no per-object setting (which is applied with colour)
   if (!props.has("opacity"))
     opacity *= (float)session.global("opacity");
-  bool allopaque = !session.global("sort");
+  bool allopaque = session.global("opaque");
   if (allopaque) opacity = 1.0;
   prog->setUniformf("uOpacity", opacity);
   prog->setUniformi("uLighting", lighting);
