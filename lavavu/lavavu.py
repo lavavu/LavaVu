@@ -1049,13 +1049,14 @@ class Object(dict):
 
         Parameters
         ----------
-        data : list or array
+        data : list or array or string
             (If data is not provided, the object's texture data will be cleared)
             Pass a list or numpy uint32 or uint8 array
             texture data is loaded as raw image data
             shape of array must be 2d or 3d,
             either (height, width, channels) for RGB(A) image
             or (height, width) for single channel grayscale image
+            Pass a string to load a texture from given filename
         flip : boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
@@ -1067,6 +1068,9 @@ class Object(dict):
         if data is None:
             #Clear texture
             self.parent.app.clearTexture(self.ref)
+            return
+        if isinstance(data, str):
+            self.parent.app.setTexture(self.ref, data)
             return
 
         data = _convert(data)

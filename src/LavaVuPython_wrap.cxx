@@ -25020,6 +25020,51 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_setTexture(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  std::string arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_setTexture",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_setTexture" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_setTexture" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_setTexture" "', argument " "3"" of type '" "std::string""'"); 
+    }
+    arg3 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->setTexture(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_textureUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -29252,6 +29297,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_arrayUInt", _wrap_LavaVu_arrayUInt, METH_VARARGS, NULL},
 	 { "LavaVu_arrayFloat", _wrap_LavaVu_arrayFloat, METH_VARARGS, NULL},
 	 { "LavaVu_clearTexture", _wrap_LavaVu_clearTexture, METH_VARARGS, NULL},
+	 { "LavaVu_setTexture", _wrap_LavaVu_setTexture, METH_VARARGS, NULL},
 	 { "LavaVu_textureUChar", _wrap_LavaVu_textureUChar, METH_VARARGS, NULL},
 	 { "LavaVu_textureUInt", _wrap_LavaVu_textureUInt, METH_VARARGS, NULL},
 	 { "LavaVu_getGeometry", _wrap_LavaVu_getGeometry, METH_VARARGS, NULL},

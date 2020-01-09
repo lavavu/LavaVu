@@ -3462,6 +3462,19 @@ void LavaVu::clearTexture(DrawingObject* target)
   }
 }
 
+void LavaVu::setTexture(DrawingObject* target, std::string texpath)
+{
+  //GL_Check_Thread(viewer->render_thread);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
+  if (container)
+  {
+    Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
+    container->setTexture(target, texture);
+    reloadObject(target);
+  }
+}
+
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
 {
   if (!amodel || !target) return;
