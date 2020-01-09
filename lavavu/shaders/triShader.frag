@@ -3,6 +3,7 @@ in vec3 vNormal;
 in vec3 vPosEye;
 in vec3 vVertex;
 in vec2 vTexCoord;
+in vec3 vLightPos;
 
 uniform float uOpacity;
 uniform bool uLighting;
@@ -19,7 +20,7 @@ uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform bool uOpaque;
-uniform vec3 uLightPos;
+uniform vec4 uLight;
 
 #ifdef WEBGL
 #define outColour gl_FragColor
@@ -54,6 +55,11 @@ void calcColour(vec3 colour, float alpha)
   colour = mix(intensity, colour, uSaturation);
   colour = mix(AvgLumin, colour, uContrast);
 
+  //Gamma correction
+  //https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model#OpenGL_Shading_Language_code_sample
+  //const float screenGamma = 2.2; // Assume the monitor is calibrated to the sRGB color space
+  //vec3 colorGammaCorrected = pow(color, vec3(1.0 / screenGamma));
+
   outColour = vec4(colour, alpha);
 }
 
@@ -68,7 +74,7 @@ void main(void)
     fColour = vFlatColour;
 #endif
   float alpha = fColour.a;
-  if (uTextured && vTexCoord.x >= 0.0)
+  if (uTextured && vTexCoord.x > -1.0) //Null texcoord (-1,-1)
   {
     //With this blending mode, texture is blended over base colour,
     //and colour opacity has no effect on texture opacity
@@ -100,11 +106,11 @@ void main(void)
     calcColour(fColour.rgb, alpha);
     return;
   }
-  
-  const vec3 light = vec3(1.0);  //Colour of light
 
-  //Head light, lightPos=(0,0,0) - vPosEye
-  vec3 lightDir = normalize(uLightPos - vPosEye);
+  vec3 lightColour = uLight.xyz;
+  
+  //Light direction
+  vec3 lightDir = normalize(vLightPos - vPosEye);
 
   //Calculate diffuse lighting
   vec3 N = normalize(vNormal);
@@ -118,25 +124,47 @@ void main(void)
     N = normalize(cross(fdx,fdy)); 
   }
 
-  //Two-sided lighting with abs()
-  float diffuse = abs(dot(N, lightDir));
-  //float diffuse = dot(N, lightDir);
+  //Modified to use energy conservation adjustment
+  //https://learnopengl.com/Advanced-Lighting/Advanced-Lighting
+  const float kPi8 = 3.14159265 * 8.0;
+
+  //Calculate diffuse component
+  //Single side or two-sided lighting with abs()?
+  float diffuse = dot(N, lightDir);
+  if (uLight.w < 0.5)
+    diffuse = abs(diffuse);
+  else
+    diffuse = max(diffuse, 0.0);
 
   //Compute the specular term
-  vec3 specular = vec3(0.0,0.0,0.0);
   if (diffuse > 0.0 && uSpecular > 0.0)
   {
-    vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
+    //Specular power, higher is more focused/shiny
+    float shininess = 256.0 * clamp(uShininess, 0.0, 1.0);
+    vec3 specolour = lightColour; //Color of light - use the same as diffuse/ambient
+    //Blinn-Phong
+    vec3 viewDir = normalize(-vPosEye);
     //Normalize the half-vector
-    //vec3 halfVector = normalize(vPosEye + lightDir);
-    vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
-    //Compute cosine (dot product) with the normal (abs for two-sided)
-    float NdotHV = abs(dot(N, halfVector));
-    float shininess = 250.0 * (1.0 - uShininess);
-    specular = specolour * pow(NdotHV, shininess);
-    calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse) + (specular * uSpecular), alpha);
+    vec3 halfVector = normalize(lightDir + viewDir);
+
+    //Compute cosine (dot product) with the normal
+    float NdotHV = dot(N, halfVector);
+    //Single side or two-sided lighting with abs()?
+    if (uLight.w < 0.5)
+      NdotHV = abs(NdotHV);
+    else
+      NdotHV = max(NdotHV, 0.0);
+
+    //Energy conservation adjustment (more focused/shiny highlight will be brighter)
+    float energyConservation = ( 8.0 + shininess) / kPi8;
+    //Multiplying specular by diffuse prevents bands at edges for low shininess
+    float spec = diffuse * uSpecular * energyConservation * pow(NdotHV, shininess);
+
+    //Final colour - specular + diffuse + ambient
+    calcColour(lightColour * (fColour.rgb * (uAmbient + uDiffuse * diffuse) + vec3(spec)), alpha);
   }
   else
-    calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse), alpha);
+    //Final colour - diffuse + ambient only
+    calcColour(lightColour * fColour.rgb * (uAmbient + diffuse * uDiffuse), alpha);
 }
 

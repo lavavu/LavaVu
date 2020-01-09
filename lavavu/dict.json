@@ -504,15 +504,32 @@
       ]
     ]
   },
+  "light": {
+    "default": [
+      1.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "target": "object",
+    "type": "real[4]",
+    "desc": "Light properties, colour Red,Green,Blue values and fourth component if provided is two-sided lighting flag, set to 1.0 to switch to single-sided lighting",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "lightpos": {
     "default": [
       0.1,
       -0.1,
-      2.0
+      2.0,
+      0.0
     ],
     "target": "object",
-    "type": "real[3]",
-    "desc": "Light position X Y Z relative to camera position (follows camera)",
+    "type": "real[4]",
+    "desc": "Light position X Y Z. Default is relative to camera (light moves follows camera, rotating the scene changes the illuminated area). Fourth component, if provided, is scene light flag, set to 1.0 to switch to a position in the scene, regardless of camera/view position the same parts of the scene will be illuminated.",
     "strict": true,
     "redraw": 0,
     "control": [

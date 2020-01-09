@@ -1241,6 +1241,7 @@ void Geometry::setState(Geom_Ptr g)
   prog->setUniformf("uSpecular", props["specular"]);
   prog->setUniformf("uShininess", props["shininess"]);
   prog->setUniform("uLightPos", props["lightpos"]);
+  prog->setUniform("uLight", props["light"]);
   prog->setUniformi("uTextured", texture && texture->unit >= 0 && g->hasTexture());
   prog->setUniformf("uOpaque", allopaque || g->opaque);
   prog->setUniformf("uFlat", flat);
