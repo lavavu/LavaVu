@@ -142,6 +142,7 @@ void Triangles::loadBuffers()
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     debug_print("Mesh %d/%d has normals? %d == %d\n", index, geom.size(), geom[index]->render->normals.size(), geom[index]->render->vertices.size());
+    if (!geom[index]->count()) continue;
     bool grid = (geom[index]->width * geom[index]->height == geom[index]->count());
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     bool flat = geom[index]->draw->properties["flat"];
@@ -534,6 +535,7 @@ void Triangles::calcGridNormals(unsigned int i)
   debug_print("Calculating normals for grid surface %d... ", i);
   bool hasTexture = geom[i]->hasTexture();
   bool genTexCoords = hasTexture && geom[i]->render->texCoords.size() == 0;
+  bool flip = geom[i]->draw->properties["flip"];
 
   // Calc per-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   int n = 0;
@@ -551,39 +553,43 @@ void Triangles::calcGridNormals(unsigned int i)
       // Get sum of normal vectors
       if (j > 0)
       {
+        unsigned int j0 = flip ? j-1 : j;
+        unsigned int j1 = flip ? j : j-1;
         if (k > 0)
         {
           // Look back
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k-1]);
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j0 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j1 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j0 + k-1]);
         }
 
         if (k < geom[i]->width - 1)
         {
           // Look back in x, forward in y
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k+1],
-                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k]);
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j0 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j0 + k+1],
+                                            geom[i]->render->vertices[geom[i]->width * j1 + k]);
         }
       }
 
       if (j <  geom[i]->height - 1)
       {
+        unsigned int j0 = flip ? j+1 : j;
+        unsigned int j1 = flip ? j : j+1;
         if (k > 0)
         {
           // Look forward in x, back in y
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k-1],
-                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k]);
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j0 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j0 + k-1],
+                                            geom[i]->render->vertices[geom[i]->width * j1 + k]);
         }
 
         if (k < geom[i]->width - 1)
         {
           // Look forward
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k+1]);
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j0 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j1 + k],
+                                            geom[i]->render->vertices[geom[i]->width * j0 + k+1]);
         }
       }
 
