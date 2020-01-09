@@ -838,16 +838,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     session.globals[action] = value;
     printMessage("Set global %s to %.2f", action.c_str(), value);
   }
-  else if (parsed.exists("cache"))
-  {
-    if (gethelp)
-    {
-      help += "Load all timesteps into cache\n\n"
-              "**Usage:** cache\n\n";
-      return false;
-    }
-    amodel->cacheLoad();
-  }
   else if (parsed.exists("interactive"))
   {
     if (gethelp)
@@ -928,6 +918,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Add to the queue to be processed once open
     queueCommands(cmd);
     return false;
+  }
+  else if (parsed.exists("cache"))
+  {
+    if (gethelp)
+    {
+      help += "Load all timesteps into cache\n\n"
+              "**Usage:** cache\n\n";
+      return false;
+    }
+    amodel->cacheLoad();
   }
   else if (parsed.exists("save"))
   {
