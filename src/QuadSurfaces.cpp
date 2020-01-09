@@ -53,6 +53,14 @@ void QuadSurfaces::update()
   // with simpler version that sorts by centre of each geometry element
   //
   // Functions to turn grid vertices into triangles are already provided by Triangles() class
+  sort();
+
+  // Update triangles...
+  Triangles::update();
+}
+
+void QuadSurfaces::sort()
+{
   clock_t t1,t2,tt;
   t1 = tt = clock();
   // Update and depth sort surfaces..
@@ -109,15 +117,6 @@ void QuadSurfaces::update()
   t2 = clock();
   debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
-
-  // Update triangles...
-  Triangles::update();
-}
-
-void QuadSurfaces::sort()
-{
-  if (view && view->is3d)
-    redraw = true; //Recalc cross section order
 }
 
 void QuadSurfaces::draw()
