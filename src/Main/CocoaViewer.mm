@@ -357,7 +357,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
   //NSLog(@"Update");
   if (redisplay)
-  { 
+  {
     viewer->display();
     redisplay = false;
     CGLFlushDrawable((CGLContextObj)[[self openGLContext] CGLContextObj]);
@@ -382,7 +382,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  NSSize size = [ [ _window contentView ] frame ].size;
+  NSSize size = [ [ cWindow contentView ] frame ].size;
   NSLog(@"Window resize: %lf, %lf", size.width, size.height);
   windowRect.size.width = size.width;
   windowRect.size.height = size.height;
@@ -397,7 +397,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
   viewer->resize(size.width, size.height);
   viewer->postdisplay = true;
- 
+
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
 }
@@ -466,7 +466,7 @@ CocoaViewer::~CocoaViewer()
 
 void CocoaViewer::open(int w, int h)
 {
-  if (!visible || app->session.automate) 
+  if (!visible || app->session.automate)
   {
     //Use CGL viewer for offscreen/automated
     CGLViewer::open(w, h);
@@ -603,7 +603,7 @@ void CocoaViewer::display(bool redraw)
 void CocoaViewer::execute()
 {
   postdisplay = true;
-  if (app->session.automate) 
+  if (app->session.automate)
   {
     //Once CocoaViewer run loop started
     //we can't leave, so disable for now
@@ -615,7 +615,7 @@ void CocoaViewer::execute()
   }
 
   //Run event loop
-  if (visible) 
+  if (visible)
     [NSApp run];
   else
     CGLViewer::execute();
