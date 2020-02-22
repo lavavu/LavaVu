@@ -123,7 +123,23 @@ ColourLookup& GeomData::colourCalibrate()
   ColourMap* cmap = draw->colourMap;
   FloatValues* vals = colourData();
 
-  if (render->colours.size() > 0)
+  if (cmap && vals)
+  {
+    //Calibrate the colour map
+    auto range = draw->ranges[vals->label];
+    cmap->calibrate(&range);
+
+    if (mappedOpacity)
+    {
+      _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
+      _getColourMappedOpacityMapped(draw->colour, 0); //Cache a representative colour
+      return _getColourMappedOpacityMapped;
+    }
+    _getColourMapped.init(draw, render, vals, NULL);
+    _getColourMapped(draw->colour, 0); //Cache a representative colour
+    return _getColourMapped;
+  }
+  else if (render->colours.size() > 0)
   {
     if (mappedOpacity)
     {
@@ -158,22 +174,6 @@ ColourLookup& GeomData::colourCalibrate()
     _getColourLuminance.init(draw, render, NULL, NULL);
     _getColourLuminance(draw->colour, 0); //Cache a representative colour
     return _getColourLuminance;
-  }
-  else if (cmap && vals)
-  {
-    //Calibrate the colour map
-    auto range = draw->ranges[vals->label];
-    cmap->calibrate(&range);
-
-    if (mappedOpacity)
-    {
-      _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
-      _getColourMappedOpacityMapped(draw->colour, 0); //Cache a representative colour
-      return _getColourMappedOpacityMapped;
-    }
-    _getColourMapped.init(draw, render, vals, NULL);
-    _getColourMapped(draw->colour, 0); //Cache a representative colour
-    return _getColourMapped;
   }
   else
   {
