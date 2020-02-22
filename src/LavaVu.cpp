@@ -1418,7 +1418,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   }
 }
 
-bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* tris, bool verbose)
+bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* geom, bool verbose)
 {
   //std::cerr << "Applying material : " << material.name << std::endl;
   if (material.name.length() == 0)
@@ -1450,7 +1450,7 @@ bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
 
     //Add per-object texture
     Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
-    tris->setTexture(obj, texture);
+    geom->setTexture(obj, texture);
     return false;
   }
   else
@@ -1461,8 +1461,8 @@ bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
     c.b = material.diffuse[2] * 255;
     c.a = material.dissolve * 255;
     if (c.a == 0.0) c.a = 255;
-    //std::cout << c << std::endl;
-    tris->read(obj, 1, lucRGBAData, &c.value);
+    //std::cout << "Material colour: " << c << std::endl;
+    geom->read(obj, 1, lucRGBAData, &c.value);
     return c.a == 255;
   }
 }
@@ -1492,9 +1492,9 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base, "renderer=triangles\ncolour=[128,128,128]\n"));
-  Geometry* tris = amodel->lookupObjectRenderer(tobj);
-  if (!tris) return;
+  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base));
+  Geometry* geom = NULL;
+  std::string renderer = "triangles";
 
   for (size_t i = 0; i < shapes.size(); i++)
   {
@@ -1506,15 +1506,52 @@ void LavaVu::readOBJ(const FilePath& fn)
     debug_print("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
     debug_print("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 
-    //Add new triangles data store to object
-    tris->add(tobj);
+    //Lines? Points?
+    if (shapes[i].path.indices.size())
+      renderer = "lines";
+    else if (shapes[i].mesh.num_face_vertices.size() == 0)
+      renderer = "points";
+
+    if (!geom)
+    {
+      if (!tobj->properties.has("renderer"))
+        tobj->properties.data["renderer"] = renderer;
+      geom = amodel->lookupObjectRenderer(tobj);
+      if (!geom) return;
+    }
+    //Add new triangles(or points or lines) data store to object
+    geom->add(tobj);
+
+    //Load point or line data
+    bool opaque = true;
+    if (shapes[i].path.indices.size() || shapes[i].mesh.num_face_vertices.size() == 0)
+    {
+      /*/Load first material as default for object
+      if (shapes[i].path.material_ids.size() > 0 &&
+          shapes[i].path.material_ids[0] >= 0 &&
+          (int)materials.size() > shapes[i].path.material_ids[0])
+        opaque = readOBJ_material(fn, materials[shapes[i].path.material_ids[0]], tobj, geom, verbose);
+        */
+
+      //Load
+      if (shapes[i].path.indices.size())
+      {
+        //Fix negative indices
+        for (size_t d=0; d < shapes[i].path.indices.size(); d++)
+          if (shapes[i].path.indices[d] < 0)
+            shapes[i].path.indices[d] = attrib.vertices.size()/3 + shapes[i].path.indices[d]; 
+        //Load
+        geom->read(tobj, shapes[i].path.indices.size(), lucIndexData, &shapes[i].path.indices[0]);
+      }
+      geom->read(tobj, attrib.vertices.size()/3, lucVertexData, &attrib.vertices[0]);
+      continue;
+    }
 
     //Load first material as default for object
-    bool opaque = true;
     if (shapes[i].mesh.material_ids.size() > 0 &&
         shapes[i].mesh.material_ids[0] >= 0 &&
         (int)materials.size() > shapes[i].mesh.material_ids[0])
-      opaque = readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, tris, verbose);
+      opaque = readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, geom, verbose);
 
     //Default is to load the indexed triangles and provided normals
     //Can be overridden by setting trisplit (-T#)
@@ -1528,8 +1565,15 @@ void LavaVu::readOBJ(const FilePath& fn)
     int voffset = 0;
     unsigned int current_material_id = 0;
 
-    //TODO: load point data (vertices only)
-    for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
+#if 0
+    //Load all vertex/normal/texcoord data initially
+    geom->read(tobj, attrib.vertices.size()/3, lucVertexData, &attrib.vertices[0]);
+    geom->read(tobj, attrib.normals.size()/3, lucNormalData, &attrib.normals[0]);
+    geom->read(tobj, attrib.texcoords.size()/2, lucTexCoordData, &attrib.texcoords[0]);
+#endif
+
+    //for (size_t f = 0; f < shapes[i].mesh.num_face_vertices.size(); f+=3)
+    for (size_t f=0; f < shapes[i].mesh.indices.size(); f+=3)
     {
       //Get the material, if it has changed, load the new data and add an element
       if (materials.size() > 0 && shapes[i].mesh.material_ids.size() > 1)
@@ -1546,12 +1590,21 @@ void LavaVu::readOBJ(const FilePath& fn)
         {
           //printf("%d current material %d == %d\n", f, current_material_id, material_id);
           //TODO: only add new container if a new texture is loaded?
-          tris->add(tobj); //Start new container
-          opaque = readOBJ_material(fn, materials[material_id], tobj, tris, verbose);
+          geom->add(tobj); //Start new container
+          opaque = readOBJ_material(fn, materials[material_id], tobj, geom, verbose);
           voffset = 0;
           current_material_id = material_id;
         }
       }
+
+#if 0
+      //Use the provided indices - assumes the same vertex/normal/texcoord indices
+      geom->read(tobj, 1, lucIndexData, &shapes[i].mesh.indices[f].vertex_index);
+      geom->read(tobj, 1, lucIndexData, &shapes[i].mesh.indices[f+1].vertex_index);
+      geom->read(tobj, 1, lucIndexData, &shapes[i].mesh.indices[f+2].vertex_index);
+      //printf("%d %d %d\n", ids[0].vertex_index, ids[1].vertex_index, ids[2].vertex_index);
+#else
+      //trisplit = 1;
 
       tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
       int vi[3] = {3*ids[0].vertex_index, 3*ids[1].vertex_index, 3*ids[2].vertex_index};
@@ -1563,17 +1616,17 @@ void LavaVu::readOBJ(const FilePath& fn)
         //printf("%d %d %d\n", ids[0].vertex_index, ids[1].vertex_index, ids[2].vertex_index);
         for (int c=0; c<3; c++)
         {
-          tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi[c]]);
-          tris->read(tobj, 1, lucIndexData, &voffset);
+          geom->read(tobj, 1, lucVertexData, &attrib.vertices[vi[c]]);
+          geom->read(tobj, 1, lucIndexData, &voffset);
           voffset++;
           if (attrib.texcoords.size())
-            tris->read(tobj, 1, lucTexCoordData, &attrib.texcoords[2*ids[c].texcoord_index]);
+            geom->read(tobj, 1, lucTexCoordData, &attrib.texcoords[2*ids[c].texcoord_index]);
           if (attrib.normals.size())
           {
             //Some files skip the normal index, so assume it is the same as vertex index
             int nidx = 3*ids[c].normal_index;
             if (nidx < 0) nidx = 3*ids[c].vertex_index;
-            tris->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
+            geom->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
           }
 
           //Extended vertex spec with colour (R,G,B float)
@@ -1581,7 +1634,7 @@ void LavaVu::readOBJ(const FilePath& fn)
           if (attrib.colors.size())
           {
             Colour C(_FTOC(attrib.colors[vi[c]]), _FTOC(attrib.colors[vi[c]+1]), _FTOC(attrib.colors[vi[c]+2]));
-            tris->read(tobj, 1, lucRGBAData, &C.value);
+            geom->read(tobj, 1, lucRGBAData, &C.value);
           }
         }
       }
@@ -1598,17 +1651,17 @@ void LavaVu::readOBJ(const FilePath& fn)
         float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
         float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
         float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
-        tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, true, opaque ? 0.0 : trilimit);
+        geom->addTriangle(tobj, tv0, tv1, tv2, trisplit, true, opaque ? 0.0 : trilimit);
       }
       else
       {
-        tris->addTriangle(tobj,
+        geom->addTriangle(tobj,
                    &attrib.vertices[vi[0]],
                    &attrib.vertices[vi[1]],
                    &attrib.vertices[vi[2]],
                    trisplit, false, opaque ? 0.0 : trilimit);
       }
-
+#endif
     }
   }
 }
