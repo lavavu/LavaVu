@@ -318,7 +318,7 @@ class Server(threading.Thread):
                 self.port += 1
                 #Try again
                 self.run()
-            if e.errno == errno.EAFNOSUPPORT: #97 : Address family not supported by protocol
+            elif e.errno == errno.EAFNOSUPPORT: #97 : Address family not supported by protocol
                 #Try next host name/address
                 self.host += 1
                 if self.host > 2:
