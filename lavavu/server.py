@@ -247,6 +247,7 @@ HTTP Server manager class
 ports = [] #List of ports
 class Server(threading.Thread):
     def __init__(self, viewer, port=None, ipv6=False, retries=100):
+        self.host = 0
         if port is None:
             port = 8080
         self._closing = False
@@ -275,11 +276,18 @@ class Server(threading.Thread):
             handler = partial(LVRequestHandler, self.viewer)
             if self.ipv6:
                 HTTPServer.address_family = socket.AF_INET6
-                #httpd = HTTPServer(('::', self.port), handler)
-                httpd = ThreadingHTTPServer(('::', self.port), handler)
+                hosts = ['::', 'localhost', '::1']
+                host = hosts[self.host]
+                #httpd = HTTPServer((host, self.port), handler)
+                httpd = ThreadingHTTPServer((host, self.port), handler)
             else:
-                #httpd = HTTPServer(('0.0.0.0', self.port), handler)
+                HTTPServer.address_family = socket.AF_INET
+                hosts = ['0.0.0.0', 'localhost', '127.0.0.1']
+                host = hosts[self.host]
+                #httpd = HTTPServer((host, self.port), handler)
                 httpd = ThreadingHTTPServer(('0.0.0.0', self.port), handler)
+
+            #print("Server running on host %s port %s" % (host, self.port))
 
             #Sync with starting thread here to ensure server thread has initialised before it continues
             with self._cv:
@@ -296,14 +304,25 @@ class Server(threading.Thread):
                 httpd.handle_request()
 
         except (Exception) as e:
+            self.retries -= 1
+            if self.retries < 1:
+                print("Failed to start server, max retries reached")
+
             #Try another port
-            if e.errno == errno.EADDRINUSE:
+            if e.errno == errno.EADDRINUSE: #98
                 self.port += 1
-                self.retries -= 1
-                #print("Port already in use - retry ", (self.maxretries - self.retries), "Port: ", self.port)
-                if self.retries < 1:
-                    print("Failed to start server, max retries reached")
-                    return
+                #Try again
+                self.run()
+            if e.errno == errno.EAFNOSUPPORT: #97 : Address family not supported by protocol
+                #Try next host name/address
+                self.host += 1
+                if self.host > 2:
+                    #Try again without ipv6?
+                    if self.ipv6:
+                        self.ipv6 = False
+                    else:
+                        self.ipv6 = True
+                    self.host = 0
                 #Try again
                 self.run()
             else:
