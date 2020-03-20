@@ -95,12 +95,17 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
         query = parse_qs(parsed.query)
 
         def img_response():
+            resp = None
             if 'width' in query and 'height' in query:
-                self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0]))), 'image/jpeg')
+                resp = lv.jpeg(resolution=(int(query['width'][0]), int(query['height'][0])))
             elif 'width' in query:
-                self.serveResponse(lv.jpeg(resolution=(int(query['width'][0]), 0)), 'image/jpeg')
+                resp = lv.jpeg(resolution=(int(query['width'][0]), 0))
             else:
-                self.serveResponse(lv.jpeg(), 'image/jpeg')
+                resp = lv.jpeg()
+
+            #Ensure the response is valid before serving
+            if resp is not None:
+                self.serveResponse(resp, 'image/jpeg')
 
         if self.path.find('image') > 0:
             img_response()
