@@ -2267,6 +2267,15 @@ class Viewer(dict):
         #Launch in thread?
         #(Can disable by setting port=0)
         if port > 0:
+            #Start the web server
+            try:
+                self.server = server.serve(self, port, ipv6=True) #ipv6 flag pass through?
+            except:
+                #Failed, disable server and continue in single thread mode (no interactive support)
+                print('Failed to start server, continuing with interaction disabled')
+                port = 0
+
+        if port > 0:
             #Exit handler to clean up threads
             #(__del__ does not always seem to get called on termination)
             def exitfn(vref):
@@ -2305,9 +2314,6 @@ class Viewer(dict):
                 self._thread.start()
                 self._cv.wait()
 
-            #Start the web server
-            import server
-            self.server = server.serve(self, port, ipv6=True) #ipv6 flag pass through?
         else:
             self._create(False, binpath, havecontext, omegalib, *args, **kwargs)
 
