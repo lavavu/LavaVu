@@ -56,6 +56,7 @@ TODO:
     Review possible dependencies to support image/video libraries
     - imageio or pillow for libpng, libtiff
     - ffmpeg-python or opencv-python for libavcodec
+    - anaconda binaries
 
 NOTE:
     To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
