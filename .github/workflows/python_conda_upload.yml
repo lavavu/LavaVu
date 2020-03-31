@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [  'ubuntu-latest', 'macos-latest']
-        python-version: ['2.7', '3.7']
+        python-version: ['3.7']  # 2.7 seems problematic all round 
 
     steps:
       - uses: actions/checkout@v2
@@ -31,7 +31,9 @@ jobs:
       - name: ubuntu apt-get dependencies
         if: matrix.os == 'ubuntu-latest' 
         shell: bash -l {0}
-        run: sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev mesa-common-dev 
+        run: |
+          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev mesa-common-dev 
+          conda install mesalib 
 
       - name: Install dependencies via conda
         shell: bash -l {0}
