@@ -33,7 +33,7 @@ jobs:
         shell: bash -l {0}
         run: |
           sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev mesa-common-dev 
-          conda install mesalib 
+          conda install -c conda-forge mesalib 
 
       - name: Install dependencies via conda
         shell: bash -l {0}
