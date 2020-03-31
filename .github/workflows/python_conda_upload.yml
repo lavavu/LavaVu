@@ -28,6 +28,11 @@ jobs:
         shell: bash -l {0}
         run: conda info
 
+      - name: ubuntu apt-get dependencies
+        if: matrix.os == 'ubuntu-latest' 
+        shell: bash -l {0}
+        run: sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev xvfb'
+
       - name: Install dependencies via conda
         shell: bash -l {0}
         run: |
