@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [  'ubuntu-latest', 'macos-latest']
-        python-version: ['3.7']  # 2.7 seems problematic all round 
+        python-version: ['2.7', '3.7']  # 2.7 seems problematic all round 
 
     steps:
       - uses: actions/checkout@v2
