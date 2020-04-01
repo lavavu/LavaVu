@@ -28,22 +28,32 @@ jobs:
         shell: bash -l {0}
         run: conda info
 
-      - name: ubuntu apt-get dependencies
+      - name: ubuntu apt-get dependencies / conda dependencies
         if: matrix.os == 'ubuntu-latest' 
         shell: bash -l {0}
         run: |
           sudo apt-get install build-essential libx11-dev
           sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev 
-
-      - name: Install dependencies via conda
-        shell: bash -l {0}
-        run: |
           conda update -n base -c defaults conda
-          conda install -c conda-forge compilers numpy  
+          conda install -c conda-forge numpy  
           conda install conda-build anaconda-client 
 
           # pip install does a lot of the installation / prep work that the anaconda bdist_conda needs
-          pip install . 
+          pip install -e . 
+
+
+
+      - name: Macos Install dependencies - mostly via conda
+        if: matrix.os == 'macos-latest' 
+
+        shell: bash -l {0}
+        run: |
+          conda update -n base -c defaults conda
+          conda install -c conda-forge numpy  
+          conda install conda-build anaconda-client 
+
+          # pip install does a lot of the installation / prep work that the anaconda bdist_conda needs
+          pip install -e . 
 
       - name: Reinvent the wheel / upload (UBUNTU)
         if: matrix.os == 'ubuntu-latest' 
