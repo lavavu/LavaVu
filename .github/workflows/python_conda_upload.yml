@@ -32,17 +32,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest' 
         shell: bash -l {0}
         run: |
-          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev mesa-common-dev 
-          conda install -c conda-forge mesalib sqlite 
+          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev libx11-dev
 
       - name: Install dependencies via conda
         shell: bash -l {0}
         run: |
           conda update -n base -c defaults conda
           conda install -c conda-forge compilers numpy  
-          # conda install pytest
           conda install conda-build anaconda-client 
 
+          # pip install does a lot of the installation / prep work that the anaconda bdist_conda needs
+          pip install . 
 
       - name: Reinvent the wheel / upload (UBUNTU)
         if: matrix.os == 'ubuntu-latest' 
@@ -57,8 +57,8 @@ jobs:
 
           anaconda logout
           printf Y | anaconda login --username $ANACONDA_USERNAME --password $ANACONDA_PASSWORD --hostname stripy-virtual-${{ matrix.os}}-${{ matrix.python-version }}
-          pip install . # This triggers the configuring / dependency checking and then it is possible to do the bdist_conda step 
-          python setup.py bdist_conda   # this will upload to lmoresi in the first instance ... 
+          # pip install . # This triggers the configuring / dependency checking and then it is possible to do the bdist_conda step 
+          python setup.py bdist_conda    
           anaconda upload -u underworldcode --skip-existing /usr/share/miniconda/envs/test/conda-bld/*/*.tar.bz2 
           anaconda logout
 
@@ -76,8 +76,7 @@ jobs:
 
           anaconda logout
           printf Y | anaconda login --username $ANACONDA_USERNAME --password $ANACONDA_PASSWORD --hostname stripy-virtual-${{ matrix.os}}-${{ matrix.python-version }}
-          pip install . # This triggers the configuring / dependency checking and then it is possible to do the bdist_conda step 
-          python setup.py bdist_conda   # this will upload to lmoresi in the first instance ... 
+          python setup.py bdist_conda   
           anaconda upload -u underworldcode --skip-existing /usr/local/miniconda/envs/test/conda-bld/*/*.tar.bz2 
           anaconda logout
 
