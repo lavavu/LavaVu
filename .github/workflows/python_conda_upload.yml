@@ -1,0 +1,96 @@
+name: conda -c underworldcode 
+
+on: 
+  release:
+    types: [created, edited]
+  push:
+    branches:
+      - conda-test
+
+# I think py38 is pointless with bdist_conda as it seems not to be supported yet
+
+jobs:
+  catch_and_release: 
+    name: ${{matrix.os}} build and test on py (${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [  'ubuntu-latest', 'macos-latest']
+        python-version: ['2.7', '3.7']  # 2.7 seems problematic all round 
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
+
+      - name: ubuntu apt-get dependencies / conda dependencies
+        if: matrix.os == 'ubuntu-latest' 
+        shell: bash -l {0}
+        run: |
+          sudo apt-get install build-essential libx11-dev
+          sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglu1-mesa-dev 
+          conda update -n base -c defaults conda
+          conda install -c conda-forge numpy  
+          conda install conda-build anaconda-client 
+
+          # pip install does a lot of the installation / prep work that the anaconda bdist_conda needs
+          pip install -e . 
+
+
+
+      - name: Macos Install dependencies - mostly via conda
+        if: matrix.os == 'macos-latest' 
+
+        shell: bash -l {0}
+        run: |
+          conda update -n base -c defaults conda
+          conda install -c conda-forge numpy  
+          conda install conda-build anaconda-client 
+
+          # pip install does a lot of the installation / prep work that the anaconda bdist_conda needs
+          pip install -e . 
+
+      - name: Reinvent the wheel / upload (UBUNTU)
+        if: matrix.os == 'ubuntu-latest' 
+
+        env:
+          ANACONDA_USERNAME: ${{ secrets.ANACONDA_USERNAME}}
+          ANACONDA_PASSWORD: ${{ secrets.ANACONDA_PASSWORD}}
+
+        shell: bash -l {0}
+        run: |
+          # Note the hard-coded path is different on ubuntu v. macos
+
+          anaconda logout
+          printf Y | anaconda login --username $ANACONDA_USERNAME --password $ANACONDA_PASSWORD --hostname stripy-virtual-${{ matrix.os}}-${{ matrix.python-version }}
+          # pip install . # This triggers the configuring / dependency checking and then it is possible to do the bdist_conda step 
+          python setup.py bdist_conda    
+          anaconda upload -u underworldcode --skip-existing /usr/share/miniconda/envs/test/conda-bld/*/*.tar.bz2 
+          anaconda logout
+
+          
+      - name: Reinvent the wheel / upload (MACOS)
+        if: matrix.os == 'macos-latest' 
+
+        env:
+          ANACONDA_USERNAME: ${{ secrets.ANACONDA_USERNAME}}
+          ANACONDA_PASSWORD: ${{ secrets.ANACONDA_PASSWORD}}
+
+        shell: bash -l {0}
+        run: |
+          # Note the hard-coded path is different on ubuntu v. macos
+
+          anaconda logout
+          printf Y | anaconda login --username $ANACONDA_USERNAME --password $ANACONDA_PASSWORD --hostname stripy-virtual-${{ matrix.os}}-${{ matrix.python-version }}
+          python setup.py bdist_conda   
+          anaconda upload -u underworldcode --skip-existing /usr/local/miniconda/envs/test/conda-bld/*/*.tar.bz2 
+          anaconda logout
+
+         
+
+
