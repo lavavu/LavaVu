@@ -1933,6 +1933,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #OpenGL context creation options
         havecontext = False
         omegalib = False
+        self.use_moderngl = False
+        self.use_moderngl_window = False
         if "provided" in context:
             havecontext = True
         elif "omegalib" in context:
