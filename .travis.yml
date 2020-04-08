@@ -15,10 +15,11 @@ matrix:
       os: linux
       compiler: gcc
       install: pip install numpy
-    - os: osx
+    - python: "3.6"
+      os: osx
       language: cpp
       compiler: clang
-      install: pip2 install numpy
+      install: pip install numpy
 addons:
   apt:
     packages:
