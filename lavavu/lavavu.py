@@ -50,6 +50,9 @@ import threading
 import time
 import weakref
 
+if sys.version_info[0] < 3:
+    print("Python 3 required. LavaVu no longer supports Python 2.7.")
+
 from vutils import is_ipython, is_notebook, getname, download, inject, hidecode, style, cellstyle, cellwidth
 
 #import swig module
@@ -844,11 +847,8 @@ class Object(dict):
         self._geom = self.data
         return self._geom.__iter__()
 
-    def __next__(self): # Python 3
+    def __next__(self):
         return self._geom.__next__()
-
-    def next(self):
-        return self._geom.next()
 
     def vertices(self, data):
         """
@@ -4527,9 +4527,7 @@ class DrawData(object):
 def player(filename):
     """
     Shows a video inline within an ipython notebook.
-
     If IPython is not running, just returns
-
 
     Parameters
     ----------
@@ -5083,9 +5081,7 @@ def lerp(first, second, mu):
 if __name__ == '__main__':
     #Run doctests - only works on numpy 1.14+ due to changes in array printing
     npyv = numpy.__version__.split('.')
-    if sys.version_info[0] < 3:
-        print("Python 3 required for doctests")
-    elif int(npyv[0]) < 2 and int(npyv[1]) < 14:
+    if int(npyv[0]) < 2 and int(npyv[1]) < 14:
         print("NumPy 1.14 required for doctests")
     else:
         import doctest

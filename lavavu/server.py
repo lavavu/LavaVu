@@ -9,23 +9,11 @@ import base64
 import json
 import socket
 
-#Python2/3 compatibility hacks
-try:
-    # Python 2.x
-    from SocketServer import ThreadingMixIn
-    from SimpleHTTPServer import SimpleHTTPRequestHandler
-    #from SimpleHTTPServer import HTTPServer
-    from SocketServer import TCPServer as HTTPServer
-    from urllib import unquote
-    from urlparse import urlparse
-    from urlparse import parse_qs
-except ImportError:
-    # Python 3.x
-    from socketserver import ThreadingMixIn
-    from http.server import SimpleHTTPRequestHandler, HTTPServer
-    from urllib.parse import unquote
-    from urllib.parse import urlparse
-    from urllib.parse import parse_qs
+from socketserver import ThreadingMixIn
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+from urllib.parse import unquote
+from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 """
 HTTP Server interface

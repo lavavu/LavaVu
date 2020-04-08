@@ -54,9 +54,6 @@ winids = []
 id_random = Random() #Ensure we use our own default seed in case set in notebook
 def gen_id(length=10):
     alphabet = string.ascii_letters + string.digits
-    if not hasattr(id_random, 'choices'):
-        #For Python 2.7
-        return ''.join(id_random.choice(alphabet) for i in range(length))
     return ''.join(id_random.choices(alphabet, k=length))
 
 vertexShader = """
@@ -442,10 +439,7 @@ class _Container(_HTML):
     def __iter__(self):
         return self
 
-    def __next__(self): # Python 3
-        return self.next()
-
-    def next(self):
+    def __next__(self):
         if self._current > len(self._content)-1:
             self._current = 0
             raise StopIteration
@@ -779,10 +773,7 @@ class _MultiControl(_Control):
     def __iter__(self):
         return self
 
-    def __next__(self): # Python 3
-        return self.next()
-
-    def next(self):
+    def __next__(self):
         if self._current > len(self._content)-1:
             self._current = 0
             raise StopIteration
