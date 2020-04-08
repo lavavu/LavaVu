@@ -2043,7 +2043,12 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
     def textureUChar(self, *args, **kwargs):
         return self._lavavu_call('textureUChar', True, *args, **kwargs)
     """
+
     ####################################
+
+    def render(self, *args, **kwargs):
+        #Wait for return value! Required when calling render for video etc
+        return self._openglviewer_call('display', True, *args, **kwargs)
 
     def display(self, *args, **kwargs):
         #Don't wait for return value
@@ -3257,7 +3262,7 @@ class Viewer(dict):
         """        
         Render a new frame, explicit display update
         """
-        self.app.display()
+        self.app.render()
 
     def init(self):
         """        
