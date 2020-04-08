@@ -55,6 +55,14 @@ if sys.version_info[0] < 3:
 
 from vutils import is_ipython, is_notebook, getname, download, inject, hidecode, style, cellstyle, cellwidth
 
+try:
+    import moderngl
+    import moderngl_window
+    from moderngl_window.conf import settings as mgl_settings
+    from moderngl_window.timers.clock import Timer
+except (ImportError) as e:
+    pass
+
 #import swig module
 import LavaVuPython
 version = LavaVuPython.version
@@ -1918,10 +1926,30 @@ class Figure(dict):
 
 
 class _LavaVuThreadSafe(LavaVuPython.LavaVu):
-    def __init__(self, threaded=True, *args, **kwargs):
-        self._threaded = threaded
+    def __init__(self, threaded, runargs, binpath=None, context="default", resolution=(640,480)):
+        self.args = runargs
         self._closing = False
 
+        #OpenGL context creation options
+        havecontext = False
+        omegalib = False
+        if "provided" in context:
+            havecontext = True
+        elif "omegalib" in context:
+            havecontext = True
+            omegalib = True
+        elif "moderngl" in context:
+            havecontext = True
+            self.use_moderngl = True
+            if len(context) > 8:
+                self.use_moderngl_window = context[9:]
+        self.wnd = None
+        self.ctx = None
+        self.resolution = resolution
+
+        super(_LavaVuThreadSafe, self).__init__(binpath, havecontext, omegalib)
+
+        self._thread = threaded
         if threaded:
             # Create a condition variable to synchronize resource access
             self._cv = threading.Condition()
@@ -1933,7 +1961,25 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             #Safe call return value
             self._returned = None
 
-        super(_LavaVuThreadSafe, self).__init__(*args, **kwargs)
+            #Thread start
+            self._thread = threading.Thread(target=self._thread_run)
+            #Due to python failing to call __del__ on exit, have to use daemon or thread never quits
+            self._thread.daemon = True
+
+            #Start the thread and wait for it to finish initialising
+            with self._cv:
+                self._thread.start()
+                self._cv.wait()
+        else:
+            #Just run in main thread
+            self.run(runargs)
+
+    def _shutdown(self):
+        if self._thread:
+            #print("---SHUTDOWN-THREAD")
+            self._closing = True
+            self._thread.join()
+            self._thread = None
 
     #def __getattr__(self, attr):
     #    #Lock?
@@ -2093,7 +2139,7 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         return self._thread_call(getattr(self.viewer, name), wait_return, *args, **kwargs)
 
     def _thread_call(self, method, wait_return, *args, **kwargs):
-        if not self._threaded:
+        if not self._thread:
             return method(*args, **kwargs)
         """
         This calls a method on the render thread
@@ -2121,25 +2167,69 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         Used to: handle events, get images
         All OpenGL calls must be made from here
         """
-        #self._kwargs["usequeue"] = True #Switch on command queuing
+        try:
+            if self.use_moderngl:
+                self.ctx = moderngl.create_standalone_context(require=330)
+
+                mgl_timer = Timer()
+                mgl_timer.start()
+
+            if self.use_moderngl_window and self.ctx:
+                # Make sure you activate this context
+                moderngl_window.activate_context(ctx=self.ctx)
+                # Configure to use provided window class
+                window_str = 'moderngl_window.context.' + self.use_moderngl_window + '.Window'
+                window_cls = moderngl_window.get_window_cls(window_str)
+                self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
+
+                # register event methods
+                self.wnd.resize_func = self.resized
+                self.wnd.iconify_func = self.iconified
+                self.wnd.close_func = self.closed
+                self.wnd.key_event_func = self.key_event
+                self.wnd.mouse_position_event_func = self.mouse_position_event
+                self.wnd.mouse_drag_event_func = self.mouse_drag_event
+                self.wnd.mouse_scroll_event_func = self.mouse_scroll_event
+                self.wnd.mouse_press_event_func = self.mouse_press_event
+                self.wnd.mouse_release_event_func = self.mouse_release_event
+                self.wnd.unicode_char_entered_func = self.unicode_char_entered
+
+                self.wnd.exit_key = None #Disable ESC to exit
+                self.mousepos = (0,0)
+
+        except (Exception) as e:
+            print("moderngl context create failed, disabled ", e)
+            self.use_moderngl = False
+            self.use_moderngl_window = None
+
+        try:
+            self.run(self.args)
+        except (RuntimeError) as e:
+            print("LavaVu Run error: " + str(e))
+            pass
+
+        #Sync with main thread here to ensure render thread has initialised before it continues
+        with self._cv:
+            self._cv.notifyAll()
 
         #Render event handling loop!
         timer = 0
         while not self._closing:
-            #Process interactive and timer events
-            FPS = self.viewer.timer_animate  #FPS for animate timer
-            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-            if timer >= self.TIMER_INC:
-                #Process this every TIMER_INC milliseconds
-                if self.viewer.events():
-                    self.viewer.execute()
-                timer = 0
+            if not self.ctx:
+                #Process interactive and timer events
+                FPS = self.viewer.timer_animate  #FPS for animate timer
+                self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+                if timer >= self.TIMER_INC:
+                    #Process this every TIMER_INC milliseconds
+                    if self.viewer.events():
+                        self.viewer.execute()
+                    timer = 0
 
             #Process commands that must be run on the render thread
             if len(self._q):
-                #if not self.app.viewer.isopen or not self.app.amodel:
+                #if not self.viewer.isopen or not self.amodel:
                 #    print("NOT OPEN!")
-                #    print('deferring : ' + self.app._q[0])
+                #    print('deferring : ' + self._q[0])
                 method, wait_return, args, kwargs = self._q.popleft()
                 #If set, must return result and notify waiting thread with condition variable
                 if wait_return:
@@ -2153,8 +2243,23 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     method(*args, **kwargs)
                 method = None
 
-            #Sleep for 1 millisecond
-            time.sleep(0.001)
+            #### moderngl_window
+            if self.ctx:
+                if self.wnd:
+                    self.wnd.clear()
+                #t, frame_time = mgl_timer.next_frame()
+                #print(t, frame_time)
+                self.viewer.display()
+                if self.wnd:
+                    self.wnd.swap_buffers()
+
+                #Process interactive and timer events
+                FPS = self.viewer.timer_animate  #FPS for animate timer
+                self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+                time.sleep(self.TIMER_INC)
+            else:
+                #Sleep for 1 millisecond
+                time.sleep(0.001)
             timer += 1
 
             #Detect window closed
@@ -2166,6 +2271,126 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
         #Must be called from thread to free OpenGL resources!
         self.destroy()
+
+        if self.wnd:
+            self.wnd.destroy()
+        #if self.ctx:
+        #    self.ctx.destroy()
+
+
+    ###############################################################################
+    def resized(self, width: int, height: int):
+        #print("Window was resized. buffer size is {} x {}".format(width, height))
+        self.resize(width, height)
+
+    def closed(self):
+        #print("Window is closing")
+        return
+        #self.wnd.close()
+        #self.wnd.destroy()
+        #self.wnd = None
+
+    def iconified(self, iconify: bool):
+        """Window hide/minimize and restore"""
+        #print("Window was iconified:", iconify)
+
+    def get_modifiers(self):
+        mod = ''
+        if self.wnd.is_key_pressed(65507) or self.wnd.is_key_pressed(65508):
+            mod += 'C'
+        if self.wnd.is_key_pressed(65505) or self.wnd.is_key_pressed(65506):
+            mod += 'S'
+        if self.wnd.is_key_pressed(65513) or self.wnd.is_key_pressed(65514):
+            mod += 'A'
+        if self.wnd.is_key_pressed(65515):
+            mod += 'M'
+        return mod
+
+    def key_event(self, key, action, modifiers):
+        # Key presses
+        keys = self.wnd.keys
+        if action == keys.ACTION_PRESS:
+            #print("KEY:",key,modifiers)
+
+            '''
+            if key == keys.BACKSPACE:
+                key = 8
+            if key == keys.TAB:
+                key = 9
+            if key == keys.ENTER:
+                key = 13
+            if key == keys.ESCAPE:
+                key = 27
+            if key == keys.DELETE:
+                key = 127
+            '''
+            if key == keys.UP:
+                key = 17
+            if key == keys.DOWN:
+                key = 18
+            if key == keys.LEFT:
+                key = 20;
+            if key == keys.RIGHT:
+                key = 19
+            if key == keys.PAGE_UP:
+                key = 24
+            if key == keys.PAGE_DOWN:
+                key = 25
+            if key == keys.HOME:
+                key = 22
+            if key == keys.END:
+                key = 23
+
+            x, y = self.mousepos
+            cmd = 'key key=' + str(key) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+            self.parseCommands(cmd)
+
+            #Quit from keyboard?
+            if self.viewer.quitProgram:
+                self.wnd.close()
+                #self.wnd.destroy()
+            return
+
+    def mouse_position_event(self, x, y, dx, dy):
+        self.mousepos = (x,y)
+        #print("Mouse position pos={} {} delta={} {}".format(x, y, dx, dy))
+
+    def mouse_drag_event(self, x, y, dx, dy):
+        #print("Mouse drag pos={} {} delta={} {}".format(x, y, dx, dy))
+        #print("Mouse states:", self.wnd.mouse_states.left)
+        button = 0
+        if self.wnd.mouse_states.left:
+            button = 0
+        if self.wnd.mouse_states.right:
+            button = 2
+        if self.wnd.mouse_states.middle:
+            button = 1
+        #x, y = self.mousepos
+        cmd = 'mouse mouse=move,button=' + str(button) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+        self.parseCommands(cmd)
+
+    def mouse_scroll_event(self, x_offset, y_offset):
+        #print("mouse_scroll_event", x_offset, y_offset)
+        x, y = self.mousepos
+        cmd = 'mouse mouse=scroll,spin=' + str(y_offset) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+        self.parseCommands(cmd)
+
+    def mouse_press_event(self, x, y, button):
+        #print("Mouse button {} pressed at {}, {}".format(button, x, y))
+        cmd = 'mouse mouse=down,button=' + str(button-1) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+        self.parseCommands(cmd)
+        return
+
+    def mouse_release_event(self, x: int, y: int, button: int):
+        #print("Mouse button {} released at {}, {}".format(button, x, y))
+        cmd = 'mouse mouse=up,button=' + str(button-1) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+        self.parseCommands(cmd)
+
+    def unicode_char_entered(self, char):
+        #print("unicode_char_entered:", char)
+        return
+
+    ###############################################################################
 
 
 class Viewer(dict):
@@ -2249,7 +2474,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, binpath=None, havecontext=False, omegalib=False, port=8080, **kwargs):
+    def __init__(self, *args, binpath=None, context="default", port=8080, **kwargs):
         """
         Create and init viewer instance
 
@@ -2262,11 +2487,13 @@ class Viewer(dict):
             When disabled (None) creates the viewer in the current(main) thread and disables the server
         binpath : str
             Override the executable path
-        havecontext : boolean
-            OpenGL context provided by user, set this if you have already setup the context
-        omegalib : boolean
-            For use in VR mode, disables some conflicting functionality
-            and parsed into the initial set of global properties
+        context : str
+            OpenGL context type, "default" will create a context and window based on available configurations
+            "provided" user provided context, set this if you have already created and activated the context
+            "moderngl" : create a context in python using the moderngl module (experimental)
+            "moderngl*" : create a context and a window in python using the moderngl module (experimental)
+                           specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5
+            "omegalib" : for use in multi-display VR mode
         """
         self.resolution = (640,480)
         self._ctr = 0
@@ -2291,170 +2518,130 @@ class Viewer(dict):
                 print('Failed to start server, continuing with interaction disabled')
                 port = 0
 
-        if port > 0:
-            #Exit handler to clean up threads
-            #(__del__ does not always seem to get called on termination)
-            def exitfn(vref):
-                #Check if the viewer reference is still valid
-                viewer = vref()
-                if viewer:
-                    viewer._shutdown()
-            import atexit
-            atexit.register(exitfn, weakref.ref(self))
+        #Exit handler to clean up threads
+        #(__del__ does not always seem to get called on termination)
+        def exitfn(vref):
+            #Check if the viewer reference is still valid
+            viewer = vref()
+            if viewer:
+                viewer._shutdown()
+        import atexit
+        atexit.register(exitfn, weakref.ref(self))
 
-            self._cv = threading.Condition()
-            #self.app = _LavaVuThreadSafe(binpath, havecontext, omegalib)
-            def _thread_run(viewer, args, kwargs):
-                """
-                This function runs the render thread.
-                Used to: create the viewer, handle events, get images
-                All OpenGL calls must be made from here
-                """
-                #Create the viewer
-                viewer()._create(True, binpath, havecontext, omegalib, *args, **kwargs)
-
-                #Sync with main thread here to ensure render thread has initialised before it continues
-                with viewer()._cv:
-                    viewer()._cv.notifyAll()
-
-                #Handle events
-                viewer().app._thread_run()
-
-            #Thread start
-            self._thread = threading.Thread(target=_thread_run, args=[weakref.ref(self), args, kwargs])
-            #Due to python failing to call __del__ on exit, have to use daemon or thread never quits
-            self._thread.daemon = True
-
-            #Start the thread and wait for it to finish initialising
-            with self._cv:
-                self._thread.start()
-                self._cv.wait()
-
-        else:
-            self._create(False, binpath, havecontext, omegalib, *args, **kwargs)
-
-    def _create(self, threaded, binpath, havecontext, omegalib, *args, **kwargs):
         """
         Create and init the C++ viewer object
         """
+        #Get the binary path if not provided
+        if not binpath:
+            binpath = os.path.abspath(os.path.dirname(__file__))
         try:
-            #Get the binary path if not provided
-            if binpath is None:
-                binpath = os.path.abspath(os.path.dirname(__file__))
-
-            self.app = _LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
-
-            #Get property dict
-            self.properties = _convert_keys(json.loads(self.app.propertyList()))
-            #Init prop dict for tab completion
-            super(Viewer, self).__init__(**self.properties)
-
-            self.setup(*args, safe=False, **kwargs)
-
-            #Control setup, expect html files in same path as viewer binary
-            control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
-            #Some global data, should not change so doesn't matter if duplicated/shared
-            control.jsglobals = 'var dictionary = ' + self.app.propertyList() + '\n'
-            control.jsglobals += 'var defaultcolourmaps = ' + json.dumps(self.defaultcolourmaps()) + '\n'
-
-            if not os.path.isdir(control.htmlpath):
-                control.htmlpath = self.htmlpath = None
-                print("Can't locate html dir, interactive view disabled")
-
-            #Create a control factory
-            self.control = control._ControlFactory(self)
-
-            #List of inline WebGL viewers
-            self.webglviews = []
-
-            #Get available commands
-            self._cmdcategories = self.app.commandList()
-            self._cmds = {}
-            self._allcmds = []
-            for c in self._cmdcategories:
-                self._cmds[c] = self.app.commandList(c)
-                self._allcmds += self._cmds[c]
-
-            #Create command methods
-            selfdir = dir(self)  #Functions on Viewer
-            for key in self._allcmds:
-                #Check if a method exists already
-                if key in selfdir:
-                    existing = getattr(self, key, None)
-                    if existing and callable(existing):
-                        #Add the lavavu doc entry to the docstring
-                        doc = ""
-                        if existing.__doc__:
-                            if "Wraps LavaVu" in existing.__doc__: continue #Already modified
-                            doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
-                        doc += self.app.helpCommand(key, False)
-                        #These should all be wrapper for the matching lavavu commands
-                        #(Need to ensure we don't add methods that clash)
-                        existing.__func__.__doc__ = doc
-                else:
-                    #Use a closure to define a new method that runs this command
-                    def cmdmethod(name):
-                        _target = weakref.ref(self) #Use a weak ref in the closure
-                        def method(*args, **kwargs):
-                            arglist = [name]
-                            for a in args:
-                                if isinstance(a, (tuple, list)):
-                                    arglist += [str(b) for b in a]
-                                else:
-                                    arglist.append(str(a))
-                            _target().commands(' '.join(arglist))
-                        return method
-
-                    #Create method that runs this command:
-                    method = cmdmethod(key)
-
-                    #Set docstring
-                    method.__doc__ = self.app.helpCommand(key, False)
-                    #Add the new method
-                    self.__setattr__(key, method)
-
-            #Add module functions to Viewer object
-            mod = sys.modules[__name__]
-            import inspect
-            for name in dir(mod):
-                element = getattr(mod, name)
-                if callable(element) and name[0] != '_' and not inspect.isclass(element):
-                    #Add the new method
-                    self.__setattr__(name, element)
-
-            #Add object by geom type shortcut methods
-            #(allows calling add by geometry type, e.g. obj = lavavu.lines())
-            self.renderers = self.properties["renderers"]["default"]
-            self.renderlist = [item for sublist in self.renderers for item in sublist]
-            #print(self.renderlist)
-            #print(self.renderers)
-            for key in self.renderlist:
-                #Use a closure to define a new method to call addtype with this type
-                def addmethod(name):
-                    _target = weakref.ref(self) #Use a weak ref in the closure
-                    def method(*args, **kwargs):
-                        return _target()._addtype(name, *args, **kwargs)
-                    return method
-                method = addmethod(key)
-                #Set docstring
-                method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
-                self.__setattr__(key, method)
-
-            #Switch the default background to white if in a browser notebook
-            if is_notebook() and not "background" in self:
-                self["background"] = "white"
-
+            self.app = _LavaVuThreadSafe(port > 0, self.args(*args, **kwargs), binpath, context, resolution=self.resolution)
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
 
+        #Get property dict
+        self.properties = _convert_keys(json.loads(self.app.propertyList()))
+        #Init prop dict for tab completion
+        super(Viewer, self).__init__(**self.properties)
+
+        #Control setup, expect html files in same path as viewer binary
+        control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
+        #Some global data, should not change so doesn't matter if duplicated/shared
+        control.jsglobals = 'var dictionary = ' + self.app.propertyList() + '\n'
+        control.jsglobals += 'var defaultcolourmaps = ' + json.dumps(self.defaultcolourmaps()) + '\n'
+
+        if not os.path.isdir(control.htmlpath):
+            control.htmlpath = self.htmlpath = None
+            print("Can't locate html dir, interactive view disabled")
+
+        #Create a control factory
+        self.control = control._ControlFactory(self)
+
+        #List of inline WebGL viewers
+        self.webglviews = []
+
+        #Get available commands
+        self._cmdcategories = self.app.commandList()
+        self._cmds = {}
+        self._allcmds = []
+        for c in self._cmdcategories:
+            self._cmds[c] = self.app.commandList(c)
+            self._allcmds += self._cmds[c]
+
+        #Create command methods
+        selfdir = dir(self)  #Functions on Viewer
+        for key in self._allcmds:
+            #Check if a method exists already
+            if key in selfdir:
+                existing = getattr(self, key, None)
+                if existing and callable(existing):
+                    #Add the lavavu doc entry to the docstring
+                    doc = ""
+                    if existing.__doc__:
+                        if "Wraps LavaVu" in existing.__doc__: continue #Already modified
+                        doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
+                    doc += self.app.helpCommand(key, False)
+                    #These should all be wrapper for the matching lavavu commands
+                    #(Need to ensure we don't add methods that clash)
+                    existing.__func__.__doc__ = doc
+            else:
+                #Use a closure to define a new method that runs this command
+                def cmdmethod(name):
+                    _target = weakref.ref(self) #Use a weak ref in the closure
+                    def method(*args, **kwargs):
+                        arglist = [name]
+                        for a in args:
+                            if isinstance(a, (tuple, list)):
+                                arglist += [str(b) for b in a]
+                            else:
+                                arglist.append(str(a))
+                        _target().commands(' '.join(arglist))
+                    return method
+
+                #Create method that runs this command:
+                method = cmdmethod(key)
+
+                #Set docstring
+                method.__doc__ = self.app.helpCommand(key, False)
+                #Add the new method
+                self.__setattr__(key, method)
+
+        #Add module functions to Viewer object
+        mod = sys.modules[__name__]
+        import inspect
+        for name in dir(mod):
+            element = getattr(mod, name)
+            if callable(element) and name[0] != '_' and not inspect.isclass(element):
+                #Add the new method
+                self.__setattr__(name, element)
+
+        #Add object by geom type shortcut methods
+        #(allows calling add by geometry type, e.g. obj = lavavu.lines())
+        self.renderers = self.properties["renderers"]["default"]
+        self.renderlist = [item for sublist in self.renderers for item in sublist]
+        #print(self.renderlist)
+        #print(self.renderers)
+        for key in self.renderlist:
+            #Use a closure to define a new method to call addtype with this type
+            def addmethod(name):
+                _target = weakref.ref(self) #Use a weak ref in the closure
+                def method(*args, **kwargs):
+                    return _target()._addtype(name, *args, **kwargs)
+                return method
+            method = addmethod(key)
+            #Set docstring
+            method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
+            self.__setattr__(key, method)
+
+        #Switch the default background to white if in a browser notebook
+        if is_notebook() and not "background" in self:
+            self["background"] = "white"
+
     def _shutdown(self):
         #Wait for the render thread to exit
-        if self.port and self._thread:
-            #print("---SHUTDOWN-THREAD")
-            self.app._closing = True
-            self._thread.join()
-            self._thread = None
+        if self.app:
+            self.app._shutdown()
         #Wait for server thread to exit
         if self.server:
             #print("---SHUTDOWN-SERVER")
@@ -2484,7 +2671,7 @@ class Viewer(dict):
             if name in self.renderers[i]:
                 return geomtypes[i]
 
-    def setup(self, *args, safe=True, arglist=None, database=None, figure=None, timestep=None,
+    def args(self, *args, arglist=None, figure=None, timestep=None,
          verbose=False, interactive=False, hidden=True, cache=False, quality=3,
          writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
@@ -2492,6 +2679,9 @@ class Viewer(dict):
         entering event loop if requested
 
         Parameters: see __init__ docs
+
+        *args : passed directly to viewer, eg: filenames or initial script commands
+        **kwargs: parsed as below to specific switches
 
         """
         #Convert options to args
@@ -2520,9 +2710,6 @@ class Viewer(dict):
                 args += ["-" + str(timestep)]
             if isinstance(timestep, (tuple, list)) and len(timestep) > 1:
                 args += ["-" + str(timestep[0]), "-" + str(timestep[1])]
-        #Database file
-        if database:
-          args += [database]
         #Initial figure
         if figure != None:
           args += ["-f" + str(figure)]
@@ -2555,18 +2742,7 @@ class Viewer(dict):
         if verbose:
             print("ARGS:",args)
 
-        try:
-            #Need to call thread safe version if not in render thread
-            if safe:
-                self.app.saferun(args)
-            else:
-                self.app.run(args)
-            #Load objects/state
-            if database:
-                self._get()
-        except (RuntimeError) as e:
-            print("LavaVu Run error: " + str(e))
-            pass
+        return args
 
     #dict methods
     def __getitem__(self, key):
@@ -3739,7 +3915,6 @@ class Viewer(dict):
                     print(outfile)
                     with open(outfile, mode='rb') as f:
                         data = f.read()
-                        import base64
                         print("data:image/png;base64," + base64.b64encode(data).decode('ascii'))
                 else:
                     print("Buffer:")
@@ -3938,6 +4113,11 @@ class Viewer(dict):
 
         WARNING: On MacOS this function will never return until the window closes
         """
+        if self.app.wnd and not is_notebook():
+            #Handle events until quit - allow interaction without exiting when run from python script
+            while not self.app.viewer.quitProgram:
+                time.sleep(50) #self.app.TIMER_INC)
+
         self.app.show() #Need to manually call show now
         if args:
             self.commands("interactive " + args)
