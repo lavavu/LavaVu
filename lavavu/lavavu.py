@@ -594,7 +594,7 @@ class Object(dict):
         """
         return self.filter(*args, out=True, map=True, **kwargs)
 
-    def filter(self, label, values, out=False, map=False):
+    def filter(self, label, values=None, out=False, map=False):
         """
         Filter data by including a range of values
 
@@ -626,6 +626,9 @@ class Object(dict):
         if "filters" in self:
             filterlist = self["filters"]
 
+        if values is None:
+            d = self.datasets[label]
+            values = [d['minimum']*0.99, d['maximum']*1.01]
         if isinstance(values, float) or isinstance(values, int):
             values = [values,values]
         newfilter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
