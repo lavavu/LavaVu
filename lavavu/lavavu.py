@@ -3081,6 +3081,25 @@ class Viewer(dict):
             obj = self.file(infile, **kwargs)
         return obj
 
+    def export(self, filepath='exported.gldb', compress=True):
+        """
+        Export model and state to a database snapshot
+
+        Parameters
+        ----------
+        filepath : str
+            Specification of the files to load
+        compress : boolean
+            Set flag to false to disable zlib compression of database
+        """
+        #Load file with this object selected (import)
+        if filepath[0] != '"':
+            filepath = '"' + filepath + '"'
+        if not compress:
+            self.app.commands("export " + filepath + " uncompressed")
+        else:
+            self.app.commands("export " + filepath)
+
     def colourbar(self, obj=None, **kwargs):
         """
         Create a new colourbar
