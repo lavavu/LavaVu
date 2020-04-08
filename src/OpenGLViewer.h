@@ -42,10 +42,11 @@
 #include "OutputInterface.h"
 #include "InputInterface.h"
 
+extern std::thread::id no_thread;
 #ifdef DEBUG
 #define GL_Check_Thread(thread) \
 { \
-  if (thread != std::this_thread::get_id()) \
+  if (thread != no_thread && thread != std::this_thread::get_id()) \
     abort_program("FATAL: must call GL functions from render thread"); \
 }
 #else

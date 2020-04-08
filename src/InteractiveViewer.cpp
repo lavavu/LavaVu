@@ -662,7 +662,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
   }
 
-  GL_Check_Thread(viewer->render_thread);
+  if (!gethelp)
+    GL_Check_Thread(viewer->render_thread);
 
   //Parse the line
   PropertyParser parsed = PropertyParser();

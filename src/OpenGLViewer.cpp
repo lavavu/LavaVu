@@ -36,6 +36,8 @@
 //OpenGLViewer class
 #include "OpenGLViewer.h"
 
+std::thread::id no_thread;
+
 // FBO buffers
 ImageData* FrameBuffer::pixels(ImageData* image, int channels)
 {
@@ -295,9 +297,6 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
   visible = true;
 
   output_path = "";
-
-  render_thread = std::this_thread::get_id();
-  //std::cerr << "Render thread: " << render_thread << std::endl;
 }
 
 OpenGLViewer::~OpenGLViewer()
@@ -307,6 +306,9 @@ OpenGLViewer::~OpenGLViewer()
 
 void OpenGLViewer::open(int w, int h)
 {
+  render_thread = std::this_thread::get_id();
+  //std::cerr << "Render thread: " << render_thread << std::endl;
+
   //Open window, called before window manager open
   //Set width and height
 
