@@ -1109,7 +1109,7 @@ class Object(dict):
             data = [data]
         self.parent.app.loadLabels(self.ref, data)
 
-    def colourmap(self, data=None, reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, data=None, name=None, reverse=False, monochrome=False, **kwargs):
         """
         Load colour map data for object
 
@@ -1126,6 +1126,8 @@ class Object(dict):
             - An existing ColourMap object
             Creates a colourmap named objectname_colourmap if object
             doesn't already have a colourmap
+        name : str
+            Name of colourmap, when creating a new one
         reverse : boolean
             Reverse the order of the colours after loading
         monochrome : boolean
@@ -1154,8 +1156,11 @@ class Object(dict):
                     data = cubehelix()
 
             #Load colourmap data to object, create if none exists
-            if self.ref.colourMap is None:
-                self.ref.colourMap = self.parent.app.addColourMap(self.name + "_colourmap")
+            #(If name is set, always create a new map using this name)
+            if self.ref.colourMap is None or name is not None:
+                if name is None:
+                    name = self.name + "_colourmap"
+                self.ref.colourMap = self.parent.app.addColourMap(name)
                 self["colourmap"] = self.ref.colourMap.name
             cmap = ColourMap(self.ref.colourMap, self.parent)
 
