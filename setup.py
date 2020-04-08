@@ -18,6 +18,13 @@ import platform
 import glob
 import shutil
 
+
+try: 
+    from distutils.command import bdist_conda
+except ImportError:
+    pass
+
+
 #Current version
 version = "1.4.14"
 
@@ -49,6 +56,7 @@ TODO:
     Review possible dependencies to support image/video libraries
     - imageio or pillow for libpng, libtiff
     - ffmpeg-python or opencv-python for libavcodec
+    - anaconda binaries
 
 NOTE:
     To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
@@ -365,7 +373,7 @@ if __name__ == "__main__":
             shutil.copyfile('src/Main/CocoaViewer.mm', 'src/Main/CocoaViewer.m')
             srcs += ['src/Main/CocoaViewer.m']
             cflags += ['-ObjC++'] #Now have to tell compiler it's objective c++ as .m file indicates objective c
-            defines += [('HAVE_CGL', '1')]
+            defines += [('HAVE_CGL', '1'), ('GL_SILENCE_DEPRECATION','1')]
             cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
