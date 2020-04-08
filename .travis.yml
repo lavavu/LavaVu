@@ -18,7 +18,7 @@ matrix:
     - os: osx
       language: cpp
       compiler: clang
-      env: PYTHON=36
+      before_install: alias python=python3; alias pip=pip3
       install: pip install numpy
 addons:
   apt:
