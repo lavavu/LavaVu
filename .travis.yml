@@ -18,7 +18,10 @@ matrix:
     - os: osx
       language: cpp
       compiler: clang
-      before_install: alias python=python3; alias pip=pip3
+      before_install:
+        - pip3 install virtualenv
+        - virtualenv -p python3 ~/venv
+        - source ~/venv/bin/activate
       install: pip install numpy
 addons:
   apt:
