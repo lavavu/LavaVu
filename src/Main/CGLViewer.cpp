@@ -42,6 +42,7 @@ CGLViewer::CGLViewer() : OpenGLViewer()
 {
   visible = false;
   context = NULL;
+  debug_print("Using CGL Viewer (offscreen only)\n");
 }
 
 CGLViewer::~CGLViewer()

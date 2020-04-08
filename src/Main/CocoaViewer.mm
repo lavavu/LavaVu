@@ -457,6 +457,7 @@ CocoaViewer::CocoaViewer() : CGLViewer()
 {
   //Default to visible
   visible = true;
+  debug_print("Using Cocoa Viewer (interactive)\n");
 }
 
 CocoaViewer::~CocoaViewer()

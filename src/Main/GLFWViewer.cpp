@@ -200,7 +200,7 @@ static void mousescroll_callback(GLFWwindow* window, double xoffset, double yoff
 // Create a new GLFW window
 GLFWViewer::GLFWViewer() : OpenGLViewer()
 {
-  debug_print("GLFW viewer created\n");
+  debug_print("Using GLFW Viewer (interactive)\n");
 }
 
 GLFWViewer::~GLFWViewer()

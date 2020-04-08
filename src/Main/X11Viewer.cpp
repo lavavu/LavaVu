@@ -52,7 +52,7 @@ int X11_error(Display* Xdisplay, XErrorEvent* error)
 X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
 {
   XSetErrorHandler(X11_error);
-  debug_print("X11 viewer created\n");
+  debug_print("Using X11 Viewer (interactive)\n");
 }
 
 X11Viewer::~X11Viewer()

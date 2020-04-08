@@ -44,6 +44,7 @@ OSMesaViewer::OSMesaViewer() : OpenGLViewer()
   visible = false;
   pixelBuffer = NULL;
   osMesaContext = NULL;
+  debug_print("Using OSMesa Viewer (offscreen only)\n");
 }
 
 OSMesaViewer::~OSMesaViewer()
