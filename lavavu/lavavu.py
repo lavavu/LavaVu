@@ -2568,12 +2568,12 @@ class Viewer(dict):
             print("LavaVu Run error: " + str(e))
             pass
 
-
-
     #dict methods
     def __getitem__(self, key):
         #Get view/global property
         self._get()
+        if not self.state:
+            return None
         view = self.state["views"][0]
         if key in view:
             return view[key]
@@ -2596,6 +2596,9 @@ class Viewer(dict):
         self._get()
 
     def __contains__(self, key):
+        self._get()
+        if not self.state:
+            return False
         return key in self.state or key in self.state["properties"] or key in self.state["views"][0]
 
     def __repr__(self):
@@ -2761,6 +2764,8 @@ class Viewer(dict):
     def _get(self):
         #Import state from lavavu
         self.state = _convert_keys(json.loads(self.app.getState()))
+        if not "properties" in self.state:
+            return
         #Cache the validate flag
         if "validate" in self.state["properties"]:
             self.validate = self.state["properties"]["validate"]
