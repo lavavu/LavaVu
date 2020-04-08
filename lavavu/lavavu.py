@@ -2249,7 +2249,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, binpath=None, havecontext=False, omegalib=False, port=8080, *args, **kwargs):
+    def __init__(self, *args, binpath=None, havecontext=False, omegalib=False, port=8080, **kwargs):
         """
         Create and init viewer instance
 
@@ -2333,7 +2333,7 @@ class Viewer(dict):
         else:
             self._create(False, binpath, havecontext, omegalib, *args, **kwargs)
 
-    def _create(self, threaded, binpath=None, havecontext=False, omegalib=False, *args, **kwargs):
+    def _create(self, threaded, binpath, havecontext, omegalib, *args, **kwargs):
         """
         Create and init the C++ viewer object
         """
@@ -2349,7 +2349,7 @@ class Viewer(dict):
             #Init prop dict for tab completion
             super(Viewer, self).__init__(**self.properties)
 
-            self.setup(safe=False, *args, **kwargs)
+            self.setup(*args, safe=False, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
             control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
@@ -2484,7 +2484,7 @@ class Viewer(dict):
             if name in self.renderers[i]:
                 return geomtypes[i]
 
-    def setup(self, safe=True, arglist=None, database=None, figure=None, timestep=None,
+    def setup(self, *args, safe=True, arglist=None, database=None, figure=None, timestep=None,
          verbose=False, interactive=False, hidden=True, cache=False, quality=3,
          writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
@@ -2495,7 +2495,7 @@ class Viewer(dict):
 
         """
         #Convert options to args
-        args = settings["default_args"][:]
+        args = list(args) + settings["default_args"][:]
         if not initscript:
           args += ["-S"]
         if verbose:
