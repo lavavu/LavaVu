@@ -4012,9 +4012,14 @@ class Viewer(dict):
     def isosurface(self, dstref, srcref, properties, clearvol):
         return self.app.isoSurface(dstref, srcref, properties, clearvol)
 
-    def get_all_vertices(self, objectlist):
+    def get_all_vertices(self, objectlist=None):
         """
         Extract all vertex data from a list of objects
+
+        Parameters
+        ----------
+        objectlist : list
+            List of objects, defaults to all
 
         Returns
         -------
@@ -4024,6 +4029,8 @@ class Viewer(dict):
             the bounding box of the combined data
         """
         #Get vertices from a list of lavavu objects
+        if objectlist is None:
+            objectlist = self.objects.list
         pverts = None
         bb_all = [[float('Inf'), float('Inf'), float('Inf')], [float('-Inf'), float('-Inf'), float('-Inf')]]
         for o in objectlist:
