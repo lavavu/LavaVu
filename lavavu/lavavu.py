@@ -470,6 +470,9 @@ class Object(dict):
         #Check for valid key
         if self.parent.validate and not key in self.parent.properties:
             raise KeyError(key + " : Invalid property name")
+        #Return global from parent if set (bug fix: not getting global property)
+        if key in self.parent:
+            return self.parent[key]
         #Default to the property lookup dict (default value is first element)
         #(allows default values to be returned from prop get)
         prop = super(Object, self).__getitem__(key)
