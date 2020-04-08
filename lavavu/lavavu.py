@@ -2673,7 +2673,7 @@ class Viewer(dict):
             if name in self.renderers[i]:
                 return geomtypes[i]
 
-    def args(self, *args, arglist=None, figure=None, timestep=None,
+    def args(self, *args, arglist=None, database=None, figure=None, timestep=None,
          verbose=False, interactive=False, hidden=True, cache=False, quality=3,
          writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
@@ -2688,6 +2688,8 @@ class Viewer(dict):
         """
         #Convert options to args
         args = list(args) + settings["default_args"][:]
+        if database:
+            args += [database]
         if not initscript:
           args += ["-S"]
         if verbose:
