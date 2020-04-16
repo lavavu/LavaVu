@@ -59,6 +59,7 @@ namespace std
 %apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int height, int width, int depth)};
 
 %include "ViewerTypes.h"
+%include "Colours.h"
 
 const std::string version;
 
@@ -96,6 +97,8 @@ public:
   ColourMap* opacityMap;
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   std::string name();
+  float opacity;
+  Colour colour;
 };
 
 class Model
@@ -143,6 +146,7 @@ public:
   LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   ~LavaVu();
   void destroy();
+  virtual void resize(int new_width, int new_height);
 
   void run(std::vector<std::string> args={});
 
@@ -186,6 +190,7 @@ public:
   void clearData(DrawingObject* target, lucGeometryDataType type);
 
   std::string getObjectDataLabels(DrawingObject* target);
+  void populateData(DrawingObject* target, std::string label);
 
   Geom_Ptr arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData, int width=0, int height=0, int depth=0);
   Geom_Ptr arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData, int width=0, int height=0, int depth=0);
