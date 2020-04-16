@@ -47,6 +47,7 @@ import re
 import copy
 import base64
 import threading
+from collections import deque
 import time
 import weakref
 
@@ -1957,7 +1958,6 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             self._cv = threading.Condition()
 
             # Create the command queue
-            from collections import deque
             self._q = deque()
 
             #Safe call return value
@@ -2179,10 +2179,19 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             if self.use_moderngl_window and self.ctx:
                 # Make sure you activate this context
                 moderngl_window.activate_context(ctx=self.ctx)
-                # Configure to use provided window class
-                window_str = 'moderngl_window.context.' + self.use_moderngl_window + '.Window'
-                window_cls = moderngl_window.get_window_cls(window_str)
-                self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
+                if self.use_moderngl_window == 'window':
+                    # Configure with default window class / settings
+                    from moderngl_window.conf import settings
+                    settings.WINDOW['gl_version'] = (3, 3)
+                    settings.WINDOW['samples'] = 4
+                    settings.WINDOW['size'] = self.resolution
+                    # Creates the window instance and activates its context
+                    self.wnd = moderngl_window.create_window_from_settings()
+                else:
+                    # Configure to use provided window class
+                    window_str = 'moderngl_window.context.' + self.use_moderngl_window + '.Window'
+                    window_cls = moderngl_window.get_window_cls(window_str)
+                    self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
 
                 # register event methods
                 self.wnd.resize_func = self.resized
@@ -2196,6 +2205,7 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                 self.wnd.mouse_release_event_func = self.mouse_release_event
                 self.wnd.unicode_char_entered_func = self.unicode_char_entered
 
+                #self.wnd.resize(self.resolution[0], self.resolution[1])
                 self.wnd.exit_key = None #Disable ESC to exit
                 self.mousepos = (0,0)
 
@@ -2274,8 +2284,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #Must be called from thread to free OpenGL resources!
         self.destroy()
 
-        if self.wnd:
-            self.wnd.destroy()
+        #if self.wnd:
+        #    self.wnd.destroy()
         #if self.ctx:
         #    self.ctx.destroy()
 
@@ -2287,6 +2297,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     def closed(self):
         #print("Window is closing")
+        self.viewer.quitProgram = True
+        self._closing = True
         return
         #self.wnd.close()
         #self.wnd.destroy()
@@ -2296,62 +2308,66 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         """Window hide/minimize and restore"""
         #print("Window was iconified:", iconify)
 
-    def get_modifiers(self):
+    def get_modifiers(self, modifiers=None):
+        if modifiers is None:
+            modifiers = self.wnd.modifiers
+
         mod = ''
-        if self.wnd.is_key_pressed(65507) or self.wnd.is_key_pressed(65508):
+        if modifiers.ctrl:
             mod += 'C'
-        if self.wnd.is_key_pressed(65505) or self.wnd.is_key_pressed(65506):
+        if modifiers.shift:
             mod += 'S'
-        if self.wnd.is_key_pressed(65513) or self.wnd.is_key_pressed(65514):
+        if modifiers.alt:
             mod += 'A'
-        if self.wnd.is_key_pressed(65515):
-            mod += 'M'
         return mod
 
     def key_event(self, key, action, modifiers):
         # Key presses
+        #print("KEY:",key,action,modifiers)
         keys = self.wnd.keys
-        if action == keys.ACTION_PRESS:
-            #print("KEY:",key,modifiers)
+        #if action == keys.ACTION_PRESS:
 
-            '''
+        if action == keys.ACTION_RELEASE:
+            mods = self.get_modifiers(modifiers)
+            x, y = self.mousepos
+
             if key == keys.BACKSPACE:
                 key = 8
-            if key == keys.TAB:
+            elif key == keys.TAB:
                 key = 9
-            if key == keys.ENTER:
+            elif key == keys.ENTER:
                 key = 13
-            if key == keys.ESCAPE:
+            elif key == keys.ESCAPE:
                 key = 27
-            if key == keys.DELETE:
+            elif key == keys.DELETE:
                 key = 127
-            '''
-            if key == keys.UP:
+            elif key == keys.UP:
                 key = 17
-            if key == keys.DOWN:
+            elif key == keys.DOWN:
                 key = 18
-            if key == keys.LEFT:
+            elif key == keys.LEFT:
                 key = 20;
-            if key == keys.RIGHT:
+            elif key == keys.RIGHT:
                 key = 19
-            if key == keys.PAGE_UP:
+            elif key == keys.PAGE_UP:
                 key = 24
-            if key == keys.PAGE_DOWN:
+            elif key == keys.PAGE_DOWN:
                 key = 25
-            if key == keys.HOME:
+            elif key == keys.HOME:
                 key = 22
-            if key == keys.END:
+            elif key == keys.END:
                 key = 23
+            else:
+                if not 'A' in mods or key < 32 or key > 126:
+                    return
 
-            x, y = self.mousepos
-            cmd = 'key key=' + str(key) + ',modifiers=' + self.get_modifiers() + ",x=" + str(x) + ",y=" + str(y)
+            cmd = 'key key=' + str(key) + ',modifiers=' + mods + ",x=" + str(x) + ",y=" + str(y)
             self.parseCommands(cmd)
 
             #Quit from keyboard?
             if self.viewer.quitProgram:
                 self.wnd.close()
                 #self.wnd.destroy()
-            return
 
     def mouse_position_event(self, x, y, dx, dy):
         self.mousepos = (x,y)
@@ -2389,7 +2405,14 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         self.parseCommands(cmd)
 
     def unicode_char_entered(self, char):
-        #print("unicode_char_entered:", char)
+        mods = self.get_modifiers()
+        #print("unicode_char_entered:", ord(char),mods)
+        x, y = self.mousepos
+        key = ord(char)
+        if 'A' in mods or key < 32 or key > 126:
+            return
+        cmd = 'key key=' + str(key) + ',modifiers=' + mods + ",x=" + str(x) + ",y=" + str(y)
+        self.parseCommands(cmd)
         return
 
     ###############################################################################
@@ -2691,18 +2714,18 @@ class Viewer(dict):
         if database:
             args += [database]
         if not initscript:
-          args += ["-S"]
+            args += ["-S"]
         if verbose:
-          args += ["-v"]
+            args += ["-v"]
         #Automation: scripted mode, no interaction
         if not interactive:
-          args += ["-a"]
+            args += ["-a"]
         #Hidden window
         if hidden:
-          args += ["-h"]
+            args += ["-h"]
         #Timestep cache
         if cache:
-          args += ["-c1"]
+            args += ["-c1"]
         #Subsample anti-aliasing for image output
         if settings["quality_override"]:
             #Override provided setting with global setting
@@ -2716,19 +2739,21 @@ class Viewer(dict):
                 args += ["-" + str(timestep[0]), "-" + str(timestep[1])]
         #Initial figure
         if figure != None:
-          args += ["-f" + str(figure)]
+            args += ["-f" + str(figure)]
         #Resolution
-        if resolution != None and isinstance(resolution,tuple) or isinstance(resolution,list):
-          #Output res
-          #args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
-          #Interactive res
-          args += ["-r" + str(resolution[0]) + "," + str(resolution[1])]
-          self.resolution = resolution
+        if resolution is None:
+            resolution = self.resolution
+        if isinstance(resolution,tuple) or isinstance(resolution,list):
+            #Output res
+            #args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
+            #Interactive res
+            args += ["-r" + str(resolution[0]) + "," + str(resolution[1])]
+            self.resolution = resolution
         #Save image and quit
         if writeimage:
-          args += ["-I"]
+            args += ["-I"]
         if script and isinstance(script,list):
-          args += script
+            args += script
         if arglist:
             if isinstance(arglist, list):
                 args += arglist
@@ -4119,8 +4144,9 @@ class Viewer(dict):
         """
         if self.app.wnd and not is_notebook():
             #Handle events until quit - allow interaction without exiting when run from python script
-            while not self.app.viewer.quitProgram:
-                time.sleep(50) #self.app.TIMER_INC)
+            while self.app.viewer and not self.app.viewer.quitProgram:
+                time.sleep(0.05) #self.app.TIMER_INC)
+            return
 
         self.app.show() #Need to manually call show now
         if args:
