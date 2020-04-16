@@ -2741,9 +2741,7 @@ class Viewer(dict):
         if figure != None:
             args += ["-f" + str(figure)]
         #Resolution
-        if resolution is None:
-            resolution = self.resolution
-        if isinstance(resolution,tuple) or isinstance(resolution,list):
+        if resolution is not None and (isinstance(resolution,tuple) or isinstance(resolution,list)):
             #Output res
             #args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
             #Interactive res
