@@ -3445,6 +3445,21 @@ std::string LavaVu::getObjectDataLabels(DrawingObject* target)
   return ss.str();
 }
 
+//GeomData interface, for loading/acessing geom store directly
+void LavaVu::populateData(DrawingObject* target, std::string label)
+{
+  //Calculate data array for a generated/preset label
+  if (!amodel || !target) return;
+  for (auto g : amodel->geometry)
+  {
+    std::vector<Geom_Ptr> geomlist = g->getAllObjects(target);
+    for (auto geom : geomlist)
+    {
+      geom->valuesLookup(label);
+    }
+  }
+}
+
 Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type, int width, int height, int depth)
 {
   if (!amodel || !target) return nullptr;
