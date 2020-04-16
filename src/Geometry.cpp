@@ -305,12 +305,41 @@ int GeomData::colourCount()
 unsigned int GeomData::valuesLookup(const json& by)
 {
   //Gets a valid value index by property, either actual index or string label
+  static unsigned int index = 0;
+  static DrawingObject* last = NULL;
+  if (draw != last)
+    index = 0;
+  else
+    index++;
+  last = draw;
   unsigned int valueIdx = MAX_DATA_ARRAYS+1;
-  if (!values.size()) return valueIdx;
   if (by.is_string())
   {
-    //Lookup index from label
     std::string label = by;
+
+    //Labels can include a range:
+    //syntax: "label[min,max]" for user defined range
+    //syntax: "label[auto]"    for data based range
+    std::size_t pos = label.find("[");
+    if (pos != std::string::npos)
+    {
+      std::string rangestr = label.substr(pos);
+      label = label.substr(0,pos);
+      //std::cout << "LABEL + RANGE " << label << " : " << rangestr << std::endl;
+
+      if (rangestr == "[auto]")
+      {
+        //Ensure any manual range removed
+        //draw->properties.data.erase("range");
+        draw->properties.data["range"] = NULL;
+      }
+      else if (rangestr.length())
+      {
+        draw->properties.data["range"] = json::parse(rangestr);
+      }
+    }
+
+    //Lookup index from label
     if (label.length() == 0) return valueIdx;
     for (unsigned int j=0; j < values.size(); j++)
     {
@@ -321,7 +350,153 @@ unsigned int GeomData::valuesLookup(const json& by)
       }
     }
     if (valueIdx > MAX_DATA_ARRAYS)
-      debug_print("Label: %s not found!\n", label.c_str());
+    {
+      //Predefined / builtin labels
+      Range range;
+      Values_Ptr store = std::make_shared<FloatValues>();
+      store->label = label;
+      if (label == "X" || label == "Y" || label == "Z")
+      {
+        int idx = label.at(0) - 'X';
+        for (unsigned int i = 0; i < count(); i ++)
+        {
+          float* v = render->vertices[i];
+          store->read(1, v+idx);
+        }
+      }
+      if (label == "index")
+      {
+        float val = index;
+        store->read(1, &val);
+      }
+      if (label == "count")
+      {
+        float val = count();
+        store->read(1, &val);
+      }
+      if (label == "width")
+      {
+        float val = max[0] - min[0];
+        store->read(1, &val);
+      }
+      if (label == "height")
+      {
+        float val = max[1] - min[1];
+        store->read(1, &val);
+      }
+      if (label == "length")
+      {
+        float val = max[2] - min[2];
+        store->read(1, &val);
+      }
+      if (label == "size")
+      {
+        Vec3d diff = Vec3d(max) - Vec3d(min);
+        float val = diff.magnitude();
+        store->read(1, &val);
+      }
+      if (label == "x0")
+      {
+        float val = min[0];
+        store->read(1, &val);
+      }
+      if (label == "y0")
+      {
+        float val = min[1];
+        store->read(1, &val);
+      }
+      if (label == "z0")
+      {
+        float val = min[2];
+        store->read(1, &val);
+      }
+      if (label == "x1")
+      {
+        float val = max[0];
+        store->read(1, &val);
+      }
+      if (label == "y1")
+      {
+        float val = max[1];
+        store->read(1, &val);
+      }
+      if (label == "z1")
+      {
+        float val = max[2];
+        store->read(1, &val);
+      }
+      else if (label == "magnitude")
+      {
+        Coord3DValues& array = render->vectors.size() == count() ? render->vectors : render->vertices;
+        for (unsigned int i = 0; i < count(); i ++)
+        {
+          Vec3d vec(array[i]);
+          float mag = vec.magnitude();
+          store->read(1, &mag);
+        }
+      }
+      else if (label == "nx")
+      {
+        if (render->normals.size() / 3 == count())
+        {
+          for (unsigned int i = 0; i < count(); i++)
+          {
+            Vec3d vec(render->normals[i]);
+            store->read(1, &vec.x);
+          }
+        }
+      }
+      else if (label == "ny")
+      {
+        std::cout << render->normals.size() / 3 << " == " << count() << std::endl;
+        if (render->normals.size() / 3 == count())
+        {
+          for (unsigned int i = 0; i < count(); i++)
+          {
+            Vec3d vec(render->normals[i]);
+            store->read(1, &vec.y);
+          }
+        }
+      }
+      else if (label == "nz")
+      {
+        if (render->normals.size() / 3 == count())
+        {
+          for (unsigned int i = 0; i < count(); i++)
+          {
+            Vec3d vec(render->normals[i]);
+            store->read(1, &vec.z);
+          }
+        }
+      }
+      else if (label == "nmean")
+      {
+        if (render->normals.size() / 3 == count())
+        {
+          float mean = 0.0;
+          for (unsigned int i = 0; i < count(); i++)
+          {
+            Vec3d vec(render->normals[i]);
+            mean += 0.333 * (vec.x + vec.y + vec.z);
+          }
+          mean /= count();
+          store->read(1, &mean);
+        }
+      }
+
+      if (store->size())
+      {
+        std::cout << "*** Loaded built-in data label: " << label << ", " << store->size() << " values,  min: " << store->minimum << " max: " << store->maximum << std::endl;
+        values.push_back(store);
+        valueIdx = values.size()-1;
+
+        store->minmax();
+        range.update(store->minimum, store->maximum);
+        draw->updateRange(label, range);
+      }
+      else
+        debug_print("Label: %s not found!\n", label.c_str());
+    }
   }
   //Numerical index, check in range
   else if (by.is_number() && (unsigned int)by < values.size())
