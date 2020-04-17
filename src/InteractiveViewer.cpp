@@ -816,6 +816,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
     }
   }
+  else if (parsed.exists("populate"))
+  {
+    if (gethelp)
+    {
+      help += "Populate generated data set\n\n"
+              "**Usage:** populate label\n\n"
+              "label (string) : the label of the built in data to copy to a value data set, one of:\n"
+              "                 x,y,z,index,count,width,height,length,size,x0,y0,z0,x1,y1,z1,magnitude,nx,ny,nz,nmean\n";
+      return false;
+    }
+
+    if (aobject && amodel)
+    {
+      std::string label = parsed["populate"];
+      //Calculate data array for a generated/preset label
+      for (auto g : amodel->geometry)
+      {
+        std::vector<Geom_Ptr> geomlist = g->getAllObjects(aobject);
+        for (auto geom : geomlist)
+          geom->valuesLookup(label);
+      }
+      printMessage("Populate %s complete", label.c_str());
+    }
+  }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
     std::string action = parsed.exists("alpha") ? "alpha" : "opacity";
@@ -2044,30 +2068,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cerr << ss.str();
     help = ss.str();
   }
-  else if (parsed.exists("populate"))
-  {
-    if (gethelp)
-    {
-      help += "Populate generated data set\n\n"
-              "**Usage:** populate label\n\n"
-              "label (string) : the label of the built in data to copy to a value data set, one of:\n"
-              "                 x,y,z,index,count,width,height,length,size,x0,y0,z0,x1,y1,z1,magnitude,nx,ny,nz,nmean\n";
-      return false;
-    }
-
-    if (aobject && amodel)
-    {
-      std::string label = parsed["populate"];
-      //Calculate data array for a generated/preset label
-      for (auto g : amodel->geometry)
-      {
-        std::vector<Geom_Ptr> geomlist = g->getAllObjects(aobject);
-        for (auto geom : geomlist)
-          geom->valuesLookup(label);
-      }
-      printMessage("Populate %s complete", label.c_str());
-    }
-  }
   else if (parsed.exists("clear"))
   {
     if (gethelp)
@@ -3283,14 +3283,13 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "bakecolour", "glaze", "export", "csv", "json", "save", "tiles"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "spin", "focus", "fov", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "fixbb", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
-    {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface", "texture"},
-    {"background", "alpha", "axis", "rulers",
-     "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
-     "pointsample", "border", "title", "scale", "modelscale"},
+    {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface", "texture", "populate", "bake", "bakecolour", "glaze", "csv", "json", "tiles", "valuerange", "colourmap", "colourbar", "pointtype", "scale"},
+    {"background", "alpha", "axis", "rulers", "colourmap",
+     "antialias", "pointtype", "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive", "display"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "verbose", "toggle", "createvolume", "clearvolume", "palette"}

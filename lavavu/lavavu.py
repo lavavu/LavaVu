@@ -1510,6 +1510,20 @@ class Object(dict):
         bb = self.parent.app.getBoundingBox(self.ref, allsteps)
         return [[bb[0], bb[1], bb[2]], [bb[3], bb[4], bb[5]]]
 
+    def commands(self, cmds, queue=False):
+        """
+        Execute viewer commands with this object as the target
+        https://lavavu.github.io/Documentation/Scripting-Commands-Reference
+
+        Parameters
+        ----------
+        cmds : list or str
+            Command(s) to execute
+        """
+        self.select()
+        self.parent.commands(cmds, queue)
+
+
 #Wrapper dict+list of objects
 class _Objects(dict):
     """  
@@ -2594,43 +2608,51 @@ class Viewer(dict):
             self._cmds[c] = self.app.commandList(c)
             self._allcmds += self._cmds[c]
 
-        #Create command methods
-        selfdir = dir(self)  #Functions on Viewer
-        for key in self._allcmds:
-            #Check if a method exists already
-            if key in selfdir:
-                existing = getattr(self, key, None)
-                if existing and callable(existing):
-                    #Add the lavavu doc entry to the docstring
-                    doc = ""
-                    if existing.__doc__:
-                        if "Wraps LavaVu" in existing.__doc__: continue #Already modified
-                        doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
-                    doc += self.app.helpCommand(key, False)
-                    #These should all be wrapper for the matching lavavu commands
-                    #(Need to ensure we don't add methods that clash)
-                    existing.__func__.__doc__ = doc
-            else:
-                #Use a closure to define a new method that runs this command
-                def cmdmethod(name):
-                    _target = weakref.ref(self) #Use a weak ref in the closure
-                    def method(*args, **kwargs):
-                        arglist = [name]
-                        for a in args:
-                            if isinstance(a, (tuple, list)):
-                                arglist += [str(b) for b in a]
-                            else:
-                                arglist.append(str(a))
-                        _target().commands(' '.join(arglist))
-                    return method
+        #Create methods for all scripting commands that don't yet have wrappers
+        def auto_methods(Class, cmds):
+            selfdir = dir(Class)  #Functions already existing on Class
+            for key in cmds:
+                #Check if a method exists already
+                if key in selfdir:
+                    existing = getattr(Class, key, None)
+                    if existing and callable(existing):
+                        #Add the lavavu doc entry to the docstring
+                        doc = ""
+                        if existing.__doc__:
+                            if "Wraps LavaVu" in existing.__doc__: continue #Already modified
+                            doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
+                        doc += self.app.helpCommand(key, False)
+                        #These should all be wrapper for the matching lavavu commands
+                        #(Need to ensure we don't add methods that clash)
+                        #existing.__func__.__doc__ = doc
+                        existing.__doc__ = doc
+                else:
+                    #Use a closure to define a new method that runs this command
+                    def cmdmethod(name):
+                        def method(self, *args, **kwargs):
+                            arglist = [name]
+                            for a in args:
+                                if isinstance(a, (tuple, list)):
+                                    arglist += [str(b) for b in a]
+                                else:
+                                    arglist.append(str(a))
+                            self.commands(' '.join(arglist))
+                        return method
 
-                #Create method that runs this command:
-                method = cmdmethod(key)
+                    #Create method that runs this command:
+                    method = cmdmethod(key)
 
-                #Set docstring
-                method.__doc__ = self.app.helpCommand(key, False)
-                #Add the new method
-                self.__setattr__(key, method)
+                    #Set docstring
+                    method.__doc__ = self.app.helpCommand(key, False)
+                    #Add the new method
+                    setattr(Class, key, method)
+
+        #Apply to self (Viewer)
+        auto_methods(Viewer, self._allcmds)
+
+        #Apply to Object class for object related commands
+        auto_methods(Object, self._cmds['Object'])
+
 
         #Add module functions to Viewer object
         mod = sys.modules[__name__]
