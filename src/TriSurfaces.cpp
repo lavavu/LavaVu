@@ -81,7 +81,8 @@ void TriSurfaces::update()
     sorter.changed = true;
 
   //Reload the sort array?
-  if (sorter.size != total/3 || !allVertsFixed || counts.size() != geom.size())
+  //(NOTE: if reload not included here it is possible to get into a state where data is never reloaded)
+  if (reload || sorter.size != total/3 || !allVertsFixed || counts.size() != geom.size())
     loadList();
 }
 
