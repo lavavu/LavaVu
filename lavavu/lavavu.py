@@ -2241,15 +2241,14 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #Render event handling loop!
         timer = 0
         while not self._closing:
-            if not self.ctx:
-                #Process interactive and timer events
-                FPS = self.viewer.timer_animate  #FPS for animate timer
-                self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-                if timer >= self.TIMER_INC:
-                    #Process this every TIMER_INC milliseconds
-                    if self.viewer.events():
-                        self.viewer.execute()
-                    timer = 0
+            #Process interactive and timer events
+            FPS = self.viewer.timer_animate  #FPS for animate timer
+            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+            if timer >= self.TIMER_INC:
+                #Process this every TIMER_INC milliseconds
+                if self.viewer.events():
+                    self.viewer.execute()
+                timer = 0
 
             #Process commands that must be run on the render thread
             if len(self._q):
@@ -2275,8 +2274,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     self.wnd.clear()
                 #t, frame_time = mgl_timer.next_frame()
                 #print(t, frame_time)
-                self.viewer.display()
                 if self.wnd:
+                    self.viewer.display()
                     self.wnd.swap_buffers()
 
                 #Process interactive and timer events
