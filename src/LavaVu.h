@@ -252,7 +252,6 @@ public:
   void clearData(DrawingObject* target, lucGeometryDataType type);
 
   std::string getObjectDataLabels(DrawingObject* target);
-  void populateData(DrawingObject* target, std::string label);
 
   //Numpy interface
   Geom_Ptr arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData, int width=0, int height=0, int depth=0);

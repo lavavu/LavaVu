@@ -2044,6 +2044,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cerr << ss.str();
     help = ss.str();
   }
+  else if (parsed.exists("populate"))
+  {
+    if (gethelp)
+    {
+      help += "Populate generated data set\n\n"
+              "**Usage:** populate label\n\n"
+              "label (string) : the label of the built in data to copy to a value data set, one of:\n"
+              "                 x,y,z,index,count,width,height,length,size,x0,y0,z0,x1,y1,z1,magnitude,nx,ny,nz,nmean\n";
+      return false;
+    }
+
+    if (aobject && amodel)
+    {
+      std::string label = parsed["populate"];
+      //Calculate data array for a generated/preset label
+      for (auto g : amodel->geometry)
+      {
+        std::vector<Geom_Ptr> geomlist = g->getAllObjects(aobject);
+        for (auto geom : geomlist)
+          geom->valuesLookup(label);
+      }
+      printMessage("Populate %s complete", label.c_str());
+    }
+  }
   else if (parsed.exists("clear"))
   {
     if (gethelp)

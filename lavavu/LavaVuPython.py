@@ -514,7 +514,6 @@ class LavaVu(object):
     clearValues = _swig_new_instance_method(_LavaVuPython.LavaVu_clearValues)
     clearData = _swig_new_instance_method(_LavaVuPython.LavaVu_clearData)
     getObjectDataLabels = _swig_new_instance_method(_LavaVuPython.LavaVu_getObjectDataLabels)
-    populateData = _swig_new_instance_method(_LavaVuPython.LavaVu_populateData)
     arrayUChar = _swig_new_instance_method(_LavaVuPython.LavaVu_arrayUChar)
     arrayUInt = _swig_new_instance_method(_LavaVuPython.LavaVu_arrayUInt)
     arrayFloat = _swig_new_instance_method(_LavaVuPython.LavaVu_arrayFloat)

@@ -24497,51 +24497,6 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_populateData(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  LavaVu *arg1 = (LavaVu *) 0 ;
-  DrawingObject *arg2 = (DrawingObject *) 0 ;
-  std::string arg3 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  PyObject *swig_obj[3] ;
-  
-  if (!SWIG_Python_UnpackTuple(args, "LavaVu_populateData", 3, 3, swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_populateData" "', argument " "1"" of type '" "LavaVu *""'"); 
-  }
-  arg1 = reinterpret_cast< LavaVu * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_populateData" "', argument " "2"" of type '" "DrawingObject *""'"); 
-  }
-  arg2 = reinterpret_cast< DrawingObject * >(argp2);
-  {
-    std::string *ptr = (std::string *)0;
-    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
-    if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_populateData" "', argument " "3"" of type '" "std::string""'"); 
-    }
-    arg3 = *ptr;
-    if (SWIG_IsNewObj(res)) delete ptr;
-  }
-  {
-    try {
-      (arg1)->populateData(arg2,arg3);
-    } catch (const std::runtime_error& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -30739,7 +30694,6 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_clearValues", _wrap_LavaVu_clearValues, METH_VARARGS, NULL},
 	 { "LavaVu_clearData", _wrap_LavaVu_clearData, METH_VARARGS, NULL},
 	 { "LavaVu_getObjectDataLabels", _wrap_LavaVu_getObjectDataLabels, METH_VARARGS, NULL},
-	 { "LavaVu_populateData", _wrap_LavaVu_populateData, METH_VARARGS, NULL},
 	 { "LavaVu_arrayUChar", _wrap_LavaVu_arrayUChar, METH_VARARGS, NULL},
 	 { "LavaVu_arrayUInt", _wrap_LavaVu_arrayUInt, METH_VARARGS, NULL},
 	 { "LavaVu_arrayFloat", _wrap_LavaVu_arrayFloat, METH_VARARGS, NULL},
@@ -31131,7 +31085,6 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "LavaVu_clearValues", _wrap_LavaVu_clearValues, METH_VARARGS, NULL},
 	 { "LavaVu_clearData", _wrap_LavaVu_clearData, METH_VARARGS, NULL},
 	 { "LavaVu_getObjectDataLabels", _wrap_LavaVu_getObjectDataLabels, METH_VARARGS, NULL},
-	 { "LavaVu_populateData", _wrap_LavaVu_populateData, METH_VARARGS, NULL},
 	 { "LavaVu_arrayUChar", _wrap_LavaVu_arrayUChar, METH_VARARGS, NULL},
 	 { "LavaVu_arrayUInt", _wrap_LavaVu_arrayUInt, METH_VARARGS, NULL},
 	 { "LavaVu_arrayFloat", _wrap_LavaVu_arrayFloat, METH_VARARGS, NULL},
