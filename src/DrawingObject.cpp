@@ -85,6 +85,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
 {
   if (!session.colourMaps) return NULL;
   json prop = properties[propname];
+  bool valid = true;
   if (prop.is_number())
   {
     //Attempt to load by id
@@ -119,7 +120,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     }
 
     //Load the data string
-    current->loadPalette(data);
+    valid = current->loadPalette(data);
   }
   else if (prop.is_array() || prop.is_object())
   {
@@ -131,7 +132,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     }
 
     //Load the data array
-    current->loadPaletteJSON(prop);
+    valid = current->loadPaletteJSON(prop);
   }
   else if (prop.is_null())
     return NULL;
@@ -140,7 +141,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     //Replace property data with name of loaded map
     properties.data[propname] = current->name;
 
-  return current;
+  return valid ? current : NULL;
 }
 
 void DrawingObject::setup()
