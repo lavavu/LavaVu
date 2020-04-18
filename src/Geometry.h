@@ -598,7 +598,7 @@ public:
   bool show(unsigned int idx);
   void showObj(DrawingObject* draw, bool state);
   void redrawObject(DrawingObject* draw, bool reload=false);
-  void setValueRange(DrawingObject* draw);
+  void setValueRange(DrawingObject* draw, float* min=NULL, float* max=NULL);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void merge(int start=-2, int end=-2);

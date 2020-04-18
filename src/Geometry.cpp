@@ -969,13 +969,15 @@ void Geometry::showObj(DrawingObject* draw, bool state)
   }
 }
 
-void Geometry::setValueRange(DrawingObject* draw)
+void Geometry::setValueRange(DrawingObject* draw, float* min, float* max)
 {
   for (auto g : records)
   {
     if (g->colourData() && (!draw || g->draw == draw) && g->draw->colourMap)
     {
       auto range = g->draw->ranges[g->colourData()->label];
+      if (min && max)
+        range.update(*min, *max);
       g->draw->colourMap->properties.data["range"] = json::array({range.minimum, range.maximum});
     }
   }
