@@ -355,7 +355,7 @@ unsigned int GeomData::valuesLookup(const json& by)
       Range range;
       Values_Ptr store = std::make_shared<FloatValues>();
       store->label = label;
-      if (label == "X" || label == "Y" || label == "Z")
+      if (label == "x" || label == "y" || label == "z")
       {
         int idx = label.at(0) - 'X';
         for (unsigned int i = 0; i < count(); i ++)
@@ -448,7 +448,6 @@ unsigned int GeomData::valuesLookup(const json& by)
       }
       else if (label == "ny")
       {
-        std::cout << render->normals.size() / 3 << " == " << count() << std::endl;
         if (render->normals.size() / 3 == count())
         {
           for (unsigned int i = 0; i < count(); i++)
