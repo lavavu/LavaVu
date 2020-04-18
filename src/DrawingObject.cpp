@@ -244,6 +244,26 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
         tex = texture = std::make_shared<ImageLoader>(texfn, properties["fliptexture"]);
         tex->load();
       }
+      else if (texfn.substr(0,22) == "data:image/png;base64,")
+      {
+        //LOAD FROM DATA URL (only png for now)
+        std::string b64 = texfn.substr(22);
+        std::string decoded = base64_decode(b64);
+        std::stringstream ss(decoded);
+        GLuint channels, width, height;
+        unsigned char* png = (unsigned char*)read_png(ss, channels, width, height);
+
+        ImageData* data = new ImageData(width, height, channels, png);
+        tex = texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
+        tex->repeat = properties["repeat"];
+        tex->filter = properties["texturefilter"];
+        tex->flip = properties["fliptexture"];
+
+        texture->load(data);
+
+        delete[] png;
+        delete data;
+      }
       else
       {
         //Value can be "colourmap" to use palette from colourmap prop
@@ -262,7 +282,8 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
             return textureMap->texture->use();
         }
 
-        if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
+        if (texfn.length() > 0)
+          debug_print("Texture File: %s not found!\n", texfn.c_str());
         //If load failed, skip from now on
         properties.data["texture"] = "";
       }
