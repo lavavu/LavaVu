@@ -581,9 +581,9 @@ bool GeomData::filter(unsigned int idx)
           continue;
         }
         //Filters out values not between specified ranges (allows combining filters)
-        if (draw->filterCache[i].inclusive && (value <= min || value >= max))
+        if (draw->filterCache[i].inclusive && (value < min || value > max))
           return true;
-        if (value < min || value > max)
+        if (value <= min || value >= max)
           return true;
       }
     }
