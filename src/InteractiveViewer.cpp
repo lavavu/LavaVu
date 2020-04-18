@@ -181,7 +181,7 @@ bool LavaVu::mouseMove(int x, int y)
   case LeftButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      history.push_back(aview->zoom(-dy * 0.01));
+      history.push_back(aview->zoom((-dy+dx) * 0.01));
     else
     {
       // left = rotate
@@ -191,7 +191,7 @@ bool LavaVu::mouseMove(int x, int y)
   case RightButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      history.push_back(aview->zoomClip(-dy * 0.001));
+      history.push_back(aview->zoomClip((-dy+dx) * 0.001));
     else
     {
       // right = translate
@@ -275,8 +275,38 @@ bool LavaVu::parseChar(unsigned char key)
   message[0] = '\0';
   help = "";
 
+  //ALT+SHIFT commands
+  if (viewer->keyState.alt && viewer->keyState.shift)
+  {
+    switch(key)
+    {
+    case 'r':
+    case 'R':
+      return parseCommands("reload");
+    case 'b':
+    case 'B':
+      return parseCommands("background");
+    case 's':
+    case 'S':
+      return parseCommands("scale shapes down");
+    case 'v':
+    case 'V':
+      return parseCommands("scale vectors down");
+    case 't':
+    case 'T':
+      return parseCommands("scale tracers down");
+    case 'p':
+    case 'P':
+      return parseCommands("scale points down");
+    case 'l':
+    case 'L':
+      return parseCommands("scale lines down");
+    default:
+      return false;
+    }
+  }
   //ALT commands
-  if (viewer->keyState.alt)
+  else if (viewer->keyState.alt)
   {
     switch(key)
     {
@@ -301,56 +331,60 @@ bool LavaVu::parseChar(unsigned char key)
     case '|':
       return parseCommands("rulers");
     case 'a':
+    case 'A':
       return parseCommands("axis");
     case 'b':
+    case 'B':
       return parseCommands("background invert");
     case 'c':
+    case 'C':
       return parseCommands("camera");
     case 'e':
+    case 'E':
       return parseCommands("list elements");
     case 'f':
+    case 'F':
       return parseCommands("border");
     case 'h':
+    case 'H':
       return parseCommands("history");
     case 'i':
+    case 'I':
       return parseCommands("image");
     case 'j':
+    case 'J':
       return parseCommands("valuerange");
     case 'o':
+    case 'O':
       return parseCommands("list objects");
     case 'q':
+    case 'Q':
       return parseCommands("quit");
     case 'r':
+    case 'R':
       return parseCommands("reset");
     case 'u':
+    case 'U':
       return parseCommands("toggle cullface");
     case 'w':
+    case 'W':
       parseCommands("toggle wireframe");
       return true;
     case 'p':
+    case 'P':
       return parseCommands("scale points up");
     case 's':
+    case 'S':
       return parseCommands("scale shapes up");
     case 't':
+    case 'T':
       return parseCommands("scale tracers up");
     case 'v':
+    case 'V':
       return parseCommands("scale vectors up");
     case 'l':
-      return parseCommands("scale lines up");
-    case 'R':
-      return parseCommands("reload");
-    case 'B':
-      return parseCommands("background");
-    case 'S':
-      return parseCommands("scale shapes down");
-    case 'V':
-      return parseCommands("scale vectors down");
-    case 'T':
-      return parseCommands("scale tracers down");
-    case 'P':
-      return parseCommands("scale points down");
     case 'L':
-      return parseCommands("scale lines down");
+      return parseCommands("scale lines up");
     case ' ':
       if (encoder)
         return parseCommands("record"); //Stop recording
