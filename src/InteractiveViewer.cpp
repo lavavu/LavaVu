@@ -2657,10 +2657,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       if (list[c]->dbid == 0) continue;
       printMessage("%s deleting from database", list[c]->name().c_str());
-      //Delete the loaded object data
-      parseCommand("delete " + list[c]->name());
       //Delete from db
       amodel->deleteObjectRecord(list[c]->dbid);
+      //Delete the loaded object data
+      parseCommand("delete " + list[c]->name());
     }
 
     aobject = NULL;
