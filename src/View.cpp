@@ -711,6 +711,23 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
 
 void View::importProps(bool force)
 {
+  std::vector<std::string> to_erase;
+  for (auto it = properties.data.begin(); it != properties.data.end(); ++it)
+  {
+    if (std::find(session.viewProps.begin(), session.viewProps.end(), it.key()) == session.viewProps.end())
+    {
+      std::cout << "WARNING: moving invalid view property: " << it.key() << " = " << it.value() << std::endl;
+      session.globals[it.key()] = properties[it.key()];
+      to_erase.push_back(it.key());
+    }
+  }
+  //Erase moved keys (can't do it in above loop while iterating!)
+  for (auto key : to_erase)
+  {
+    properties.data.erase(key);
+    //std::cout << "ERASING: " << key << std::endl;
+  }
+
   //Never import if values updated
   //printf("IMPORT %d %d %d\n", force, initialised, updated);
   if (!force && (!initialised || updated)) return;

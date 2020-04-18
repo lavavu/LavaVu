@@ -250,6 +250,9 @@ void Session::init(std::string& binpath)
     std::cerr << "Error opening property dictionary: " << filepath << std::endl;
   properties = json_fifo::parse(buffer.str());
 
+  //Add built-ins
+  viewProps.push_back("is3d");
+  viewProps.push_back("bounds");
   for (auto it = properties.begin(); it != properties.end(); ++it)
   {
     //std::cout << it.key() << " | " << it.value() << "\n";
