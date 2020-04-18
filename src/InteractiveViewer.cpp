@@ -1930,7 +1930,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Adjust colourmaps on object to fit actual value range\n";
+      help += "Adjust colourmaps on object to fit actual value range or provided min/max\n\n"
+              "**Usage:** valuerange [min max]\n"
+              "min (number) : minimum of user defined range, default is to use the data minimum\n"
+              "max (number) : maximum of user defined range, default is to use the data maximum\n\n";
       return false;
     }
 
@@ -1939,8 +1942,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       obj = lookupObject(parsed, "valuerange");
     if (obj)
     {
+      float fmin = 0, fmax = 0;
+      float* min = NULL;
+      float* max = NULL;
+      if (parsed.has(fmin, "valuerange", 0) && parsed.has(fmax, "valuerange", 1))
+      {
+        min = &fmin;
+        max = &fmax;
+      }
       for (auto g : amodel->geometry)
-        g->setValueRange(obj);
+        g->setValueRange(obj, min, max);
       printMessage("ColourMap scales set to value range");
       //Colour change so force full reload
       amodel->reload(aobject);
