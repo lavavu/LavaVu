@@ -1,7 +1,9 @@
 //Bounding box only in WebGL
 //Urgent TODO: move shared code with draw.js into common file
 //maintaining two copies currently!
-function initBox(el, cmd_callback) {
+//Re-init using previous callback data
+
+function initBox(el, cmd_callback, fixedsize) {
   //console.log("INITBOX: " + el.id);
   var canvas = document.createElement("canvas");
   if (!el) el = document.body.firstChild;
@@ -32,10 +34,59 @@ function initBox(el, cmd_callback) {
   viewer.dict = window.dictionary;
   viewer.defaultcolourmaps = window.defaultcolourmaps;
 
+  //Enable to forward key presses to server directly
+  //(only used for full size viewers)
+  if (fixedsize == 1)
+    document.addEventListener('keyup', function(event) {keyPress(event, viewer);});
+
   return viewer;
 }
 
+function keyPress(event, viewer) {
+  // space and arrow keys, prevent scrolling
+  if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key))
+    event.preventDefault();
+
+  //Special key codes
+  if (event.key == 'ArrowUp') key = 17;
+  else if (event.key == 'ArrowDown') key = 18;
+  else if (event.key == 'ArrowLeft') key = 20;
+  else if (event.key == 'ArrowRight') key = 19;
+  else if (event.key == 'PageUp') key = 24;
+  else if (event.key == 'PageDown') key = 25;
+  else if (event.key == 'PageUp') key = 24;
+  else if (event.key == 'Home') key = 22;
+  else if (event.key == 'End') key = 23;
+  else if (event.key == 'Backspace') key = 8;
+  else if (event.key == 'Tab') key = 9;
+  else if (event.key == 'Escape') key = 27;
+  else if (event.key == 'Enter') key = 13;
+  else if (event.key == 'Insert') key = 21;
+  else if (event.key == 'Delete') key = 127;
+  else if (event.key[0] == 'F' && event.key.length > 1)
+    key = 189 + parseInt(event.key.substr(1));
+  else if (event.key.length == 1)
+    key = event.key.charCodeAt(0);
+  else
+    return;
+
+  var modifiers = '';
+  if (event.ctrlKey) modifiers += 'C';
+  if (event.shiftKey) modifiers += 'S';
+  if (event.altKey) modifiers += 'A';
+  if (event.metaKey) modifiers += 'M';
+
+  //Ignore CTRL+R, CTRL+SHIFT+R
+  if (key == 114 && modifiers == 'C' || key == 82 && modifiers == 'CS') return;
+
+  cmd = 'key key=' + key + ',modifiers=' + modifiers + ",x=" + defaultMouse.x + ",y=" + defaultMouse.y;
+  //console.log(cmd);
+  viewer.command(cmd);
+}
+
 function canvasBoxMouseClick(event, mouse) {
+  mouse.element.viewer.check_context(mouse);
+
   if (mouse.element.viewer.rotating)
     mouse.element.viewer.command('' + mouse.element.viewer.getRotationString());
   else
@@ -53,6 +104,7 @@ function canvasBoxMouseClick(event, mouse) {
 }
 
 function canvasBoxMouseDown(event, mouse) {
+  mouse.element.viewer.check_context(mouse);
   //Just draw so the box appears
   mouse.element.viewer.draw();
   return false;
@@ -128,6 +180,7 @@ function canvasBoxMouseMove(event, mouse) {
 }
 
 function canvasBoxMouseWheel(event, mouse) {
+  mouse.element.viewer.check_context(mouse);
   if (event.shiftKey) {
     mouse.element.viewer.zoomClip(event.spin*0.01);
   } else {
@@ -137,6 +190,7 @@ function canvasBoxMouseWheel(event, mouse) {
 }
 
 function canvasBoxMousePinch(event, mouse) {
+  mouse.element.viewer.check_context(mouse);
   if (event.distance != 0) {
     var factor = event.distance * 0.0001;
     mouse.element.viewer.zoom(factor);
@@ -163,9 +217,30 @@ function BoxRenderer(gl, colour) {
     this.elementSize += this.attribSizes[i];
 }
 
+var vs = "precision highp float; \n \
+attribute vec3 aVertexPosition; \n \
+attribute vec4 aVertexColour; \n \
+uniform mat4 uMVMatrix; \n \
+uniform mat4 uPMatrix; \n \
+uniform vec4 uColour; \n \
+varying vec4 vColour; \n \
+void main(void) \n \
+{ \n \
+  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0); \n \
+  gl_Position = uPMatrix * mvPosition; \n \
+  vColour = uColour; \n \
+}";
+
+var fs = "precision highp float; \n \
+varying vec4 vColour; \n \
+void main(void) \n \
+{ \n \
+  gl_FragColor = vColour; \n \
+}";
+
 BoxRenderer.prototype.init = function() {
   //Compile the shaders
-  this.program = new WebGLProgram(this.gl, "line-vs", "line-fs");
+  this.program = new WebGLProgram(this.gl, vs, fs);
   if (this.program.errors) console.log(this.program.errors);
   //Setup attribs/uniforms (flag set to skip enabling attribs)
   this.program.setup(undefined, undefined, true);
@@ -301,8 +376,9 @@ function BoxViewer(canvas) {
     this.webgl = new WebGL(this.canvas, {antialias: true}); //, premultipliedAlpha: false});
     this.gl = this.webgl.gl;
     canvas.addEventListener("webglcontextlost", function(event) {
-      event.preventDefault();
-      console.log("CONTEXT LOSS DETECTED");
+      //event.preventDefault();
+      console.log("Context loss detected, clearing data/state and flagging defunct");
+      this.mouse.lostContext = true;
     }, false);
 
   } catch(e) {
@@ -336,6 +412,20 @@ function BoxViewer(canvas) {
   //this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
   //this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ZERO, this.gl.ONE);
   this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+}
+
+BoxViewer.prototype.check_context = function(mouse) {
+  if (mouse.lostContext) {
+    console.log("Recreating viewer after context loss");
+    //Reinit on timer? on click?
+    var box = initBox(this.canvas.imgtarget, this.command);
+    box.loadFile(JSON.stringify(this.vis));
+    //Delete the old canvas now
+    this.canvas.parentNode.removeChild(this.canvas);
+    this.vis = null;
+    mouse.lostContext = false;
+    this.deleted = true;
+  }
 }
 
 BoxViewer.prototype.reload = function() {
@@ -485,6 +575,9 @@ BoxViewer.prototype.loadFile = function(source) {
     console.log(BoxViewer.prototype.loadFile.caller);
     return; //Invalid
   }
+
+  if (!this.vis)
+    this.vis = {};
 
   //Parse data
   var src = {};
@@ -717,6 +810,14 @@ BoxViewer.prototype.draw = function() {
       this.webgl.viewport = new Viewport(0, 0, this.width, this.height);
     }
   }
+
+  /*/Attempt to prevent element resizing to 0,0 when a frame is dropped
+  if (this.width)
+    this.canvas.parentElement.style.minWidth = this.width + 'px';
+  if (this.height)
+    this.canvas.parentElement.style.minHeight = this.height + 'px';
+  */
+
   if (!this.gl) return;
 
   this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);

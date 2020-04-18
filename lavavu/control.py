@@ -44,6 +44,7 @@ import json
 from vutils import is_ipython, is_notebook
 import weakref
 import string
+import re
 from random import Random
 
 #Register of windows (viewer instances)
@@ -55,36 +56,6 @@ id_random = Random() #Ensure we use our own default seed in case set in notebook
 def gen_id(length=10):
     alphabet = string.ascii_letters + string.digits
     return ''.join(id_random.choices(alphabet, k=length))
-
-vertexShader = """
-<script id="line-vs" type="x-shader/x-vertex">
-precision highp float;
-//Line vertex shader
-attribute vec3 aVertexPosition;
-attribute vec4 aVertexColour;
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
-uniform vec4 uColour;
-varying vec4 vColour;
-void main(void)
-{
-  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
-  gl_Position = uPMatrix * mvPosition;
-  vColour = uColour;
-}
-</script>
-"""
-
-fragmentShader = """
-<script id="line-fs" type="x-shader/x-fragment">
-precision highp float;
-varying vec4 vColour;
-void main(void)
-{
-  gl_FragColor = vColour;
-}
-</script>
-"""
 
 basehtml = """
 <html>
@@ -227,7 +198,7 @@ def _webglboxcode(menu=True, lighttheme=True):
     Returns WebGL base code for the bounding box interactor window
     """
     jslibs = [['gl-matrix-min.js'], ['OK-min.js', 'control.js', 'drawbox.js']]
-    return _webglcode(fragmentShader + vertexShader, ['control.css', 'styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
+    return _webglcode('', ['control.css', 'styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
 def _connectcode(target):
     """
@@ -284,6 +255,23 @@ def _readfile(filename):
 
 def _getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
     #Load combined shaders
+    src = '<script>\nvar shaders = {};\n'
+    sdict = {'points' : 'point', 'lines' : 'line', 'triangles' : 'tri', 'volume' : 'volume'};
+    for key in shaders:
+        vs = _readfile(os.path.join(path, sdict[key] + 'Shader.vert'))
+        fs = _readfile(os.path.join(path, sdict[key] + 'Shader.frag'))
+        vs = vs.replace('"', '\\"').replace('\n', '\\n')
+        fs = fs.replace('"', '\\"').replace('\n', '\\n')
+        #vs = re.sub("^\s*in ", 'attribute ', vs, flags=re.MULTILINE);
+        #vs = re.sub("^\s*out ", 'varying ', vs, flags=re.MULTILINE)
+        #fs = re.sub("^\s*in ", 'varying ', fs, flags=re.MULTILINE);
+        src += 'shaders["' + key + '-vs"] = "' + vs + '";'
+        src += 'shaders["' + key + '-fs"] = "' + fs + '";'
+    src += '\n</script>\n\n'
+    return src
+
+def _getshaders_as_scripts(path, shaders=['points', 'lines', 'triangles', 'volume']):
+    #Load shaders into script tags, not compatible with colab for some reason
     src = ''
     sdict = {'points' : 'point', 'lines' : 'line', 'triangles' : 'tri', 'volume' : 'volume'};
     for key in shaders:
@@ -1087,12 +1075,13 @@ class Colour(_Control):
     """A colour picker for setting colour properties
     """
     def __init__(self, *args, **kwargs):
+        self.style = ""
         super(Colour, self).__init__(command="", *args, **kwargs)
 
     def controls(self):
         html = self.labelhtml()
         html += """
-        <div><div class="colourbg checkerboard">
+        <div class="colourbg checkerboard" style="---STYLE---">
           <div id="---ELID---" ---ATTRIBS--- class="colour ---ELID---" onclick="
             var col = new Colour(this.style.backgroundColor);
             var offset = [this.getBoundingClientRect().left, this.getBoundingClientRect().top];
@@ -1106,7 +1095,7 @@ class Colour(_Control):
             el.picker = new ColourPicker(savefn);
             el.picker.pick(col, offset[0], offset[1]);">
           </div>
-        </div></div>
+        </div>
         <script>
         var el = document.getElementById("---ELID---");
         //Set the initial colour
@@ -1117,7 +1106,20 @@ class Colour(_Control):
         html = html.replace('---VALUE---', str(self.value))
         html = html.replace('---ELID---', self.elid)
         html = html.replace('---ATTRIBS---', self.attribs())
+        html = html.replace('---STYLE---', self.style)
         return html.replace('---ID---', self.id)
+
+class ColourIndicator(Colour):
+    """A small indicator for showing/setting the colour of the object
+    """
+    def __init__(self, *args, **kwargs):
+        super(ColourIndicator, self).__init__(*args, **kwargs)
+        #Custom div style:
+        self.style="border: #888 1px solid; display: inline-block; width: 20px; height: 20px;"
+        self.label = ""
+        #Set the colour from cached data so at least the indicated colour is correct
+        if not self.target["colour"]:
+            self.target["colour"] = self.target.colour.toString()
 
 class Gradient(_Control):
     """A colourmap editor
@@ -1361,13 +1363,23 @@ class Filter(DualRange):
             label = self.filter['by'].capitalize()
 
         #Get the default range limits from the matching data source
-        self.data = target["data"][self.filter['by']]
+        fname = self.filter['by']
+        if not target["data"]:
+            #Attempt to update
+            target.reload()
+            target.parent.render()
+
+        if not target["data"]:
+            raise(ValueError("target data list empty, can't use filter"))
+        if not fname in target['data']:
+            raise(ValueError(fname + " not found in target data list, can't use filter"))
+        self.data = target["data"][fname]
         if not range:
             #self.range = (self.filter["minimum"], self.filter["maximum"])
             if self.filter["map"]:
                 range = (0.,1.)
             else:
-                range = (self.data["minimum"], self.data["maximum"])
+                range = (self.data["minimum"]*0.99, self.data["maximum"]*1.01)
 
         #Setup DualRange using filter min/max
         super(Filter, self).__init__(_getviewer(target), properties=[None, None], values=[self.filter["minimum"], self.filter["maximum"]], label=label, range=range)
@@ -1382,6 +1394,7 @@ class ObjectList(_MultiControl):
     def __init__(self, viewer, *args, **kwargs):
         super(ObjectList, self).__init__(viewer, label="Objects", *args, **kwargs)
         for obj in viewer.objects.list:
+            self.add(ColourIndicator(obj, "colour"))
             self.add(Checkbox(obj, "visible", label=obj["name"])) 
 
 #TODO: broken

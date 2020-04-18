@@ -558,7 +558,7 @@ Renderer.prototype.init = function() {
     }
   }
 
-  var fdefines = "precision highp float;\n#define WEBGL\n#extension GL_OES_standard_derivatives : enable\n";
+  var fdefines = "#extension GL_OES_standard_derivatives : enable\nprecision highp float;\n#define WEBGL\n";
   var vdefines = "precision highp float;\n#define WEBGL\n";
 
   if (this.type == "volume" && this.id && this.image) {
@@ -595,8 +595,10 @@ Renderer.prototype.init = function() {
       fdefines += "#define ENABLE_TRICUBIC\n";
   }
 
-  vs = vdefines + getSourceFromElement(vs).replace(/^out /gm, 'varying ').replace(/^in /gm, 'attribute ');
-  fs = fdefines + getSourceFromElement(fs).replace(/^in /gm, 'varying ');
+  //vs = vdefines + getSourceFromElement(vs).replace(/^out /gm, 'varying ').replace(/^in /gm, 'attribute ');
+  //fs = fdefines + getSourceFromElement(fs).replace(/^in /gm, 'varying ');
+  vs = vdefines + shaders[vs].replace(/^in /gm, 'attribute ').replace(/^out /gm, 'varying ');
+  fs = fdefines + shaders[fs].replace(/^in /gm, 'varying ');
 
   try {
     //Compile the shaders

@@ -5,6 +5,7 @@
 .lvctrl input[type=number] { width: 105px; height: 26px; border-radius: 0; border: 1px dotted #999;}
 .lvctrl pre { display: inline; }
 .lvctrl p  { color: gray; margin: 0px}
+.lvctrl label { margin: 0px}
 
 .lvtab    { border: 1px solid #999; padding: 5px; }
 .lvtabbar { width:100%; overflow:hidden; margin-top: 5px; }

@@ -125,8 +125,10 @@ WindowInteractor.prototype.init = function() {
   //console.log(this.img.width + ' x ' + this.img.height);
   //If initial img size > 64x64 (default image => grey 64x64 square)
   //then use the image size as in the image requests
-  if (this.img.width > 64 && this.img.height > 64)
+  if (this.img.width > 64 && this.img.height > 64) {
     this.fixedsize = 2; //2 == use image size
+    this.img.fixedsize = 2; //2 == use image size
+  }
 
   //Initial image
   //(Init WebGL bounding box interaction on load)
@@ -134,7 +136,7 @@ WindowInteractor.prototype.init = function() {
   this.get_image(function() {
     //console.log('In image loaded callback ' + that.id);
     //Init on image load with callback function to execute commands
-    that.box = initBox(that.img, function(cmd) {that.execute(cmd);});
+    that.box = initBox(that.img, function(cmd) {that.execute(cmd);}, that.fixedsize);
     console.log("Window initialised, id: " + that.id);
     //Clear onload
     that.img.onload = null;
@@ -261,15 +263,22 @@ WindowInteractor.prototype.get_state = function() {
   //console.log("get_state called by " + this.get_state.caller);
   if (!this.img) return; //Skip for control only interator
   var that = this;
-  var box = this.box;
-  var onget = function(data) { box.loadFile(data); };
+  var onget = function(data) {
+    if (that.box.deleted) {
+      console.log("This Window is defunct! removing");
+      that.box = null;
+    } else {
+      that.box.loadFile(data);
+      that.redisplay_reset();
+    }
+  };
+
   var url = this.baseurl + "/getstate?" + new Date().getTime();
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if (xhttp.status == 200) {
       //Success, callback
       onget(xhttp.response);
-      that.redisplay_reset();
     } else
       console.log("Ajax Request Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
   }
@@ -291,5 +300,18 @@ WindowInteractor.prototype.redisplay_reset = function() {
   //Image element no longer exists? Skip
   if (!document.getElementById("imgtarget_" + this.id)) return;
 
-  this.redisplay_timer = setTimeout(function() { console.log("Redisplay " + that.id); that.redisplay(); }, 10000);
+  // Get img position in the viewport
+  var bounding = this.img.getBoundingClientRect();
+  if (
+    bounding.top >= 0 &&
+    bounding.left >= 0 &&
+    bounding.right <= (window.innerWidth || document.documentElement.clientWidth) &&
+    bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+  ) {
+    //console.log('IMG In the viewport! Setting redisplay timer on');
+    this.redisplay_timer = setTimeout(function() { console.log("Redisplay " + that.id); that.redisplay(); }, 10000);
+  } else {
+    //console.log('Not in the viewport... disabling auto-refresh');
+  }
 }
+
