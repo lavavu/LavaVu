@@ -121,8 +121,8 @@ public:
   void draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);
-  void loadPalette(std::string data);
-  void loadPaletteJSON(json& data);
+  bool loadPalette(std::string data);
+  bool loadPaletteJSON(json& data);
   ImageData* toImage(bool repeat);
   json toJSON();
   std::string toString();

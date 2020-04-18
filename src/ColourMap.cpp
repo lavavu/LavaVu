@@ -62,7 +62,7 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
   }
 }
 
-void ColourMap::loadPaletteJSON(json& data)
+bool ColourMap::loadPaletteJSON(json& data)
 {
   //Load from json object/array
   if (data.is_object())
@@ -74,7 +74,7 @@ void ColourMap::loadPaletteJSON(json& data)
       add(data["background"]);
       background = colours[0].colour;
     }
-    loadPaletteJSON(data["colours"]);
+    return loadPaletteJSON(data["colours"]);
   }
   else if (data.is_array())
   {
@@ -82,17 +82,19 @@ void ColourMap::loadPaletteJSON(json& data)
     noValues = false;
     for (auto el : data)
       add(el);
+    return colours.size() > 1;
   }
   else if (data.is_string())
   {
     std::string s = data;
-    loadPalette(s);
+    return loadPalette(s);
   }
+  return false;
 }
 
-void ColourMap::loadPalette(std::string data)
+bool ColourMap::loadPalette(std::string data)
 {
-  if (data.length() == 0) return;
+  if (data.length() == 0) return false;
   //Types of data accepted
   // a) Name of predefined colour map, if preceded with @ position data is ignored
   //   and only colours loaded at even spacing
@@ -105,7 +107,7 @@ void ColourMap::loadPalette(std::string data)
   {
     //Load from json array
     json j = json::parse(data);
-    loadPaletteJSON(j);
+    return loadPaletteJSON(j);
   }
   else
   {
@@ -191,6 +193,7 @@ void ColourMap::loadPalette(std::string data)
   }
 
   //Ensure at least two colours
+  bool valid = colours.size() > 1;
   if (colours.size() == 0)
     add(0xff000000);
   if (colours.size() == 1)
@@ -198,6 +201,7 @@ void ColourMap::loadPalette(std::string data)
 
   //Strip positions
   if (nopos) noValues = true;
+  return valid; //Data was a valid colourmap
 }
 
 void ColourMap::addAt(Colour& colour, float position)
