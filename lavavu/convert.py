@@ -29,8 +29,8 @@ def default_sample_grid(vrange, res=8):
     resolution of smallest dimension will be minres elements
     """
     #If provided a full resolution, use that, otherwise will be interpreted as min res
-    if isinstance(res, list) and len(res) == 3:
-        return res
+    if len(list(res)) == 3:
+        return list(res)
     #Use bounding box range min
     minr = numpy.min(vrange)
     #res parameter is minimum resolution
@@ -55,9 +55,8 @@ def points_to_volume(verts, res=8, kdtree=False, normed=False, clamp=None, bound
     -------
     values: numpy array of float32
         The converted density field
-    vmin
+    boundingbox : 2,3
         the minimum 3d vertex of the bounding box
-    vmax
         the maximum 3d vertex of the bounding box
 
     """
@@ -250,8 +249,10 @@ def _get_objects(source):
     """
     if source.__class__.__name__ == 'Viewer':
         return source.objects.list
-    else:
+    elif not isinstance(source, list):
         return [source]
+    else:
+        return source
 
 def export_OBJ(filepath, source):
     """
@@ -261,14 +262,41 @@ def export_OBJ(filepath, source):
     If source is lavavu.Viewer() exports all objects
     If source is lavavu.Object() exports single object
     """
-    mtlfilename = os.path.basename(filepath) + '.mtl'
+    mtlfilename = os.path.splitext(filepath)[0] + '.mtl'
     objects = _get_objects(source)
     with open(filepath, 'w') as f, open(mtlfilename, 'w') as m:
         f.write("# OBJ file\n")
         offset = 1
         for obj in objects:
-            f.write("g %s\n" % obj.name)
-            offset = _write_OBJ(f, m, filepath, obj, offset)
+            if obj["visible"]:
+                f.write("g %s\n" % obj.name)
+                offset = _write_OBJ(f, m, filepath, obj, offset)
+
+def _write_MTL(m, name, texture=None, diffuse=[1.0, 1.0, 1.0], ambient=None, specular=None, opacity=1.0, illum=None):
+    #http://paulbourke.net/dataformats/mtl/
+    print("Writing MTL ", texture, diffuse, opacity, name)
+    mtl = "newmtl %s\n" % name
+    mtl += "Kd %.06f %.06ff %.06f\n" % (diffuse[0], diffuse[1], diffuse[2])
+    if ambient:
+        mtl += "Ka %.06f %.06ff %.06f\n" % (ambient[0], ambient[1], ambient[2])
+    if specular:
+        if illum is None:
+            illum = 2 #Highlight on
+        mtl += "Ks %.06f %.06ff %.06f\n" % (specular[0], specular[1], specular[2])
+        if len(specular) > 3:
+            mtl += "Ns %.06f\n" % specular[3]
+    mtl += "d %f\n" % (1.0 - opacity) #Dissolve: inverse of opacity
+    if illum is None:
+        illum = 1 #Default=1 = colour on, ambient on
+    mtl += "illum %d\n" % illum
+
+    if texture:
+        mtl += "map_Kd %s\n" % texture
+
+    mtl += '\n'
+    m.write(mtl)
+    mtl_line = "usemtl %s\n" % name
+    return mtl_line
 
 def _write_OBJ(f, m, filepath, obj, offset=1):
     mtl_line = ""
@@ -276,33 +304,44 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
     colourdict = None
     import re
     name = re.sub(r"\s+", "", obj["name"])
-    if m and obj["texture"] == 'colourmap':
+    colourcount = sum([len(c) for c in obj.data.colours])
+    if m and obj["texture"]:
+        fn = obj["texture"]
+        if fn == 'colourmap':
+            fn = 'texture.png'
         #Write palette.png
         obj.parent.palette('image', 'texture')
-        mtl = ("newmtl material-%s\n"
-        "Ka 1.000000 1.000000 1.000000\n"
-        "Kd 1.000000 1.000000 1.000000\n"
-        "Ks 0.000000 0.000000 0.000000\n"
-        "Tr %f\n"
-        "illum 1\n"
-        "Ns 0.000000\n"
-        "map_Kd texture.png\n\n" % (name, obj["opacity"]))
-        mtl_line = "usemtl material-%s\n" % name
-        m.write(mtl)
+        print("Writing texture mtl ", fn)
+        mtl_line = _write_MTL(m, name, texture=fn, opacity=obj["opacity"])
 
-    elif m and "colour" in obj:
-        print("Writing mtl lib (default colour)")
+    elif m and colourcount > 0:
+        #"""
+        #18bit RGB = 262144 colours
+        #Top-left = (0,0,0)
+        #Bottom-right = (255,255,255)
+        #(8x8 tiles of 64x64)
+        #G - slow, Z index = G
+        #R - midd, Y axis = R
+        #B - fast, X axis = B
+        #X = B//4
+        #Y = R//4
+        #Z = G//4
+        #zx = Z % 8
+        #zy = Z // 8
+        #x = zx * 64 + X
+        #y = zy * 64 + Y
+        #u = x / 512
+        #v = y / 512
+        #https://upload.wikimedia.org/wikipedia/commons/3/34/RGB_18bits_palette.png
+        palimg = u"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"
+        import base64
+        decoded = base64.b64decode(palimg).decode('utf-8')
+        with open("palette_rgb.png", "wb") as f:
+            f.write(decoded.encode('ascii'))
+        mtl_line = _write_MTL(m, "palette_rgb", texture="palette_rgb.png", opacity=obj["opacity"])
         colourdict = {}
-        c = obj.parent.parse_colour(obj["colour"])
-        mtl = "newmtl default-%s\n" % name
-        mtl += "Kd %f %f %f\n" % (c[0], c[1], c[2])
-        mtl += "Tr %f\n" % obj["opacity"]
-        mtl += "illum 1\n\n"
-        mtl_line = "usemtl default-%s\n" % name
-        m.write(mtl)
-
-    if m and len(obj.data.colours) > 0:
-        import matplotlib
+        """
+        #SLOW!
         print("Creating palette")
         colourdict = {}
         for data in obj:
@@ -313,10 +352,13 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         print("Writing mtl lib (colour list)")
         for c in colourdict:
             rgb = colourdict[c]
-            mtl = "newmtl %s\n" % c[1:]
-            mtl += "Kd %f %f %f\n" % (rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0)
-            mtl += "illum 1\n\n"
-            m.write(mtl)
+            mtl_line = _write_MTL(m, c[1:], diffuse=[rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0], opacity=obj["opacity"])
+        """
+
+    elif m and "colour" in obj:
+        print("Writing mtl lib (default colour)")
+        c = obj.parent.parse_colour(obj["colour"])
+        mtl_line = _write_MTL(m, 'default-' + name, diffuse=c, opacity=obj["opacity"])
 
     for o,data in enumerate(obj):
         print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
@@ -326,7 +368,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
             continue
         f.write("o Surface_%d\n" % o)
         #f.write("o %s\n" % obj.name)
-        if m: f.write("mtllib " + os.path.basename(filepath) + ".mtl\n")
+        if m: f.write("mtllib " + os.path.splitext(os.path.basename(filepath))[0] + ".mtl\n")
         indices = data.indices.reshape((-1,3))
         normals = data.normals.reshape((-1,3))
         texcoords = data.texcoords.reshape((-1,2))
@@ -351,9 +393,20 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 zeros = numpy.zeros((len(texcoords)))
                 texcoords = numpy.vstack((texcoords,zeros)).reshape([2, -1]).transpose()
 
+        #Colours?
+        cs0 = ""
+        vperc = 1
+        if colourdict and len(data.colours):
+            vperc = int(verts.shape[0] / len(data.colours))
+
         print("- Writing vertices:",verts.shape)
         for v in verts:
-            f.write("v %.6f %.6f %.6f\n" % (v[0], v[1], v[2]))
+            if colourdict:
+                c = data.colours[ci]
+                rgb = colour2rgb(c)
+                f.write("v %.6f %.6f %.6f %.6f %.6f %.6f\n" % (v[0], v[1], v[2], rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0))
+            else:
+                f.write("v %.6f %.6f %.6f\n" % (v[0], v[1], v[2]))
         print("- Writing normals:",normals.shape)
         for n in normals:
             f.write("vn %.6f %.6f %.6f\n" % (n[0], n[1], n[2]))
@@ -378,17 +431,13 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         print("- Colours :",data.colours.shape)
         print("- Indices :",indices.shape)
 
-        cs0 = ""
-        vperc = 1
-        if colourdict:
-            vperc = int(verts.shape[0] / len(data.colours))
-
         for n,i in enumerate(indices):
             if n%1000==0: print(".", end=''); sys.stdout.flush()
             i0 = i[0]+offset
             i1 = i[1]+offset
             i2 = i[2]+offset
             if colourdict:
+                """
                 ci = int(i[0] / vperc)
                 #print(i0,vperc,ci)
                 #print(data.colours)
@@ -401,6 +450,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 if cs0 != cs1 and cs in colourdict:
                     f.write("usemtl " + cs1 + "\n")
                     cs0 = cs1
+                """
 
             if len(normals) and len(texcoords):
                 f.write("f %d/%d/%d %d/%d/%d %d/%d/%d\n" % (i0, i0, i0, i1, i1, i1, i2, i2, i2))
