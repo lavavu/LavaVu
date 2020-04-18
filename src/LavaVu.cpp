@@ -1459,7 +1459,7 @@ bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
     c.r = material.diffuse[0] * 255;
     c.g = material.diffuse[1] * 255;
     c.b = material.diffuse[2] * 255;
-    c.a = material.dissolve * 255;
+    c.a = (1.0 - material.dissolve) * 255;
     if (c.a == 0.0) c.a = 255;
     //std::cout << "Material colour: " << c << std::endl;
     geom->read(obj, 1, lucRGBAData, &c.value);
@@ -1473,8 +1473,8 @@ void LavaVu::readOBJ(const FilePath& fn)
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
-  std::string err;
-  tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str(), true, false);
+  std::string err, warn;
+  tinyobj::LoadObj(&attrib, &shapes, &materials, &err, &warn, fn.full.c_str(), fn.path.c_str(), true, false);
   if (!err.empty())
   {
     std::cerr << "While loading OBJ file: " << fn.full << " - " << err << std::endl;
@@ -1496,6 +1496,13 @@ void LavaVu::readOBJ(const FilePath& fn)
   Geometry* geom = NULL;
   std::string renderer = "triangles";
 
+  tinyobj::shape_t dummy;
+  if (shapes.size() == 0)
+  {
+    renderer = "points";
+    shapes.push_back(dummy);
+  }
+
   for (size_t i = 0; i < shapes.size(); i++)
   {
     //Strip path from name
@@ -1507,9 +1514,9 @@ void LavaVu::readOBJ(const FilePath& fn)
     debug_print("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 
     //Lines? Points?
-    if (shapes[i].path.indices.size())
+    if (shapes[i].lines.indices.size())
       renderer = "lines";
-    else if (shapes[i].mesh.num_face_vertices.size() == 0)
+    if (shapes[i].points.indices.size())
       renderer = "points";
 
     if (!geom)
@@ -1524,7 +1531,44 @@ void LavaVu::readOBJ(const FilePath& fn)
 
     //Load point or line data
     bool opaque = true;
-    if (shapes[i].path.indices.size() || shapes[i].mesh.num_face_vertices.size() == 0)
+    //LINES - TODO: TEST
+    //std::cout << shapes[i].lines.indices.size() << std::endl;
+    if (shapes[i].lines.indices.size())
+    {
+      /*/Load first material as default for object
+      if (shapes[i].lines.material_ids.size() > 0 &&
+          shapes[i].lines.material_ids[0] >= 0 &&
+          (int)materials.size() > shapes[i].lines.material_ids[0])
+        opaque = readOBJ_material(fn, materials[shapes[i].lines.material_ids[0]], tobj, geom, verbose);
+        */
+
+      //Load
+      //shapes[i].lines.num_line_vertices //for polylines
+      //if (shapes[i].lines.indices.size())
+      {
+        //Fix negative indices
+        for (size_t d=0; d < shapes[i].lines.indices.size(); d++)
+        {
+          unsigned int index = shapes[i].lines.indices[d].vertex_index;
+          if (index < 0)
+            index = attrib.vertices.size()/3 + index; 
+          //Load - have to do 1 by 1 now because of stupid index_t struct
+          geom->read(tobj, 1, lucIndexData, &index);
+          //Extended vertex spec with colour (R,G,B float)
+          //(TODO: support where trisplit > 0)
+          if (attrib.colors.size())
+          {
+            Colour C(_FTOC(attrib.colors[3*index]), _FTOC(attrib.colors[3*index+1]), _FTOC(attrib.colors[3*index+2]));
+            geom->read(tobj, 1, lucRGBAData, &C.value);
+          }
+        }
+      }
+      geom->read(tobj, attrib.vertices.size()/3, lucVertexData, &attrib.vertices[0]);
+
+      continue;
+    }
+    //POINTS - TODO: TEST
+    else if (shapes[i].points.indices.size() || shapes[i].mesh.num_face_vertices.size() == 0)
     {
       /*/Load first material as default for object
       if (shapes[i].path.material_ids.size() > 0 &&
@@ -1534,14 +1578,27 @@ void LavaVu::readOBJ(const FilePath& fn)
         */
 
       //Load
-      if (shapes[i].path.indices.size())
+      //std::cout << shapes[i].points.indices.size() << std::endl;
+      if (shapes[i].points.indices.size())
       {
         //Fix negative indices
-        for (size_t d=0; d < shapes[i].path.indices.size(); d++)
-          if (shapes[i].path.indices[d] < 0)
-            shapes[i].path.indices[d] = attrib.vertices.size()/3 + shapes[i].path.indices[d]; 
-        //Load
-        geom->read(tobj, shapes[i].path.indices.size(), lucIndexData, &shapes[i].path.indices[0]);
+        for (size_t d=0; d < shapes[i].points.indices.size(); d++)
+        {
+          if (shapes[i].points.indices[d].vertex_index < 0)
+            shapes[i].points.indices[d].vertex_index = attrib.vertices.size()/3 + shapes[i].points.indices[d].vertex_index; 
+          //Load - have to do 1 by 1 now because of stupid index_t struct
+          geom->read(tobj, 1, lucIndexData, &shapes[i].points.indices[d].vertex_index);
+        }
+      }
+      //Extended vertex spec with colour (R,G,B float)
+      //(TODO: support where trisplit > 0)
+      if (attrib.colors.size())
+      {
+        for (size_t c=0; c < attrib.colors.size(); c+=3)
+        {
+          Colour C(_FTOC(attrib.colors[c]), _FTOC(attrib.colors[c+1]), _FTOC(attrib.colors[c+2]));
+          geom->read(tobj, 1, lucRGBAData, &C.value);
+        }
       }
       geom->read(tobj, attrib.vertices.size()/3, lucVertexData, &attrib.vertices[0]);
       continue;
@@ -1590,7 +1647,8 @@ void LavaVu::readOBJ(const FilePath& fn)
         {
           //printf("%d current material %d == %d\n", f, current_material_id, material_id);
           //TODO: only add new container if a new texture is loaded?
-          geom->add(tobj); //Start new container
+          if (current_material_id > 0)
+            geom->add(tobj); //Start new container
           opaque = readOBJ_material(fn, materials[material_id], tobj, geom, verbose);
           voffset = 0;
           current_material_id = material_id;
@@ -3990,7 +4048,6 @@ float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
   //return RMSE;
   return MSE;
 }
-
 
 void LavaVu::queueCommands(std::string cmds)
 {
