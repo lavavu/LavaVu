@@ -1977,18 +1977,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     DrawingObject* obj = NULL;
     if (parsed.exists("bakecolour"))
     {
-      lookupObject(parsed, "bakecolour");
-      amodel->bake(obj, true, false);
+      obj = lookupObject(parsed, "bakecolour");
+      if (!obj) obj = aobject;
+      if (obj)
+        amodel->bake(obj, true, false);
     }
     else if (parsed.exists("glaze"))
     {
-      lookupObject(parsed, "glaze");
-      amodel->bake(obj, false, true);
+      obj = lookupObject(parsed, "glaze");
+      if (!obj) obj = aobject;
+      if (obj)
+        amodel->bake(obj, false, true);
     }
     else
     {
-      lookupObject(parsed, "bake");
-      amodel->bake(obj, false, false);
+      obj = lookupObject(parsed, "bake");
+      if (!obj) obj = aobject;
+      if (obj)
+        amodel->bake(obj, false, false);
     }
     printMessage("Model baked");
   }
