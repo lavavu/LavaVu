@@ -1840,7 +1840,7 @@
       0,
       0
     ],
-    "target": "view",
+    "target": "global",
     "type": "real[3]",
     "desc": "Global model minimum bounds [x,y,z]",
     "strict": true,
@@ -1855,7 +1855,7 @@
       0,
       0
     ],
-    "target": "view",
+    "target": "global",
     "type": "real[3]",
     "desc": "Global model maximum bounds [x,y,z]",
     "strict": true,
