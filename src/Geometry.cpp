@@ -1506,19 +1506,21 @@ void Geometry::setState(Geom_Ptr g)
   GL_Error_Check;
 }
 
-void Geometry::convertColours(int step)
+void Geometry::convertColours(int step, DrawingObject* obj)
 {
   //Convert colour-mapped value data to RGBA per vertex
   debug_print("Colouring %d elements...\n", elements);
   for (unsigned int index = 0; index < records.size(); index++)
   {
-    if (step >= 0  && records[index]->step != step)
+    if (step >= 0 && records[index]->step != step)
+      continue;
+    if (obj && records[index]->draw != obj)
       continue;
     ColourMap* cmap = records[index]->draw->colourMap;
     FloatValues* vals = records[index]->colourData();
     if (records[index]->render->colours.size() == 0 and cmap and vals)
     {
-      //Calibrate colour maps on range for this surface
+      //Calibrate colour maps on range for this object
       ColourLookup& getColour = records[index]->colourCalibrate();
       unsigned int hasColours = records[index]->colourCount();
       if (hasColours > records[index]->count()) hasColours = records[index]->count(); //Limit to vertices
@@ -1542,67 +1544,87 @@ void Geometry::convertColours(int step)
   }
 }
 
-void Geometry::colourMapTexture()
+void Geometry::colourMapTexture(DrawingObject* obj)
 {
   //Convert colour-mapped value data to use a texture map
+  //If object provided, converts a single object and writes 1d texture
+  //Otherwise creates single 2d texture image for all colourmaps / objects
   // - All colourmaps used by this renderer's objects written to a single texture
   // - Generate texcoords for each object -> (x=value,y=mapindex)
   // - Delete all colour values
   debug_print("TextureColouring %d elements...\n", elements);
 
-  //First enumerate all drawing objects
-  std::vector<DrawingObject*> objlist;
-  std::map<DrawingObject*, unsigned int> objects;
-  std::pair<std::map<DrawingObject*, unsigned int>::iterator,bool> ret;
-  for (unsigned int index = 0; index < records.size(); index++)
-  {
-    if (!records[index]->draw->colourMap) continue;
-    std::cout << records[index]->draw->name() << std::endl;
-    //objects[records[index]->draw] = objects.size();
-    ret = objects.insert(std::pair<DrawingObject*, unsigned int>(records[index]->draw, objlist.size()));
-    if (ret.second != false)
-    {
-      objlist.push_back(records[index]->draw);
-    }
-  }
-
-  if (objlist.size() == 0)
-  {
-    //printf("No colourmaps applied\n");
-    return;
-  }
-
-  //Create the texture
-  ImageData* combinedData = new ImageData(ColourMap::samples, objects.size(), 4);
-  unsigned char* ptr = combinedData->pixels;
-  for (unsigned int o=0; o<objlist.size(); o++)
-  {
-    ColourMap* cmap = objlist[o]->colourMap;
-    ImageData* paletteData = cmap->toImage(false);
-    //Copy to current line and move pointer to next line
-    paletteData->paste(ptr);
-    ptr += ColourMap::samples * 4;
-    delete paletteData;
-  }
   Texture_Ptr texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
   texture->filter = 0;
   texture->repeat = false;
   //If using directly, disable
   //texture->flip = false;
-  texture->load(combinedData);
-  //TODO: need a way to store texture in GLDB
-  {
-    //combinedData->flip(); //Flip it
-    combinedData->write("palettes.png");
-  }
-  delete combinedData;
 
-  //Texture coord Y offset and increment
-  float yinc = 1.0f / (float)objects.size();
-  float yoffset = yinc * 0.5;
+  std::string texfn = "palettes.png";
+
+  //All objects with shared texture?
+  std::map<DrawingObject*, unsigned int> objects;
+  if (!obj)
+  {
+    //First enumerate all drawing objects
+    std::vector<DrawingObject*> objlist;
+    std::pair<std::map<DrawingObject*, unsigned int>::iterator,bool> ret;
+    for (unsigned int index = 0; index < records.size(); index++)
+    {
+      if (!records[index]->draw->colourMap) continue;
+      std::cout << records[index]->draw->name() << std::endl;
+      //objects[records[index]->draw] = objects.size();
+      ret = objects.insert(std::pair<DrawingObject*, unsigned int>(records[index]->draw, objlist.size()));
+      if (ret.second != false)
+      {
+        objlist.push_back(records[index]->draw);
+      }
+    }
+
+    if (objlist.size() == 0)
+    {
+      //printf("No colourmaps applied\n");
+      return;
+    }
+
+    //Create the texture
+    ImageData* combinedData = new ImageData(ColourMap::samples, objects.size(), 4);
+    unsigned char* ptr = combinedData->pixels;
+    for (unsigned int o=0; o<objlist.size(); o++)
+    {
+      ColourMap* cmap = objlist[o]->colourMap;
+      ImageData* paletteData = cmap->toImage(false);
+      //Copy to current line and move pointer to next line
+      paletteData->paste(ptr);
+      ptr += ColourMap::samples * 4;
+      delete paletteData;
+    }
+    texture->load(combinedData);
+    //TODO: need a way to store texture in GLDB
+    {
+      //combinedData->flip(); //Flip it
+      combinedData->write("palettes.png");
+    }
+    delete combinedData;
+  }
+  else
+  {
+    //Create the texture
+    ColourMap* cmap = obj->colourMap;
+    if (!cmap) return;
+    ImageData* paletteData = cmap->toImage(false);
+
+    texture->load(paletteData);
+    texfn = obj->name() + "_palette.png";
+      //paletteData->flip(); //Flip it
+    paletteData->write(texfn);
+    //std::string image_URI = paletteData->getURIString();
+    delete paletteData;
+  }
 
   for (unsigned int index = 0; index < records.size(); index++)
   {
+    if (obj && records[index]->draw != obj) continue;
     ColourMap* cmap = records[index]->draw->colourMap;
     //Calibrate on current data
     records[index]->colourCalibrate();
@@ -1612,7 +1634,10 @@ void Geometry::colourMapTexture()
       //Apply the texture
       //records[index]->texture = texture;
       //TODO: need a way to store geom texture in GLDB
-      records[index]->draw->properties.data["texture"] = "palettes.png";
+      // - base64 encoded in property? (for global object texture)
+      // - in colour/rgba data set? (for per element textures)
+      records[index]->draw->properties.data["texture"] = texfn;
+      //records[index]->draw->properties.data["texture"] = image_URI;
       records[index]->draw->properties.data["texturefilter"] = 0;
       records[index]->draw->properties.data["fliptexture"] = false;
       records[index]->draw->properties.data["repeat"] = false;
@@ -1624,7 +1649,14 @@ void Geometry::colourMapTexture()
       if (colrange < 1) colrange = 1;
       std::vector<float> texCoords(records[index]->count()*2);
       unsigned int tc = 0;
-      float texY = yoffset + yinc * (float)objects[records[index]->draw];
+      //Set texture coord Y offset and increment
+      float texY = 0.0f;
+      if (!obj)
+      {
+        float yinc = 1.0f / (float)objects.size();
+        float yoffset = yinc * 0.5;
+        texY = yoffset + yinc * (float)objects[records[index]->draw];
+      }
       for (unsigned int v=0; v < records[index]->count(); v++)
       {
         //Have colour values but not enough for per-vertex, spread over range
@@ -1639,6 +1671,8 @@ void Geometry::colourMapTexture()
       //Remove the value data
       records[index]->values.clear();
 
+      //std::cout << "=======================================" << std::endl;
+      //std::cout << records[index]->draw->properties.data << std::endl;
     }
   }
 }

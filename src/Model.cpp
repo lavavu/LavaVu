@@ -690,10 +690,14 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
     {
       if (texture)
         //Converts colourmap to textures
-        g->colourMapTexture();
+        g->colourMapTexture(obj);
       else if (colours)
         //Convert colourmap + value data into rgba
-        g->convertColours(now);
+        g->convertColours(now, obj);
+
+      //Clear colourmap
+      if (texture || colours)
+        obj->properties.data.erase("colourmap");
 
       //dynamic_cast only works if a valid descendant class
       Glyphs* glyphs = dynamic_cast<Glyphs*>(g);
