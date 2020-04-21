@@ -529,6 +529,16 @@ void Volumes::render(Geom_Ptr g)
     }
     //cmap->calibrate(&range);
   }
+  else if (props.has("range"))
+  {
+    float r[2] = {0.0, 1.0};
+    Properties::toArray<float>(props["range"], r, 2);
+    if (r[0] < r[1])
+    {
+      range = Range(r[0], r[1]);
+      //std::cout << "USING OBJECT RANGE: " << range << std::endl;
+    }
+  }
   else if (g->colourData()) // && (!cmap || !cmap->properties.has("range") || cmap->properties["range"].is_null()))
   {
     range = g->draw->ranges[g->colourData()->label];
