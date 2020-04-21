@@ -357,7 +357,7 @@ unsigned int GeomData::valuesLookup(const json& by)
       store->label = label;
       if (label == "x" || label == "y" || label == "z")
       {
-        int idx = label.at(0) - 'X';
+        int idx = label.at(0) - 'x';
         for (unsigned int i = 0; i < count(); i ++)
         {
           float* v = render->vertices[i];
