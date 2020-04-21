@@ -485,6 +485,7 @@ unsigned int GeomData::valuesLookup(const json& by)
 
       if (store->size())
       {
+        store->minmax();
         std::cout << "*** Loaded built-in data label: " << label << ", " << store->size() << " values,  min: " << store->minimum << " max: " << store->maximum << std::endl;
         values.push_back(store);
         valueIdx = values.size()-1;
