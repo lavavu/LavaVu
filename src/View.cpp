@@ -161,6 +161,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     initialised = false;
     return false;
   }
+    GL_Error_Check;
 
   //Copy to render context for use in font scaling
   session.context.model_size = model_size;
@@ -189,11 +190,13 @@ bool View::init(bool force, float* newmin, float* newmax)
     if (force || model_trans[2] == 0)
       model_trans[2] = -model_size;
 
+    GL_Error_Check;
     // Initial zoom to fit
     // NOTE without (int) cast properties["zoomstep"] == 0 here always evaluated to false!
     if ((int)properties["zoomstep"] == 0)
       zoomToFit();
 
+    GL_Error_Check;
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
     debug_print("   Rotate Origin: %f,%f,%f\n", rotate_centre[0], rotate_centre[1], rotate_centre[2]);
@@ -327,21 +330,21 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
 
 std::string View::adjustStereo(float fov, float focal_len, float eye_sep)
 {
-  fov = properties["fov"];
+  this->fov = properties["fov"];
   if (fov < 10)
-    fov += fov;
+    this->fov += fov;
   else
-    fov = fov;
-  if (fov < 10) fov = 10;
-  if (fov > 170) fov = 170;
+    this->fov = fov;
+  if (fov < 10) this->fov = 10;
+  if (fov > 170) this->fov = 170;
 
   focal_length_adj += focal_len;
   eye_sep_ratio += eye_sep;
 
   //if (eye_sep_ratio < 0) eye_sep_ratio = 0;
-  debug_print("STEREO: Aperture %f Focal Length Adj %f Eye Separation %f\n", fov, focal_length_adj, eye_sep_ratio);
+  debug_print("STEREO: Aperture %f Focal Length Adj %f Eye Separation %f\n", this->fov, focal_length_adj, eye_sep_ratio);
   std::ostringstream ss;
-  if (fov) ss << "fov " << fov;
+  if (this->fov) ss << "fov " << fov;
   if (focal_len) ss << "focallength " << focal_len;
   if (eye_sep) ss << "eyeseparation " << eye_sep;
   updated = true;
@@ -608,6 +611,7 @@ void View::projection(int eye)
 void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translation)
 {
   // Right-handed (GL default) or Left-handed
+    GL_Error_Check;
   int orientation = properties["coordsystem"];
   if (properties["globalcam"])
   {
@@ -861,6 +865,7 @@ void View::zoomToFit()
   double error = 1, scalerect, adjust = ADJUST;
   glGetIntegerv(GL_VIEWPORT, viewport);
   bool ortho_mode = properties["orthographic"];
+    GL_Error_Check;
 
   // Continue scaling adjustments until within tolerance
   while (count < 30 && fabs(error) > 0.005)
