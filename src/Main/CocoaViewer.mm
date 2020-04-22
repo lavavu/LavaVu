@@ -382,7 +382,8 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  NSSize size = [ [ cWindow contentView ] frame ].size;
+  NSSize size = [ [ notification.object contentView ] frame ].size;
+
   NSLog(@"Window resize: %lf, %lf", size.width, size.height);
   windowRect.size.width = size.width;
   windowRect.size.height = size.height;
