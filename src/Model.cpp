@@ -188,7 +188,7 @@ void Model::init(bool clear)
 {
   //Clear existing renderers
   if (clear)
-    geometry.clear();
+    clearRenderers();
   else if (geometry.size() > 0)
     return; //Renderers already exist
 
@@ -369,12 +369,16 @@ View* Model::defaultView(Properties* properties)
   return views[0];
 }
 
-Model::~Model()
+void Model::clearRenderers()
 {
   for (auto g : geometry)
     delete g;
   geometry.clear();
+}
 
+Model::~Model()
+{
+  clearRenderers();
   clearTimeSteps();
 
   //Clear drawing objects

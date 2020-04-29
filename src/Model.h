@@ -135,6 +135,7 @@ public:
   Model(Session& session);
   void init(bool clear=true);
   void load(const FilePath& fn);
+  void clearRenderers();
   ~Model();
 
   bool loadFigure(int fig, bool preserveGlobals=false);
