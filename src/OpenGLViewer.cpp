@@ -294,7 +294,7 @@ OpenGLViewer::OpenGLViewer()
 
 OpenGLViewer::~OpenGLViewer()
 {
-  setTimer(0);
+  close();
 }
 
 void OpenGLViewer::open(int w, int h)
@@ -454,6 +454,7 @@ void OpenGLViewer::resizeOutputs(int w, int h)
 
 void OpenGLViewer::close()
 {
+  setTimer(0);
   // cleanup opengl memory - required before resize if context destroyed, then call open after resize
   GL_Check_Thread(render_thread);
   fbo.destroy();
