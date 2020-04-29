@@ -164,6 +164,7 @@ void X11Viewer::title(std::string title)
   char* titlestr = (char*)title.c_str();
   XStringListToTextProperty(&titlestr, 1, &Xtitle);  //\/ argv, argc, normal_hints, wm_hints, class_hints
   XSetWMProperties(Xdisplay, win, &Xtitle, &Xtitle, NULL, 0, sHints, wmHints, NULL);
+  XFree(Xtitle.value);
 }
 
 void X11Viewer::hide()
