@@ -194,6 +194,9 @@ void LavaVu::destroy()
   //Ensure not processed twice
   if (viewer)
   {
+    //Clear all model data
+    clearAll();
+
     session.destroy();
 
     if (sort_thread.joinable())
