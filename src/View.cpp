@@ -711,87 +711,94 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
 
 void View::importProps(bool force)
 {
-  std::vector<std::string> to_erase;
-  for (auto it = properties.data.begin(); it != properties.data.end(); ++it)
+  try
   {
-    if (std::find(session.viewProps.begin(), session.viewProps.end(), it.key()) == session.viewProps.end())
+    std::vector<std::string> to_erase;
+    for (auto it = properties.data.begin(); it != properties.data.end(); ++it)
     {
-      std::cout << "WARNING: moving invalid view property: " << it.key() << " = " << it.value() << std::endl;
-      session.globals[it.key()] = properties[it.key()];
-      to_erase.push_back(it.key());
+      if (std::find(session.viewProps.begin(), session.viewProps.end(), it.key()) == session.viewProps.end())
+      {
+        std::cout << "WARNING: moving invalid view property: " << it.key() << " = " << it.value() << std::endl;
+        session.globals[it.key()] = properties[it.key()];
+        to_erase.push_back(it.key());
+      }
     }
-  }
-  //Erase moved keys (can't do it in above loop while iterating!)
-  for (auto key : to_erase)
-  {
-    properties.data.erase(key);
-    //std::cout << "ERASING: " << key << std::endl;
-  }
-
-  //Never import if values updated
-  //printf("IMPORT %d %d %d\n", force, initialised, updated);
-  if (!force && (!initialised || updated)) return;
-
-  //Copy view properties to cache
-  //Skip import cam if not provided
-  if (properties.has("rotate"))
-  {
-    json rot = properties["rotate"];
-    /*json erot = properties["xyzrotate"];
-    if (erot.size() == 3)
+    //Erase moved keys (can't do it in above loop while iterating!)
+    for (auto key : to_erase)
     {
-      rotation->identity();
-      //setRotation(erot[0], erot[1], erot[2]);
-      rotate(erot[0], 0, 0);
-      rotate(0, erot[1], 0);
-      rotate(0, 0, erot[2]);
+      properties.data.erase(key);
+      //std::cout << "ERASING: " << key << std::endl;
     }
-    else*/
-    if (rot.size() == 4)
-      setRotation(rot[0], rot[1], rot[2], rot[3]);
-    else if (rot.size() == 3)
-      setRotation(rot[0], rot[1], rot[2]);
-  }
 
-  if (properties.has("translate"))
-  {
-    json trans = properties["translate"];
-    if (trans.is_array())
-      setTranslation(trans[0], trans[1], trans[2]);
-  }
+    //Never import if values updated
+    //printf("IMPORT %d %d %d\n", force, initialised, updated);
+    if (!force && (!initialised || updated)) return;
 
-  if (properties.has("focus"))
-  {
-    json foc = properties["focus"];
-    if (foc.is_array())
-      focus(foc[0], foc[1], foc[2]);
-  }
-
-  if (properties.has("scale"))
-  {
-    json sc = properties["scale"];
-    if (sc.is_array())
+    //Copy view properties to cache
+    //Skip import cam if not provided
+    if (properties.has("rotate"))
     {
-      scale[0] = sc[0];
-      scale[1] = sc[1];
-      scale[2] = sc[2];
+      json rot = properties["rotate"];
+      /*json erot = properties["xyzrotate"];
+      if (erot.size() == 3)
+      {
+        rotation->identity();
+        //setRotation(erot[0], erot[1], erot[2]);
+        rotate(erot[0], 0, 0);
+        rotate(0, erot[1], 0);
+        rotate(0, 0, erot[2]);
+      }
+      else*/
+      if (rot.size() == 4)
+        setRotation(rot[0], rot[1], rot[2], rot[3]);
+      else if (rot.size() == 3)
+        setRotation(rot[0], rot[1], rot[2]);
     }
+
+    if (properties.has("translate"))
+    {
+      json trans = properties["translate"];
+      if (trans.is_array())
+        setTranslation(trans[0], trans[1], trans[2]);
+    }
+
+    if (properties.has("focus"))
+    {
+      json foc = properties["focus"];
+      if (foc.is_array())
+        focus(foc[0], foc[1], foc[2]);
+    }
+
+    if (properties.has("scale"))
+    {
+      json sc = properties["scale"];
+      if (sc.is_array())
+      {
+        scale[0] = sc[0];
+        scale[1] = sc[1];
+        scale[2] = sc[2];
+      }
+    }
+
+    //float newmin[3];
+    //float newmax[3];
+    //Properties::toArray<float>(properties["min"], newmin, 3);
+    //Properties::toArray<float>(properties["max"], newmax, 3);
+    //init(false, newmin, newmax);
+
+    if (properties.has("fov"))
+      fov = properties["fov"];
+    if (properties.has("near"))
+      nearclip = properties.data["near"];
+    if (properties.has("far"))
+      farclip = properties.data["far"];
+
+    setBackground();
   }
-
-  //float newmin[3];
-  //float newmax[3];
-  //Properties::toArray<float>(properties["min"], newmin, 3);
-  //Properties::toArray<float>(properties["max"], newmax, 3);
-  //init(false, newmin, newmax);
-
-  if (properties.has("fov"))
-    fov = properties["fov"];
-  if (properties.has("near"))
-    nearclip = properties.data["near"];
-  if (properties.has("far"))
-    farclip = properties.data["far"];
-
-  setBackground();
+  catch (std::exception& e)
+  {
+    std::cout << "Error in View::importProps: " << e.what() << std::endl;
+  }
 }
 
 void View::exportProps()
