@@ -287,16 +287,9 @@ ImageData* FBO::pixels(ImageData* image, int channels)
 }
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fullscreen(false), 
-  postdisplay(false), quitProgram(false), isopen(false), 
-  mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0), imagemode(false)
+OpenGLViewer::OpenGLViewer()
 {
   app = NULL;
-  keyState.shift = keyState.ctrl = keyState.alt = 0;
-
-  visible = true;
-
-  output_path = "";
 }
 
 OpenGLViewer::~OpenGLViewer()

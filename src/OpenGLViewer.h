@@ -104,7 +104,7 @@ protected:
   std::vector<InputInterface*> inputs; //Additional input attachments
   FBO fbo;
   FBO fbo_blit; //Non-multisampled fbo to blit to
-  int savewidth, saveheight;
+  int savewidth = 0, saveheight = 0;
 
 public:
   int idle = 0;
@@ -119,25 +119,25 @@ public:
 
   GLboolean stereoBuffer, doubleBuffer;
   GLint sb, ss;
-  bool visible;
-  bool stereo;
-  bool fullscreen;
-  bool postdisplay; //Flag to request a frame when animating
-  bool quitProgram;
-  bool isopen;   //Set when window is first opened
-  bool nodisplay; //Set to disable calling display and timers - when managing render loop externally
+  bool visible = true;
+  bool stereo = false;
+  bool fullscreen = false;
+  bool postdisplay = false; //Flag to request a frame when animating
+  bool quitProgram = false;
+  bool isopen = false;   //Set when window is first opened
+  bool nodisplay = false; //Set to disable calling display and timers - when managing render loop externally
 
   std::thread::id render_thread;
 
-  int mouseState;
-  ShiftState keyState;
-  MouseButton button;
+  int mouseState = 0;
+  ShiftState keyState = {false, false, false};
+  MouseButton button = NoButton;
   int last_x, last_y;
 
-  int blend_mode;
-  int outwidth, outheight;
-  std::string output_path;
-  bool imagemode;
+  int blend_mode = BLEND_NORMAL;
+  int outwidth = 0, outheight = 0;
+  std::string output_path = "";
+  bool imagemode = false;
 
   OpenGLViewer();
   virtual ~OpenGLViewer();
