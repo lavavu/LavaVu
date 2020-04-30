@@ -75,9 +75,9 @@ stages:
 jobs:
   include:
     # Optional: run a test on Windows
-    #- os: windows
-    #  language: shell
-    #  name: Test on Windows
+    - os: windows
+      language: shell
+      name: Test on Windows
     #- os: osx
     #  language: shell
     #  name: Test on MacOS
@@ -129,9 +129,8 @@ env:
     - CIBW_BUILD=cp3?-*
     #- CIBW_MANYLINUX_X86_64_IMAGE=manylinux1
     #- CIBW_MANYLINUX_I686_IMAGE=manylinux1
-    - CIBW_TEST_COMMAND: python3 -m lavavu
+    - CIBW_TEST_COMMAND: python3 lavavu/lavavu.py
     # Note: TWINE_PASSWORD encrypted as secret
     - TWINE_USERNAME: OwKal
-
     - secure: "pNa4arGN+GjtdLLBYdgoJmbOPyoLWB1E24V+UZ7pQJ8ZZir6b6vIoLWBD8i9SoywipbIYDhQk+do5wu97hGwn/b8/kVU4ftHgYTUrdb2lvuwTlmuIxMRL+FRuw0p6HQ5i+GvxRatx71Sbb8mB/7FJ5MnEqYdY9IOqs/9BrrwkqO4fElDmpFsB0kHSNu1aP3owOCzdQFByiXWv50CE6U4S7Tn1vtBGuygFx85QQSpl9NRPGmgLrOR21Hat31HaBjaGk9SS2LT4mDjZt9kxyHkmMYoXjmakUgItw4cf5y6SUtGEeJwt+viGeKgK6fYr9lwJal3ZZ750BN1KC0YIm8hcdglHfcQ/Slik8jkLjkzdeHSODxb3ucUY3DIizk2TXQoY2rdby/cGpcq+VLl1aSNPjLCQIM0gnvdIfHBynDNyiulH9175O8o7pm7IoGvkonjukAFFFyYzvXe22pU7CslaopvnC2auSVJa3jhBmPvQtofi2W2jy5tpBN3GrsZv4AWMqbXBo0T8YSbrvconOjK3SzuLYSzC9kajJShKwi7S4FzyWSlhx6ua9xpv15DWt8dd1ePZ+Sz7dKhlNkKwNsvzGtI6AlCNmgkqIqBszMf/UzyGfOeFXsKTxo6SIWAJKyV3a7aCcMv8vjo7Gz8HuT4Sz7YdmHqtTVP2lMlIk/stw0="
 
