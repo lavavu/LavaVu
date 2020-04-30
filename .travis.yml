@@ -54,6 +54,7 @@ after_script:
   - ls -la ./wheelhouse
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      python3 -m pip install delocate
       delocate-wheel --require-archs x86_64 -w . wheelhouse/lavavu-1.4.14-cp36-cp36m-macosx_10_13_x86_64.whl
       ls -la .
     fi
