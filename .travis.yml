@@ -75,9 +75,9 @@ stages:
 jobs:
   include:
     # Optional: run a test on Windows
-    - os: windows
-      language: shell
-      name: Test on Windows
+    #- os: windows
+    #  language: shell
+    #  name: Test on Windows
     #- os: osx
     #  language: shell
     #  name: Test on MacOS
