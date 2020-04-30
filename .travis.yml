@@ -61,6 +61,11 @@ after_script:
   - pwd
   - ls -la ./build
   - ls -la ./wheelhouse
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      delocate-wheel --require-archs x86_64 -w . wheelhouse/lavavu-1.4.14-cp36-cp36m-macosx_10_13_x86_64.whl
+      ls -la .
+    fi
 
 stages:
   - test
@@ -126,7 +131,10 @@ env:
     - CIBW_SKIP=cp27-*
     - CIBW_SKIP=cp34-*
     - CIBW_SKIP=cp35-*
-    - CIBW_BUILD=cp3?-*
+    #- CIBW_BUILD=cp3?-*
+    - CIBW_SKIP=cp36-*
+    - CIBW_SKIP=cp38-*
+    - CIBW_BUILD=cp37-*
     #- CIBW_MANYLINUX_X86_64_IMAGE=manylinux1
     #- CIBW_MANYLINUX_I686_IMAGE=manylinux1
     - CIBW_TEST_COMMAND: 'cd lavavu; python3 -m doctest -v lavavu.py'
