@@ -12,8 +12,8 @@ language: python
 dist: bionic
 python:
 #  - 3.6
-#  - 3.7
-  - 3.8
+  - 3.7
+#  - 3.8
 services:
   - xvfb
 
@@ -78,9 +78,9 @@ jobs:
     #- os: windows
     #  language: shell
     #  name: Test on Windows
-    - os: osx
-      language: shell
-      name: Test on MacOS
+    #- os: osx
+    #  language: shell
+    #  name: Test on MacOS
 
     # Deploy source distribution
     - stage: deploy
