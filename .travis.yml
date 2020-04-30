@@ -27,6 +27,11 @@ before_install:
         python3 -m pip install pypiwin32 #fixes jupyter install dep error
     fi
 
+addons:
+  apt:
+    packages:
+    - libgl1-mesa-dev
+
 install:
   - python3 -m pip install numpy
 
@@ -56,10 +61,6 @@ after_script:
 stages:
   - test
   # Only execute deployment stage on tagged commits, and from your repository
-    addons:
-      apt:
-        packages:
-        - libgl1-mesa-dev
   # (e.g. not PRs).
   - name: deploy
     if: repo = lavavu/LavaVu #FOR TESTING: always deploy
