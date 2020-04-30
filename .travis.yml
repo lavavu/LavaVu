@@ -27,20 +27,6 @@ before_install:
         python3 -m pip install pypiwin32 #fixes jupyter install dep error
     fi
 
-addons:
-  apt:
-    packages:
-    - libgl1-mesa-dev
-    - libx11-dev
-    - zlib1g-dev
-    - libavcodec-dev
-    - libavformat-dev
-    - libavutil-dev
-    - libswscale-dev
-  homebrew:
-    packages:
-    - ffmpeg
-
 install:
   - python3 -m pip install numpy
 
@@ -70,12 +56,29 @@ after_script:
 stages:
   - test
   # Only execute deployment stage on tagged commits, and from your repository
+    addons:
+      apt:
+        packages:
+        - libgl1-mesa-dev
   # (e.g. not PRs).
   - name: deploy
     if: repo = lavavu/LavaVu #FOR TESTING: always deploy
     #if: tag IS PRESENT AND repo = lavavu/LavaVu
     # To only build tags that look like X.Y.Z:
     #   if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
+    addons:
+      apt:
+        packages:
+        - libgl1-mesa-dev
+        - libx11-dev
+        - zlib1g-dev
+        - libavcodec-dev
+        - libavformat-dev
+        - libavutil-dev
+        - libswscale-dev
+      homebrew:
+        packages:
+        - ffmpeg
 
 jobs:
   include:
