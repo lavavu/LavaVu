@@ -1,60 +1,111 @@
+# In this configuration, the package is tested against multiple versions of python
+# on Linux and on one version of Python on Windows. If and only if all tests pass
+# will the wheels be built and deployed. Further, deployment is only initiated if
+# the current branch is "master", the current commit is tagged, and the current
+# repo is yours (e.g. it won't run on a Pull Request). For convenience, a source
+# distribution is also created.
+
+# Based on : https://github.com/joerick/cibuildwheel/blob/master/examples/travis-ci-test-and-deploy.yml
+
 language: python
-dist: bionic
-sudo: false
-notifications:
-  slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
-services:
-  - xvfb
-matrix:
-  include:
-    - python: "3.7"
-      os: linux
-      compiler: gcc
-      install: pip install numpy
-    - python: "3.8"
-      os: linux
-      compiler: gcc
-      install: pip install numpy
-    - os: osx
-      language: cpp
-      compiler: clang
-      before_install:
-        - pip3 install virtualenv
-        - virtualenv -p python3 ~/venv
-        - source ~/venv/bin/activate
-      install: pip install numpy
+python:
+  - 3.5
+  - 3.6
+  - 3.7
+  - 3.8
+
+before_install:
+  - |
+    if [[ "$TRAVIS_OS_NAME" = windows ]]; then
+        choco install python --version 3.8.0
+        export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
+        # make sure it's on PATH as 'python3'
+        ln -s /c/Python38/python.exe /c/Python38/python3.exe
+    fi
+
 addons:
   apt:
     packages:
     - libgl1-mesa-dev
-    #- libglfw3-dev
+
+install:
+  - python3 -m pip install numpy
+
 script:
-  - python setup.py install
+  - python3 setup.py install
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       git clone --depth 1 https://github.com/lavavu/Testing;
       cd Testing;
       export GALLIUM_DRIVER="llvmpipe";
       export LV_ECHO_FAIL=1;
       export LV_ARGS="-v";
-      python runall.py || travis_terminate 1;
+      python3 runall.py || travis_terminate 1;
       cd ..;
     fi
-after_script:
-- pwd
-- ls -la ./build
 
-#Deploy to PyPi on tags (releases)
-#This is used for the MacOS builds only
-#Linux - using manylinux in the wheels branch
-#Windows - using appveyor
-deploy:
-  provider: pypi
-  user: OwKal
-  password:
-    secure: GV42b9YQoZwYpjiU3APq65gqSOb4rnTW7SFmBTWlJDMr20eskhQixbG7MIwrQ2ibI71v8inMBq7x7FjbbBpIX1FBgu7ItqHuE5+IxCq6v1IdrlNhUlQ5uJP6JHcqeIqgXtlYfe4zLx4m6acW95zi2ueRl+2ZMfV2jYarnWO6v3xyUmMFG7Tibcars7/mQP5M2Q2PkLhXKdoE/VE4jYF1Iby+hdArjZF+7429lJEXBCOgIFlDMMAdcQy9MxJVznZOvr9oEGPmSFA+XopwR7YtupPgmmmBYj4BRxg59XQL18XBpIa43JoApPymBdw6n4PHlpd/4oi9nJsH78RZe62ywm4tGShvzcYwpAuglY6jIuQ0675DktgJNKfu+c5kmxjP6SWVdu0bMFRGueYqNcysSf/CcB5/QfIaLNaBmGCQuYAQL6gsS7eATeyw3fh1vHbHwdZSnxpQ7mby0V4J64gP+AWLN9DKsy69UrSeFERg8vQPgCWA8odwUhmiTR8UtJo2vawQR5z6nxWkVlBcAbwEiA8k2nPUggHTg38CHOf7I1L0tlxcYuJuTI6A4HW3NCwotVMUjzUnGZnOJV4d7w+FjSUkcQ2YYHF6EyI+Jm6iDn65gr0L6osAvdde6a5U+acmfYQb0xlu5TW6J1uTRQM85V3GjHqs/FAaA9CT9m8uEok=
-  on:
-    tags: true
-    condition: os == osx
-  skip_existing: true
-  distributions: "bdist_wheel" # Your distributions here
+after_script:
+  - pwd
+  - ls -la ./build
+
+stages:
+  - test
+  # Only execute deployment stage on tagged commits, and from your repository
+  # (e.g. not PRs). Replace with your repo name.
+  - name: deploy
+    if: repo = lavavu/lavavu #FOR TESTING: always deploy
+    #if: tag IS PRESENT AND repo = lavavu/lavavu
+    # To only build tags that look like X.Y.Z:
+    #   if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
+
+jobs:
+  include:
+    # Optional: run a test on Windows
+    - os: windows
+      language: shell
+      name: Test on Windows
+
+    # Deploy source distribution
+    - stage: deploy
+      name: Deploy source distribution
+      install: skip
+      script: python3 setup.py sdist --formats=gztar
+      after_success: |
+        python3 -m pip install twine
+        python3 -m twine upload --skip-existing dist/*.tar.gz
+    # Deploy on linux
+    - stage: deploy
+      name: Build and deploy Linux wheels
+      services: docker
+      install: python3 -m pip install cibuildwheel==1.3.0
+      script: python3 -m cibuildwheel --output-dir wheelhouse
+      after_success: |
+        python3 -m pip install twine
+        python3 -m twine upload --skip-existing wheelhouse/*.whl
+    # Deploy on mac
+    - stage: deploy
+      name: Build and deploy macOS wheels
+      os: osx
+      language: shell
+      env: MACOSX_DEPLOYMENT_TARGET=10.9
+      install: python3 -m pip install cibuildwheel==1.3.0
+      script: python3 -m cibuildwheel --output-dir wheelhouse
+      after_success: |
+        python3 -m pip install twine
+        python3 -m twine upload --skip-existing wheelhouse/*.whl
+    # Deploy on windows
+    - stage: deploy
+      name: Build and deploy Windows wheels
+      os: windows
+      language: shell
+      install: python3 -m pip install cibuildwheel==1.3.0
+      script: python3 -m cibuildwheel --output-dir wheelhouse
+      after_success: |
+        python3 -m pip install twine
+        python3 -m twine upload --skip-existing wheelhouse/*.whl
+
+env:
+  global:
+    # Note: TWINE_PASSWORD encrypted as secret
+    - TWINE_USERNAME: OwKal
+    - secure: GV42b9YQoZwYpjiU3APq65gqSOb4rnTW7SFmBTWlJDMr20eskhQixbG7MIwrQ2ibI71v8inMBq7x7FjbbBpIX1FBgu7ItqHuE5+IxCq6v1IdrlNhUlQ5uJP6JHcqeIqgXtlYfe4zLx4m6acW95zi2ueRl+2ZMfV2jYarnWO6v3xyUmMFG7Tibcars7/mQP5M2Q2PkLhXKdoE/VE4jYF1Iby+hdArjZF+7429lJEXBCOgIFlDMMAdcQy9MxJVznZOvr9oEGPmSFA+XopwR7YtupPgmmmBYj4BRxg59XQL18XBpIa43JoApPymBdw6n4PHlpd/4oi9nJsH78RZe62ywm4tGShvzcYwpAuglY6jIuQ0675DktgJNKfu+c5kmxjP6SWVdu0bMFRGueYqNcysSf/CcB5/QfIaLNaBmGCQuYAQL6gsS7eATeyw3fh1vHbHwdZSnxpQ7mby0V4J64gP+AWLN9DKsy69UrSeFERg8vQPgCWA8odwUhmiTR8UtJo2vawQR5z6nxWkVlBcAbwEiA8k2nPUggHTg38CHOf7I1L0tlxcYuJuTI6A4HW3NCwotVMUjzUnGZnOJV4d7w+FjSUkcQ2YYHF6EyI+Jm6iDn65gr0L6osAvdde6a5U+acmfYQb0xlu5TW6J1uTRQM85V3GjHqs/FAaA9CT9m8uEok=
 
