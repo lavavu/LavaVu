@@ -52,12 +52,6 @@ after_script:
   - pwd
   - ls -la ./build
   - ls -la ./wheelhouse
-  - |
-    if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      python3 -m pip install delocate
-      delocate-wheel --require-archs x86_64 -w . wheelhouse/lavavu-1.4.14-cp36-cp36m-macosx_10_13_x86_64.whl
-      ls -la .
-    fi
 
 stages:
   - test
@@ -68,19 +62,6 @@ stages:
     #if: tag IS PRESENT AND repo = lavavu/LavaVu
     # To only build tags that look like X.Y.Z:
     #   if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
-    addons:
-      apt:
-        packages:
-        - libgl1-mesa-dev
-        - libx11-dev
-        - zlib1g-dev
-        - libavcodec-dev
-        - libavformat-dev
-        - libavutil-dev
-        - libswscale-dev
-      homebrew:
-        packages:
-        - ffmpeg
 
 jobs:
   include:
@@ -104,6 +85,9 @@ jobs:
     - stage: deploy
       name: Build and deploy Linux wheels
       services: docker
+      before_install: |
+        sudo apt-get update
+        sudo apt-get install libgl1-mesa-dev libx11-dev zlib1g-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
       install: python3 -m pip install cibuildwheel==1.3.0
       script: python3 -m cibuildwheel --output-dir wheelhouse
       after_success: |
@@ -115,6 +99,11 @@ jobs:
       os: osx
       language: shell
       env: MACOSX_DEPLOYMENT_TARGET=10.13
+      addons:
+        homebrew:
+          packages:
+          - ffmpeg
+      #before_install: brew install ffmpeg
       install: python3 -m pip install cibuildwheel==1.3.0
       script: python3 -m cibuildwheel --output-dir wheelhouse
       after_success: |
