@@ -50,10 +50,10 @@ after_script:
 stages:
   - test
   # Only execute deployment stage on tagged commits, and from your repository
-  # (e.g. not PRs). Replace with your repo name.
+  # (e.g. not PRs).
   - name: deploy
-    if: repo = lavavu/lavavu #FOR TESTING: always deploy
-    #if: tag IS PRESENT AND repo = lavavu/lavavu
+    if: repo = lavavu/LavaVu #FOR TESTING: always deploy
+    #if: tag IS PRESENT AND repo = lavavu/LavaVu
     # To only build tags that look like X.Y.Z:
     #   if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
 
@@ -107,5 +107,5 @@ env:
   global:
     # Note: TWINE_PASSWORD encrypted as secret
     - TWINE_USERNAME: OwKal
-    - secure: GV42b9YQoZwYpjiU3APq65gqSOb4rnTW7SFmBTWlJDMr20eskhQixbG7MIwrQ2ibI71v8inMBq7x7FjbbBpIX1FBgu7ItqHuE5+IxCq6v1IdrlNhUlQ5uJP6JHcqeIqgXtlYfe4zLx4m6acW95zi2ueRl+2ZMfV2jYarnWO6v3xyUmMFG7Tibcars7/mQP5M2Q2PkLhXKdoE/VE4jYF1Iby+hdArjZF+7429lJEXBCOgIFlDMMAdcQy9MxJVznZOvr9oEGPmSFA+XopwR7YtupPgmmmBYj4BRxg59XQL18XBpIa43JoApPymBdw6n4PHlpd/4oi9nJsH78RZe62ywm4tGShvzcYwpAuglY6jIuQ0675DktgJNKfu+c5kmxjP6SWVdu0bMFRGueYqNcysSf/CcB5/QfIaLNaBmGCQuYAQL6gsS7eATeyw3fh1vHbHwdZSnxpQ7mby0V4J64gP+AWLN9DKsy69UrSeFERg8vQPgCWA8odwUhmiTR8UtJo2vawQR5z6nxWkVlBcAbwEiA8k2nPUggHTg38CHOf7I1L0tlxcYuJuTI6A4HW3NCwotVMUjzUnGZnOJV4d7w+FjSUkcQ2YYHF6EyI+Jm6iDn65gr0L6osAvdde6a5U+acmfYQb0xlu5TW6J1uTRQM85V3GjHqs/FAaA9CT9m8uEok=
+    - secure: "pNa4arGN+GjtdLLBYdgoJmbOPyoLWB1E24V+UZ7pQJ8ZZir6b6vIoLWBD8i9SoywipbIYDhQk+do5wu97hGwn/b8/kVU4ftHgYTUrdb2lvuwTlmuIxMRL+FRuw0p6HQ5i+GvxRatx71Sbb8mB/7FJ5MnEqYdY9IOqs/9BrrwkqO4fElDmpFsB0kHSNu1aP3owOCzdQFByiXWv50CE6U4S7Tn1vtBGuygFx85QQSpl9NRPGmgLrOR21Hat31HaBjaGk9SS2LT4mDjZt9kxyHkmMYoXjmakUgItw4cf5y6SUtGEeJwt+viGeKgK6fYr9lwJal3ZZ750BN1KC0YIm8hcdglHfcQ/Slik8jkLjkzdeHSODxb3ucUY3DIizk2TXQoY2rdby/cGpcq+VLl1aSNPjLCQIM0gnvdIfHBynDNyiulH9175O8o7pm7IoGvkonjukAFFFyYzvXe22pU7CslaopvnC2auSVJa3jhBmPvQtofi2W2jy5tpBN3GrsZv4AWMqbXBo0T8YSbrvconOjK3SzuLYSzC9kajJShKwi7S4FzyWSlhx6ua9xpv15DWt8dd1ePZ+Sz7dKhlNkKwNsvzGtI6AlCNmgkqIqBszMf/UzyGfOeFXsKTxo6SIWAJKyV3a7aCcMv8vjo7Gz8HuT4Sz7YdmHqtTVP2lMlIk/stw0="
 
