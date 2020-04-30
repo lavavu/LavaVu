@@ -8,6 +8,7 @@
 # Based on : https://github.com/joerick/cibuildwheel/blob/master/examples/travis-ci-test-and-deploy.yml
 
 language: python
+dist: bionic
 python:
   - 3.6
   - 3.7
