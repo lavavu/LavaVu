@@ -126,7 +126,6 @@ private:
 
   float focal_length;        // Stereo zero parallex distance
   float scene_shift;         // Stereo projection shift (calculated from eye sep)
-  bool  auto_stereo;         // Auto-adjust focal-len & eye-separation?
   float focal_length_adj;    // User adjust to focal length
 
   float nearclip, farclip;

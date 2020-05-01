@@ -357,7 +357,7 @@ void View::focus(float x, float y, float z, float fov, bool setdefault)
   focal_point[1] = rotate_centre[1] = y;
   focal_point[2] = rotate_centre[2] = z;
   if (fov > 0)
-    fov = fov;
+    this->fov = fov;
   //reset(); //reset view
   //Set as the default
   if (setdefault)
