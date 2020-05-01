@@ -26,8 +26,7 @@ except ImportError:
 
 
 #Current version
-#version = "1.5.0"
-version = "1.4.101" #Pre-release testing! Need new version for wheel builds
+version = "1.5.0"
 
 """
 To release a new verison:
@@ -45,19 +44,6 @@ To release a new verison:
 
     >>> make
     >>> make docs -B
-
-    4) Publish the release to PyPi,
-    ensure this is done in a clean checkout with no other source changes!
-
-    >>> python setup.py publish
-
-    (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
-
-TODO:
-    Review possible dependencies to support image/video libraries
-    - imageio or pillow for libpng, libtiff
-    - ffmpeg-python or opencv-python for libavcodec
-    - anaconda binaries
 
 NOTE:
     To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
