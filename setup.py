@@ -26,7 +26,8 @@ except ImportError:
 
 
 #Current version
-version = "1.4.14"
+#version = "1.5.0"
+version = "1.4.100rc" #Pre-release testing! Need new version for wheel builds
 
 """
 To release a new verison:
@@ -433,18 +434,13 @@ if __name__ == "__main__":
             'Environment :: X11 Applications',
             'Environment :: MacOS X :: Cocoa',
             'Environment :: Win32 (MS Windows)',
-            'Programming Language :: C++',
             'Topic :: Multimedia :: Graphics :: 3D Rendering',
             'Topic :: Scientific/Engineering :: Visualization',
-            'Development Status :: 4 - Beta',
-            #'Development Status :: 5 - Production/Stable',
+            'Development Status :: 5 - Production/Stable',
             'Programming Language :: C++',
-            'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.4',
-            'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
+            'Programming Language :: Python :: 3.8',
             'Framework :: Jupyter',
             'Framework :: IPython',
           ],
