@@ -131,7 +131,8 @@ env:
     - CIBW_SKIP=cp36-*
     - CIBW_SKIP=cp38-*
     - CIBW_BUILD=cp37-*
-    - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
+      #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
+    - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
     #- CIBW_MANYLINUX_X86_64_IMAGE=manylinux1
     #- CIBW_MANYLINUX_I686_IMAGE=manylinux1
     - CIBW_TEST_COMMAND: 'cd lavavu; python3 -m doctest -v lavavu.py'
