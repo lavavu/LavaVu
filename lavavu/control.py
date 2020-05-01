@@ -207,7 +207,7 @@ def _connectcode(target):
     """
     #If connection via window already opened, we don't need this
     if len(winids) == 0:
-        initjs = '\n_wi[0] = new WindowInteractor(0, {uid}, {port});\n;'.format(uid=id(target), port=target.server.port)
+        initjs = '\n_wi[0] = new WindowInteractor(0, {uid}, {port});\n;'.format(uid=id(target), port=target.port)
         #return _readfilehtml('control.js') + initjs
         s = '<script>\n' + _readfilehtml('control.js') + initjs + '</script>\n'
         return s
@@ -463,10 +463,12 @@ class Window(_Container):
         Set the style of the wrapper div, default is empty string so wrapper is enabled with no custom style
         Set to None to disable wrapper
     """
-    def __init__(self, viewer, align="left", wrapper=""):
+    def __init__(self, viewer, resolution=None, align="left", wrapper=""):
         super(Window, self).__init__(viewer)
         self.align = align
         self.wrapper = wrapper
+        if resolution is not None:
+            viewer.output_resolution = resolution
 
     def html(self):
         style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block; '
@@ -508,20 +510,24 @@ class FillWindow(_Container):
 
     Parameters
     ----------
+    aspect_ratio : tuple (int,int)
+        Aspect ratio to calculate the height, eg: (16,9) (default) or (4,3)
     minwidth : int
         Minimum width of the image
     minheight : int
         Minimum height of the image
     """
-    def __init__(self, viewer, minwidth=100, minheight=50):
+    def __init__(self, viewer, aspect_ratio=(16,9), minwidth=100, minheight=50):
         super(FillWindow, self).__init__(viewer)
+        if aspect_ratio is not None and len(aspect_ratio) == 2:
+            viewer.output_resolution = (viewer.output_resolution[0], int(viewer.output_resolution[0] * aspect_ratio[1] / aspect_ratio[0]))
         self.minwidth = minwidth
         self.minheight = minheight
 
     def html(self):
         style = 'height: 100%; width: 100%; position: relative; display: inline-block; '
-        style += 'min-width: ' + str(self.minwidth) + '; '
-        style += 'min-height: ' + str(self.minheight) + '; '
+        style += 'min-width: ' + str(self.minwidth) + 'px; '
+        style += 'min-height: ' + str(self.minheight) + 'px; '
         html = ""
         html += '<div>\n'
         html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style + 'margin: 0px; border: 0px; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
@@ -1636,9 +1642,9 @@ class _ControlFactory(object):
             html += "<!-- CREATION TIMESTAMP {0} -->".format(timestamp)
 
             #Pass port and object id from server
-            actionjs = self.export_actions(actions, id(target), target.server.port)
-            #Output the controls and start interactor
             html += "<script>init('{0}');</script>".format(viewerid)
+            actionjs = self.export_actions(actions, id(target), target.port)
+            #Output the controls and start interactor
             display(HTML(actionjs + html))
 
         else:

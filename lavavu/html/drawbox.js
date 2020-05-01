@@ -42,10 +42,21 @@ function initBox(el, cmd_callback, fixedsize) {
   return viewer;
 }
 
+function keyModifiers(event) {
+  modifiers = '';
+  if (event.ctrlKey) modifiers += 'C';
+  if (event.shiftKey) modifiers += 'S';
+  if (event.altKey) modifiers += 'A';
+  if (event.metaKey) modifiers += 'M';
+  return modifiers;
+}
+
 function keyPress(event, viewer) {
   // space and arrow keys, prevent scrolling
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key))
     event.preventDefault();
+
+  if (event.target.tagName == 'INPUT') return;
 
   //Special key codes
   if (event.key == 'ArrowUp') key = 17;
@@ -65,16 +76,18 @@ function keyPress(event, viewer) {
   else if (event.key == 'Delete') key = 127;
   else if (event.key[0] == 'F' && event.key.length > 1)
     key = 189 + parseInt(event.key.substr(1));
-  else if (event.key.length == 1)
+  else if (event.key.length == 1) {
     key = event.key.charCodeAt(0);
-  else
+    if (key > 127 && event.code.length == 4 && event.code.substr(0,3) == 'Key')
+      key = event.code.charCodeAt(3);
+  } else
     return;
 
-  var modifiers = '';
-  if (event.ctrlKey) modifiers += 'C';
-  if (event.shiftKey) modifiers += 'S';
-  if (event.altKey) modifiers += 'A';
-  if (event.metaKey) modifiers += 'M';
+  //console.log(event.key);
+  //console.log(event.code);
+  //console.log(key);
+
+  var modifiers = keyModifiers(event);
 
   //Ignore CTRL+R, CTRL+SHIFT+R
   if (key == 114 && modifiers == 'C' || key == 82 && modifiers == 'CS') return;
@@ -114,7 +127,7 @@ var hideBoxTimer;
 
 function canvasBoxMouseMove(event, mouse) {
   //GUI elements to show on mouseover
-  if (mouse.element && mouse.element.viewer) {
+  if (mouse.element && mouse.element.viewer && Object.keys(mouse.element.viewer.vis).length) {
     var gui = mouse.element.viewer.gui;
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
@@ -181,10 +194,14 @@ function canvasBoxMouseMove(event, mouse) {
 
 function canvasBoxMouseWheel(event, mouse) {
   mouse.element.viewer.check_context(mouse);
+  var scroll = event.deltaY < 0 ? 0.01 : -0.01;
+  //console.log(event.shiftKey,event.deltaY * -0.01);
   if (event.shiftKey) {
-    mouse.element.viewer.zoomClip(event.spin*0.01);
+    mouse.element.viewer.zoomClip(scroll);
+    //mouse.element.viewer.zoomClip(event.spin*0.01);
   } else {
-    mouse.element.viewer.zoom(event.spin*0.01);
+    mouse.element.viewer.zoom(scroll);
+    //mouse.element.viewer.zoom(event.spin*0.01);
   }
   return false; //Prevent default
 }
@@ -379,6 +396,10 @@ function BoxViewer(canvas) {
       //event.preventDefault();
       console.log("Context loss detected, clearing data/state and flagging defunct");
       this.mouse.lostContext = true;
+    }, false);
+
+    canvas.addEventListener("webglcontextrestored", function(event) {
+      console.log("Context restored");
     }, false);
 
   } catch(e) {
@@ -607,6 +628,10 @@ BoxViewer.prototype.loadFile = function(source) {
   //Merge keys - preserves original objects for gui access
   Merge(this.vis, src);
 
+  //No model loaded? Prevents errors so default are loaded
+  if (!this.vis.properties)
+    this.vis.properties = {};
+
   //Set active view (always first for now)
   this.view = this.vis.views[0];
 
@@ -820,6 +845,13 @@ BoxViewer.prototype.draw = function() {
 
   if (!this.gl) return;
 
+  //Check isContextLost
+  if (this.gl.isContextLost()) {
+    console.log("boxviewer_draw_: context lost");
+    this.mouse.lostContext = true;
+    return;
+  }
+
   this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
   //this.gl.clearColor(1, 1, 1, 0);
   this.gl.clearColor(0, 0, 0, 0);
@@ -891,7 +923,7 @@ BoxViewer.prototype.reset = function() {
 
 BoxViewer.prototype.zoom = function(factor) {
   if (this.gl) {
-    this.translate[2] += factor * this.modelsize;
+    this.translate[2] += factor * Math.max(0.01*this.modelsize, Math.abs(this.translate[2]));
     this.draw();
   }
 

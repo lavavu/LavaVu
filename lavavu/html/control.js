@@ -18,7 +18,7 @@ function WindowInteractor(id, uid, port) {
 
   //Request type settings
   this.instant = true; //false; //Use image.src to issue commands, combines into single request;
-  this.post = false; //Set this to use POST instead of GET
+  this.post = false; //Set this to use POST instead of GET (only when instant = false)
 
   //Standalone? Always request images at the full window size
   this.fixedsize = 0;
@@ -40,6 +40,9 @@ function WindowInteractor(id, uid, port) {
           if (that.uid && that.uid != parseInt(xhttp.response)) {
             console.log("--- Connection OK, but UID does not match! " + url + " : " + that.uid + " != " + xhttp.response);
           } else {
+            //Remove last slash if any
+            if (url.slice(-1) == '/')
+              url = url.slice(0,-1);
             console.log("--- Connected to LavaVu via " + url + " UID: " + that.uid);
             that.baseurl = url;
             //Ready to initialise
@@ -73,7 +76,7 @@ function WindowInteractor(id, uid, port) {
   if (!port) {
     //No port provided? We are the server,
     //Just use the same address for requests
-    connect(loc);
+    connect(loc.href);
   } else {
 
     //Several possible modes to try
@@ -122,7 +125,7 @@ WindowInteractor.prototype.init = function() {
   this.img.baseurl = this.baseurl;
 
   //Load frame image and run command in single action
-  //console.log(this.img.width + ' x ' + this.img.height);
+  //console.log("INITIAL SIZE: " + this.img.width + ' x ' + this.img.height);
   //If initial img size > 64x64 (default image => grey 64x64 square)
   //then use the image size as in the image requests
   if (this.img.width > 64 && this.img.height > 64) {
@@ -229,6 +232,9 @@ WindowInteractor.prototype.image_args = function() {
       }
     }
   } else {
+    //Once the first frame received, set to fixed size to preserve dimensions
+    //(prevents changes if the default output res is modified)
+    this.fixedsize = 2;
     return "?" + new Date().getTime();
   }
 }

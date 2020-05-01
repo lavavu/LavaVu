@@ -2459,8 +2459,6 @@ class Viewer(dict):
         For anti-aliasing image rendering where GPU multisample anti-aliasing is not available
     writeimage : boolean
         Write images and quit, create images for all figures/timesteps in loaded database then exit
-    resolution : list, tuple
-        Window/image resolution in pixels [x,y]
     script : list
         List of script commands to run after initialising
     initscript : boolean
@@ -2512,17 +2510,17 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, binpath=None, context="default", port=8080, **kwargs):
+    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, **kwargs):
         """
         Create and init viewer instance
 
         Parameters
         ----------
         (see Viewer class docs for setup args)
-        port : int
-            Web server port, open server on specific port for control/interaction
-            Viewer will be run in a separate thread, all rendering will be done in this thread
-            When disabled (None) creates the viewer in the current(main) thread and disables the server
+        resolution : list, tuple
+            Window/image resolution in pixels [x,y]
+            For off-screen/windowless rendering this sets the default image output and viewer widget size
+            For interactive windows this sets the window size.
         binpath : str
             Override the executable path
         context : str
@@ -2533,7 +2531,6 @@ class Viewer(dict):
                            specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5
             "omegalib" : for use in multi-display VR mode
         """
-        self.resolution = (640,480)
         self._ctr = 0
         self.app = None
         self._objects = _Objects(self)
@@ -2566,6 +2563,15 @@ class Viewer(dict):
         import atexit
         atexit.register(exitfn, weakref.ref(self))
 
+        #Switch the default background to white if in a browser notebook
+        if is_notebook() and not "background" in kwargs:
+            kwargs["background"] = "white"
+        #Set default res
+        if resolution is not None and (isinstance(resolution,tuple) or isinstance(resolution,list)):
+            self.output_resolution = resolution
+            kwargs["resolution"] = resolution
+        else:
+            self.output_resolution = (640,480)
         """
         Create and init the C++ viewer object
         """
@@ -2680,10 +2686,6 @@ class Viewer(dict):
             method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
             self.__setattr__(key, method)
 
-        #Switch the default background to white if in a browser notebook
-        if is_notebook() and not "background" in self:
-            self["background"] = "white"
-
     def _shutdown(self):
         #Wait for the render thread to exit
         if self.app:
@@ -2763,11 +2765,8 @@ class Viewer(dict):
             args += ["-f" + str(figure)]
         #Resolution
         if resolution is not None and (isinstance(resolution,tuple) or isinstance(resolution,list)):
-            #Output res
-            #args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
             #Interactive res
             args += ["-r" + str(resolution[0]) + "," + str(resolution[1])]
-            self.resolution = resolution
         #Save image and quit
         if writeimage:
             args += ["-I"]
@@ -3572,11 +3571,11 @@ class Viewer(dict):
     def _getres(self, resolution):
         #Use viewer default if none provided
         if not resolution or len(resolution) < 2 or resolution[0] <= 0:
-            resolution = self.resolution
+            resolution = self.output_resolution
         #Calculate height if only width provided
         elif resolution[1] <= 0:
             #Set the height based on viewer aspect
-            aspect = self.resolution[1] / self.resolution[0]
+            aspect = self.output_resolution[1] / self.output_resolution[0]
             resolution = (resolution[0], int(resolution[0] * aspect))
         return resolution
 
@@ -3981,7 +3980,7 @@ class Viewer(dict):
 
         return result
 
-    def window(self, menu=True, fill=False):
+    def window(self, resolution=None, menu=True):
         """
         Create and display an interactive viewer instance
 
@@ -3990,17 +3989,31 @@ class Viewer(dict):
 
         Parameters
         ----------
+        resolution : tuple(int,int)
+            Frame size in pixels: width, height. Defaults to the viewer default output resolution, usually (640,480)
         menu : boolean
             Adds a menu to the top right allowing control of vis parameters, defaults to on
-        fill : boolean
-            By default the window will be of a fixed size (set by the Viewer resolution)
-            If fill is set to true, the window will take up the maximum available space and images will be requested
-            to match the resulting resolution.
         """
-        if fill:
-            self.control.FillWindow()
-        else:
-            self.control.Window()
+        self.control.Window(resolution)
+        self.control.show(menu)
+
+    def fillwindow(self, aspect_ratio=(16,9), menu=True):
+        """
+        Create and display an interactive viewer instance
+
+        This shows an active viewer window to the visualisation
+        that can be controlled with the mouse or html widgets
+
+        Unlike window(), fillwindow() automatically resizes the window to the width of the parent element
+
+        Parameters
+        ----------
+        aspect_ratio : tuple (int,int) 
+            Aspect ratio to calculate the height, eg: (16,9) (default) or (4,3)
+        menu : boolean
+            Adds a menu to the top right allowing control of vis parameters, defaults to on
+        """
+        self.control.FillWindow(aspect_ratio)
         self.control.show(menu)
 
     def redisplay(self):
@@ -4143,13 +4156,13 @@ class Viewer(dict):
         if not self.server: self.serve()
         #Running outside IPython notebook? Join here to wait for quit
         #filename = 'http://localhost:' + str(self.server.port) + '/control.html'
-        filename = 'http://localhost:' + str(self.server.port) + '/interactive.html'
+        filename = 'http://localhost:' + str(self.server.port) + '/'
         if not is_notebook():
             import webbrowser
             webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
         elif inline:
             from IPython.display import IFrame
-            if resolution is None: resolution = self.resolution
+            if resolution is None: resolution = self.output_resolution
             display(IFrame(filename, width=resolution[0], height=resolution[1]))
         else:
             import webbrowser
@@ -4201,15 +4214,25 @@ class Viewer(dict):
                 from IPython.display import display,Javascript,HTML
                 eid = str(id(self)) + "_interact"
                 html = """<a href="#" id="{eid}" onclick='window.open("{url}", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'>Interactive View</a>"""
-                display(HTML(html.format(url=url, width=self.resolution[0], height=self.resolution[1], eid=eid)))
+                display(HTML(html.format(url=url, width=self.output_resolution[0], height=self.output_resolution[1], eid=eid)))
                 #Attempt to auto-click, but popup blockers may prevent this
                 #Skip if baseurl not yet set, prevents popup opening when viewing a saved copy of the notebook with stale javascript
                 js = """
-                if (_wi) {{
-                    var keys = Object.keys(_wi);
-                    if (keys.length && _wi[keys[0]].baseurl)
-                        document.getElementById('{eid}').click();
+                function _openit() {{
+                    if (_wi) {{
+                        //Get the url from the most recently added window
+                        var keys = Object.keys(_wi);
+                        //console.log(keys[keys.length-1]);
+                        if (keys.length && _wi[keys[keys.length-1]].baseurl) {{
+                            //console.log("Connect ready! " + _wi[keys[keys.length-1]].baseurl);
+                            document.getElementById('{eid}').click();
+                            return;
+                        }}
+                    }}
+                    console.log("Not yet ready");
+                    setTimeout(_openit, 500);
                 }}
+                setTimeout(_openit, 100);
                 """
                 display(Javascript(js.format(eid=eid)))
 
@@ -4238,12 +4261,6 @@ class Viewer(dict):
                 js = control._connectcode(self)
                 #display(Javascript(js))
                 display(HTML(js))
-                #Wait for the connection
-                timeout = time.time() + 10 #10 second timeout
-                while len(self._url) == 0:
-                    if time.time() > timeout:
-                        break
-                    time.sleep(0.1)
 
         if len(self._url):
             return self._url
