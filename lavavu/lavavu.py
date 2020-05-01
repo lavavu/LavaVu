@@ -2255,8 +2255,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
             if timer >= self.TIMER_INC:
                 #Process this every TIMER_INC milliseconds
-                if self.viewer.events():
-                    self.viewer.execute()
+                #if self.viewer.events(): #Disabled for now: can lock in python interpreter on reading stdin via pollInputs
+                self.viewer.execute()
                 timer = 0
 
             #Process commands that must be run on the render thread
