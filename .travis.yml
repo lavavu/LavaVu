@@ -99,7 +99,7 @@ jobs:
       os: osx
       language: shell
       #osx_image: xcode10.1  #macOS 10.13
-      osx_image: xcode10.2.1 #macOS 10.14
+      osx_image: xcode10.2   #macOS 10.14
       env: MACOSX_DEPLOYMENT_TARGET=10.13
       #addons:
       #  homebrew:
