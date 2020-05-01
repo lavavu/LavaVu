@@ -27,7 +27,7 @@ except ImportError:
 
 #Current version
 #version = "1.5.0"
-version = "1.4.100rc" #Pre-release testing! Need new version for wheel builds
+version = "1.4.101" #Pre-release testing! Need new version for wheel builds
 
 """
 To release a new verison:
