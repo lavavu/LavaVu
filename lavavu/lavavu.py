@@ -1941,7 +1941,7 @@ class Figure(dict):
 
 
 class _LavaVuThreadSafe(LavaVuPython.LavaVu):
-    def __init__(self, threaded, runargs, binpath=None, context="default", resolution=(640,480)):
+    def __init__(self, threaded, runargs, resolution=None, binpath=None, context="default"):
         self.args = runargs
         self._closing = False
 
@@ -2198,14 +2198,18 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     from moderngl_window.conf import settings
                     settings.WINDOW['gl_version'] = (3, 3)
                     settings.WINDOW['samples'] = 4
-                    settings.WINDOW['size'] = self.resolution
+                    if self.resolution:
+                        settings.WINDOW['size'] = self.resolution
                     # Creates the window instance and activates its context
                     self.wnd = moderngl_window.create_window_from_settings()
                 else:
                     # Configure to use provided window class
                     window_str = 'moderngl_window.context.' + self.use_moderngl_window + '.Window'
                     window_cls = moderngl_window.get_window_cls(window_str)
-                    self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
+                    if self.resolution:
+                        self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
+                    else:
+                        self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True)
 
                 # register event methods
                 self.wnd.resize_func = self.resized
@@ -2219,7 +2223,6 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                 self.wnd.mouse_release_event_func = self.mouse_release_event
                 self.wnd.unicode_char_entered_func = self.unicode_char_entered
 
-                #self.wnd.resize(self.resolution[0], self.resolution[1])
                 self.wnd.exit_key = None #Disable ESC to exit
                 self.mousepos = (0,0)
 
@@ -2233,6 +2236,12 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         except (RuntimeError) as e:
             print("LavaVu Run error: " + str(e))
             pass
+
+        #Set viewer size to match window size
+        if self.wnd:
+            #print(self.viewer.width,self.viewer.height)
+            #self.wnd.resize(self.viewer.width,self.viewer.height)
+            self.resized(*self.wnd.size)
 
         #Sync with main thread here to ensure render thread has initialised before it continues
         with self._cv:
@@ -2579,7 +2588,7 @@ class Viewer(dict):
         if not binpath:
             binpath = os.path.abspath(os.path.dirname(__file__))
         try:
-            self.app = _LavaVuThreadSafe(port > 0, self.args(*args, **kwargs), binpath, context, resolution=self.resolution)
+            self.app = _LavaVuThreadSafe(port > 0, self.args(*args, **kwargs), resolution, binpath, context)
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
