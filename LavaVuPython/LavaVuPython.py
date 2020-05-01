@@ -425,7 +425,7 @@ class Model(object):
     figures = property(_LavaVuPython.Model_figures_get, _LavaVuPython.Model_figures_set)
     figure = property(_LavaVuPython.Model_figure_get, _LavaVuPython.Model_figure_set)
 
-    def __init__(self, session):
+    def __init__(self, session: "Session &"):
         _LavaVuPython.Model_swiginit(self, _LavaVuPython.new_Model(session))
     __swig_destroy__ = _LavaVuPython.delete_Model
 
@@ -459,7 +459,7 @@ class GeomData(object):
     step = property(_LavaVuPython.GeomData_step_get, _LavaVuPython.GeomData_step_set)
     type = property(_LavaVuPython.GeomData_type_get, _LavaVuPython.GeomData_type_set)
 
-    def __init__(self, draw, type):
+    def __init__(self, draw: "DrawingObject", type: "lucGeometryType"):
         _LavaVuPython.GeomData_swiginit(self, _LavaVuPython.new_GeomData(draw, type))
     __swig_destroy__ = _LavaVuPython.delete_GeomData
 
@@ -475,7 +475,7 @@ class LavaVu(object):
     aobject = property(_LavaVuPython.LavaVu_aobject_get, _LavaVuPython.LavaVu_aobject_set)
     binpath = property(_LavaVuPython.LavaVu_binpath_get, _LavaVuPython.LavaVu_binpath_set)
 
-    def __init__(self, binpath, havecontext=False, omegalib=False):
+    def __init__(self, binpath: "std::string", havecontext: "bool"=False, omegalib: "bool"=False):
         _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
     destroy = _swig_new_instance_method(_LavaVuPython.LavaVu_destroy)
@@ -555,7 +555,7 @@ class VideoEncoder(object):
     __repr__ = _swig_repr
     filename = property(_LavaVuPython.VideoEncoder_filename_get, _LavaVuPython.VideoEncoder_filename_set)
 
-    def __init__(self, fn, fps, quality=3):
+    def __init__(self, fn: "std::string const &", fps: "int", quality: "int"=3):
         _LavaVuPython.VideoEncoder_swiginit(self, _LavaVuPython.new_VideoEncoder(fn, fps, quality))
     __swig_destroy__ = _LavaVuPython.delete_VideoEncoder
     open = _swig_new_instance_method(_LavaVuPython.VideoEncoder_open)

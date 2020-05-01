@@ -1,16 +1,17 @@
 #Install path
 PREFIX ?= lavavu
+LIBPREFIX ?= LavaVuPython
 PROGNAME = LavaVu
-PROGRAM = $(PREFIX)/$(PROGNAME)
-LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
-SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
+PROGRAM = $(LIBPREFIX)/$(PROGNAME)
+LIBRARY = $(LIBPREFIX)/lib$(PROGNAME).$(LIBEXT)
+SWIGLIB = $(LIBPREFIX)/_$(PROGNAME)Python.so
 
 PYTHON ?= python
 PYLIB ?= -L$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfig.get_python_lib())')
 PYINC ?= -I$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfig.get_python_inc())')
 
 #Object files path
-OPATH ?= tmp
+OPATH ?= /tmp
 #HTML files path
 HTMLPATH = $(PREFIX)/html
 
@@ -198,7 +199,7 @@ endif
 
 .PHONY: swig
 swig : $(INC) src/LavaVuPython.i | paths
-	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
+	swig -v -Wextra -python -py3 -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -l$(PROGNAME) -L$(PREFIX) $(LIBLINK)
