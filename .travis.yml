@@ -100,11 +100,11 @@ jobs:
       language: shell
       osx_image: xcode10.1
       env: MACOSX_DEPLOYMENT_TARGET=10.13
-      addons:
-        homebrew:
-          packages:
-          - ffmpeg
-      #before_install: brew install ffmpeg
+      #addons:
+      #  homebrew:
+      #    packages:
+      #    - ffmpeg
+      before_install: brew install ffmpeg
       install: python3 -m pip install cibuildwheel==1.3.0
       script: python3 -m cibuildwheel --output-dir wheelhouse
       after_success: |
