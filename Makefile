@@ -1,10 +1,9 @@
 #Install path
 PREFIX ?= lavavu
-LIBPREFIX ?= LavaVuPython
 PROGNAME = LavaVu
-PROGRAM = $(LIBPREFIX)/$(PROGNAME)
-LIBRARY = $(LIBPREFIX)/lib$(PROGNAME).$(LIBEXT)
-SWIGLIB = $(LIBPREFIX)/_$(PROGNAME)Python.so
+PROGRAM = $(PREFIX)/$(PROGNAME)
+LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
+SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 
 PYTHON ?= python
 PYLIB ?= -L$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfig.get_python_lib())')

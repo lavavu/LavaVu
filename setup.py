@@ -374,7 +374,7 @@ if __name__ == "__main__":
         #Other posix libs
         libs += ['dl', 'pthread', 'm']
 
-    lv = Extension('LavaVuPython._LavaVuPython',
+    lv = Extension('lavavu._LavaVuPython',
                     define_macros = defines,
                     include_dirs = inc_dirs,
                     libraries = libs,
@@ -396,8 +396,8 @@ if __name__ == "__main__":
           license           = "LGPL-3",
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/lavavu/LavaVu for more info',
-          packages          = ['lavavu', 'LavaVuPython'],
-          package_dir       = {'lavavu': 'lavavu', 'LavaVuPython' : 'LavaVuPython'},
+          packages          = ['lavavu'],
+          package_dir       = {'lavavu': 'lavavu'},
           install_requires  = requirements,
           platforms         = ['any'],
           entry_points      = {
