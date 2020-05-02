@@ -2187,9 +2187,6 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             if self.use_moderngl:
                 self.ctx = moderngl.create_standalone_context(require=330)
 
-                mgl_timer = Timer()
-                mgl_timer.start()
-
             if self.use_moderngl_window and self.ctx:
                 # Make sure you activate this context
                 moderngl_window.activate_context(ctx=self.ctx)
@@ -2253,10 +2250,11 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             #Process interactive and timer events
             FPS = self.viewer.timer_animate  #FPS for animate timer
             self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-            if timer >= self.TIMER_INC:
+            #Process events at half the timer resolution
+            if timer >= self.TIMER_INC*2.:
                 #Process this every TIMER_INC milliseconds
-                #if self.viewer.events(): #Disabled for now: can lock in python interpreter on reading stdin via pollInputs
-                self.viewer.execute()
+                if self.viewer.events(): #Disabled for now: can lock in python interpreter on reading stdin via pollInputs
+                    self.viewer.execute()
                 timer = 0
 
             #Process commands that must be run on the render thread
@@ -2294,7 +2292,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             else:
                 #Sleep for 1 millisecond
                 time.sleep(0.001)
-            timer += 1
+
+            timer += self.TIMER_INC
 
             #Detect window closed
             if self.viewer.quitProgram:
