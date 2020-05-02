@@ -679,27 +679,7 @@ public:
     clear();
   }
 
-  void clear()
-  {
-    context = NULL;
-
-    //Vector font
-    charset = FONT_DEFAULT;
-    fontscale = 1.0;
-
-#ifdef USE_FONTS
-    // Delete fonts
-    if (vao) glDeleteVertexArrays(1, &vao);
-    if (vbo) glDeleteBuffers(1, &vbo);
-    if (ibo) glDeleteBuffers(1, &ibo);
-    if (l_vao) glDeleteVertexArrays(1, &l_vao);
-    if (l_vbo) glDeleteBuffers(1, &l_vbo);
-    if (l_ibo) glDeleteBuffers(1, &l_ibo);
-#endif
-
-    vbo = ibo = l_vbo = l_ibo = vao = l_vao = 0;
-  }
-
+  void clear();
   void init(std::string& path, RenderContext* context);
 
   void GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile);
