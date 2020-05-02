@@ -613,39 +613,4 @@ int simplex[95][112] = {
    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 };
 
-float linefont_charwidths[95];
-unsigned linefont_counts[95];
-unsigned linefont_offsets[95];
-int linefont_vertex_total = 0;
-
-void GenerateLineFontCharacters(std::vector<float>& vertices)
-{
-  unsigned offset = 0;
-  for (int i=0; i<95; i++)
-  {
-    //First two numbers are vertex count and char width
-    int verts = simplex[i][0];
-    linefont_offsets[i] = offset;
-    linefont_charwidths[i] = simplex[i][1];
-    for (int j=2; j<2+verts*2; j+=2)
-    {
-      if (simplex[i][j] == -1)
-        continue;
-      //Add vertices for line-segment pairs except last vertex in section (no more or next vert is -1)
-      if (j<verts*2 && simplex[i][j+2] > -1)
-      {
-        vertices.push_back(simplex[i][j]);
-        vertices.push_back(simplex[i][j+1]);
-        vertices.push_back(simplex[i][j+2]);
-        vertices.push_back(simplex[i][j+3]);
-        offset += 2; //2 vertices per line segment
-      }
-    }
-
-    //Count of vertices added
-    linefont_counts[i] = offset - linefont_offsets[i];
-  }
-
-  linefont_vertex_total = vertices.size();
-}
 #endif //FontLine__

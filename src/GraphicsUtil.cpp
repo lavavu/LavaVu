@@ -88,6 +88,59 @@ void FontManager::init(std::string& path, RenderContext* context)
   SCALE3D = 0.0015;
 }
 
+void FontManager::GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile)
+{
+  std::ifstream input(fontfile, std::ios::binary|std::ios::ate);
+  if (input.good())
+  {
+    std::ifstream::pos_type pos = input.tellg();
+    vertices.resize(pos/sizeof(float));
+    input.seekg(0, std::ios::beg);
+    input.read((char*)vertices.data(), pos);
+    input.close();
+
+    unsigned offset = 0;
+    font_offsets[0] = offset;
+    for (unsigned int g=0; g<font_tricounts.size(); g++)
+    {
+      for (unsigned int t=0; t<font_tricounts[g]; t++)
+        offset += 3; //3 vertices per tri
+      font_offsets[g+1] = offset;
+    }
+  }
+  font_vertex_total = vertices.size();
+}
+
+void FontManager::GenerateLineFontCharacters(std::vector<float>& vertices)
+{
+  unsigned offset = 0;
+  for (int i=0; i<95; i++)
+  {
+    //First two numbers are vertex count and char width
+    int verts = simplex[i][0];
+    linefont_offsets[i] = offset;
+    linefont_charwidths[i] = simplex[i][1];
+    for (int j=2; j<2+verts*2; j+=2)
+    {
+      if (simplex[i][j] == -1)
+        continue;
+      //Add vertices for line-segment pairs except last vertex in section (no more or next vert is -1)
+      if (j<verts*2 && simplex[i][j+2] > -1)
+      {
+        vertices.push_back(simplex[i][j]);
+        vertices.push_back(simplex[i][j+1]);
+        vertices.push_back(simplex[i][j+2]);
+        vertices.push_back(simplex[i][j+3]);
+        offset += 2; //2 vertices per line segment
+      }
+    }
+
+    //Count of vertices added
+    linefont_counts[i] = offset - linefont_offsets[i];
+  }
+  linefont_vertex_total = vertices.size();
+}
+
 Colour FontManager::setFont(Properties& properties, float scaling, bool print3d)
 {
   //vector, line - default to line when anti-aliasing disabled

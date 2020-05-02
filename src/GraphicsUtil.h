@@ -652,6 +652,15 @@ class FontManager
   GLuint ibo = 0;
   char buffer[4096];
 
+  int font_vertex_total = 0;
+  unsigned int font_offsets[97];
+
+  int linefont_vertex_total = 0;
+
+  float linefont_charwidths[95];
+  unsigned linefont_counts[95];
+  unsigned linefont_offsets[95];
+
 public:
   RenderContext* context;
 
@@ -692,6 +701,9 @@ public:
   }
 
   void init(std::string& path, RenderContext* context);
+
+  void GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile);
+  void GenerateLineFontCharacters(std::vector<float>& vertices);
 
   //3d fonts
   Colour setFont(Properties& properties, float scaling=1.0, bool print3d=false);

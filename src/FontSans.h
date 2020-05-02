@@ -61,32 +61,4 @@ float font_charwidths[] = {9.000000, 11.046875, 13.531250, 22.359375, 16.765625,
 
 std::vector<unsigned> font_tricounts = {0,14,14,62,367,517,357,5,33,33,33,21,5,5,5,5,318,39,151,211,26,139,328,11,347,330,14,14,11,14,11,254,398,20,171,145,122,21,17,155,21,5,61,19,9,23,17,198,126,320,176,329,13,113,11,23,21,15,17,13,5,13,11,5,5,244,138,129,186,212,69,262,93,14,110,19,5,123,85,126,128,128,33,193,69,69,11,23,21,29,17,227,5,227,81,2};
 
-std::vector<unsigned> font_offsets;
-
-int font_vertex_total = 0;
-
-void GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile)
-{
-  std::ifstream input(fontfile, std::ios::binary|std::ios::ate);
-  if (input.good())
-  {
-    std::ifstream::pos_type pos = input.tellg();
-    vertices.resize(pos/sizeof(float));
-    input.seekg(0, std::ios::beg);
-    input.read((char*)vertices.data(), pos);
-    input.close();
-
-    unsigned offset = 0;
-    font_offsets.push_back(offset);
-    for (unsigned int g=0; g<font_tricounts.size(); g++)
-    {
-      for (unsigned int t=0; t<font_tricounts[g]; t++)
-        offset += 3; //3 vertices per tri
-      font_offsets.push_back(offset);
-    }
-
-    font_vertex_total = vertices.size();
-  }
-}
-
 #endif //FontSans__
