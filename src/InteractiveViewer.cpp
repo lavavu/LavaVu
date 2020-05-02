@@ -1612,143 +1612,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
   }
-  else if (parsed.exists("play"))
-  {
-    if (gethelp)
-    {
-      help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
-              "**Usage:** play endstep\n\n"
-              "endstep (integer) : last frame timestep\n"
-              "If endstep omitted, will loop continually until 'stop' command entered\n";
-      return false;
-    }
-
-    if (parsed.has(ival, "play"))
-    {
-      writeSteps(false, amodel->step(), ival);
-    }
-    else
-    {
-      //Play loop
-      viewer->animateTimer(1); //Start idle redisplay timer for frequent frame updates
-      repeat = -1; //Infinite
-      viewer->timeloop = true;
-    }
-    return true;  //Skip record
-  }
-  else if (parsed.exists("next"))
-  {
-    if (gethelp)
-    {
-      help += "Go to next timestep in sequence\n";
-      return false;
-    }
-
-    int old = session.now;
-    if (amodel->timesteps.size() < 2) return false;
-    amodel->setTimeStep(session.now+1);
-    //Allow loop back to start when using next command
-    if (session.now > 0 && session.now == old)
-      amodel->setTimeStep(0);
-    resetViews();
-    if (parsed["next"] == "auto")
-      return false; //Skip record to history if automated
-  }
-  else if (parsed.exists("stop"))
-  {
-    if (gethelp)
-    {
-      help += "Stop the looping 'play' command\n";
-      return false;
-    }
-
-    viewer->timeloop = false;
-    viewer->animateTimer(0); //Stop idle redisplay timer
-    animate = false;
-    repeat = 0;
-    replay.clear();
-  }
-  else if (parsed.exists("images"))
-  {
-    if (gethelp)
-    {
-      help += "Write images in sequence from current timestep to specified timestep\n\n"
-              "**Usage:** images endstep\n\n"
-              "endstep (integer) : last frame timestep\n";
-      return false;
-    }
-
-    //Default to writing from current to final step
-    int end = -1;
-    if (parsed.has(ival, "images"))
-      end = ival;
-    writeSteps(true, amodel->step(), end);
-  }
-  else if (parsed.exists("animate"))
-  {
-    if (gethelp)
-    {
-      help += "Update display between each command\n\n"
-              "**Usage:** animate rate\n\n"
-              "rate (integer) : animation timer to fire every (rate) msec (default: 50)\n"
-              "When on, if multiple commands are issued the frame is re-rendered at set framerate\n"
-              "When off, all commands will be processed before the display is updated\n";
-      return false;
-    }
-
-    //Start idle redisplay timer for frequent frame updates
-    if (parsed.has(ival, "animate") && ival > 0)
-    {
-      viewer->animateTimer(ival);
-      animate = true;
-      printMessage("Animate mode %d millseconds", viewer->timer_animate);
-    }
-    else if (animate)
-    {
-      animate = false;
-      viewer->timeloop = false;
-      repeat = 0;
-      viewer->animateTimer(0);
-      printMessage("Animate mode disabled");
-    }
-    else
-    {
-      animate = true;
-      viewer->animateTimer();
-      printMessage("Animate mode %d millseconds", viewer->timer_animate);
-    }
-  }
-  else if (parsed.exists("repeat"))
-  {
-    if (gethelp)
-    {
-      help += "Repeat commands from history\n\n"
-              "**Usage:** repeat [count=1] [N=1]\n\n"
-              "count (integer) : repeat commands count times\n"
-              "N (integer) : repeat the last N commands\n";
-      return false;
-    }
-
-    //Repeat last N commands from history count times
-    else if (parsed.has(ival, "repeat"))
-    {
-      int N;
-      if (parsed.has(N, "repeat", 1))
-      {
-        if ((int)linehistory.size() < N) N = (int)linehistory.size();
-        std::copy(std::end(linehistory) - N, std::end(linehistory), std::back_inserter(replay));
-      }
-      else
-        replay.push_back(last_cmd);
-      animate = true;
-      repeat = ival;
-      viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
-      return true;  //Skip record
-    }
-    else if (linehistory.size() > 0)
-      //Manual repeat from line history (ENTER)
-      return parseCommands(linehistory.back());
-  }
   else if (parsed.exists("axis"))
   {
     if (gethelp)
@@ -3208,6 +3071,128 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aview->reset();     //Zero camera
   }
+  else if (parsed.exists("play"))
+  {
+    if (gethelp)
+    {
+      help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
+              "**Usage:** play endstep\n\n"
+              "endstep (integer) : last frame timestep\n"
+              "If endstep omitted, will loop continually until 'stop' command entered\n";
+      return false;
+    }
+
+    if (parsed.has(ival, "play"))
+    {
+      writeSteps(false, amodel->step(), ival);
+    }
+    else
+    {
+      //Play loop
+      viewer->animateTimer(1); //Start idle redisplay timer for frequent frame updates
+      repeat = -1; //Infinite
+      viewer->timeloop = true;
+    }
+    return true;  //Skip record
+  }
+  else if (parsed.exists("next"))
+  {
+    if (gethelp)
+    {
+      help += "Go to next timestep in sequence\n";
+      return false;
+    }
+
+    int old = session.now;
+    if (amodel->timesteps.size() < 2) return false;
+    amodel->setTimeStep(session.now+1);
+    //Allow loop back to start when using next command
+    if (session.now > 0 && session.now == old)
+      amodel->setTimeStep(0);
+    resetViews();
+    if (parsed["next"] == "auto")
+      return false; //Skip record to history if automated
+  }
+  else if (parsed.exists("stop"))
+  {
+    if (gethelp)
+    {
+      help += "Stop the looping 'play' command\n";
+      return false;
+    }
+
+    viewer->timeloop = false;
+    viewer->animateTimer(0); //Stop idle redisplay timer
+    animate = false;
+    repeat = 0;
+    replay.clear();
+  }
+  else if (parsed.exists("animate"))
+  {
+    if (gethelp)
+    {
+      help += "Update display between each command\n\n"
+              "**Usage:** animate rate\n\n"
+              "rate (integer) : animation timer to fire every (rate) msec (default: 50)\n"
+              "When on, if multiple commands are issued the frame is re-rendered at set framerate\n"
+              "When off, all commands will be processed before the display is updated\n";
+      return false;
+    }
+
+    //Start idle redisplay timer for frequent frame updates
+    if (parsed.has(ival, "animate") && ival > 0)
+    {
+      viewer->animateTimer(ival);
+      animate = true;
+      printMessage("Animate mode %d millseconds", viewer->timer_animate);
+    }
+    else if (animate)
+    {
+      animate = false;
+      viewer->timeloop = false;
+      repeat = 0;
+      viewer->animateTimer(0);
+      printMessage("Animate mode disabled");
+    }
+    else
+    {
+      animate = true;
+      viewer->animateTimer();
+      printMessage("Animate mode %d millseconds", viewer->timer_animate);
+    }
+  }
+  else if (parsed.exists("repeat"))
+  {
+    if (gethelp)
+    {
+      help += "Repeat commands from history\n\n"
+              "**Usage:** repeat [count=1] [N=1]\n\n"
+              "count (integer) : repeat commands count times\n"
+              "N (integer) : repeat the last N commands\n";
+      return false;
+    }
+
+    //Repeat last N commands from history count times
+    else if (parsed.has(ival, "repeat"))
+    {
+      int N;
+      if (parsed.has(N, "repeat", 1))
+      {
+        if ((int)linehistory.size() < N) N = (int)linehistory.size();
+        std::copy(std::end(linehistory) - N, std::end(linehistory), std::back_inserter(replay));
+      }
+      else
+        replay.push_back(last_cmd);
+      animate = true;
+      repeat = ival;
+      viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
+      return true;  //Skip record
+    }
+    else if (linehistory.size() > 0)
+      //Manual repeat from line history (ENTER)
+      return parseCommands(linehistory.back());
+  }
+
   else if (parsed.exists("image"))
   {
     if (gethelp)
@@ -3227,6 +3212,22 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);
     else
       printMessage("Saved image %d x %d", viewer->width, viewer->height);
+  }
+  else if (parsed.exists("images"))
+  {
+    if (gethelp)
+    {
+      help += "Write images in sequence from current timestep to specified timestep\n\n"
+              "**Usage:** images endstep\n\n"
+              "endstep (integer) : last frame timestep\n";
+      return false;
+    }
+
+    //Default to writing from current to final step
+    int end = -1;
+    if (parsed.has(ival, "images"))
+      end = ival;
+    writeSteps(true, amodel->step(), end);
   }
   else if (parsed.exists("movie"))
   {
