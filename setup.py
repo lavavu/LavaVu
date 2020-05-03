@@ -135,6 +135,7 @@ def check_libraries(libraries, headers, extra_lib_dirs=[], extra_inc_dirs=[]):
     for p in inc_dirs + extra_inc_dirs:
         compiler.add_include_dir(p)
 
+
     try:
         compiler.link_executable(
             compiler.compile([file_name]),
@@ -321,8 +322,8 @@ if __name__ == "__main__":
             libs += ['tiff']
 
         print("FFMPEG:", find_library('avcodec'), find_library('avformat'), find_library('avutil'))
-        if (find_library('avcodec') and find_library('avformat')
-            and find_library('avutil')
+        inc_dirs += ['/usr/include/ffmpeg']
+        if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
             and check_libraries(['avcodec', 'avformat', 'avutil'],
                 ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
                  'libavutil/imgutils.h'])):
