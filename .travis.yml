@@ -132,7 +132,7 @@ env:
     #- CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
     #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
     - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
-    - CIBW_BEFORE_BUILD_LINUX='yum install epel-release && rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel'
+    - CIBW_BEFORE_BUILD_LINUX='yum install epel-release && rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel || true'
     - CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
     - CIBW_MANYLINUX_I686_IMAGE: manylinux2014
     # Note: TWINE_PASSWORD encrypted as secret
