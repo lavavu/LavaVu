@@ -66,12 +66,12 @@ stages:
 jobs:
   include:
     # Optional: run tests on Windows/MacOS
-    - os: windows
-      language: shell
-      name: Test on Windows
-    - os: osx
-      language: shell
-      name: Test on MacOS
+    #- os: windows
+    #  language: shell
+    #  name: Test on Windows
+    #- os: osx
+    #  language: shell
+    #  name: Test on MacOS
 
     # Deploy source distribution
     - stage: deploy
@@ -127,6 +127,7 @@ jobs:
 
 env:
   global:
+    - CIBW_BUILD_VERBOSITY: 3
     - CIBW_SKIP=cp27-*
     - CIBW_SKIP=cp34-*
     - CIBW_SKIP=cp35-*
