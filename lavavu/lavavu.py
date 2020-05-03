@@ -4878,15 +4878,6 @@ class Video(object):
             log = ""
             ffmpeg_exe = 'ffmpeg'
             try:
-                #This project comes with a prebuilt ffmpeg executable:
-                #(pip install pyffmpeg)
-                import pyffmpeg
-                ff = pyffmpeg.FFmpeg()
-                ffmpeg_exe = ff.get_ffmpeg_bin()
-            except (ImportError) as e:
-                pass
-
-            try:
                 outfn = '{0}.mp4'.format(self.filename)
                 cmd = ffmpeg_exe + ' -r {1} -i "{0}/frame_%05d.jpg" -c:v libx264 -vf fps={1} -movflags +faststart -pix_fmt yuv420p -y "{2}"'.format(self.filename, self.framerate, outfn)
                 log += "No built in video encoding, attempting to build movie from frames with ffmpeg:\n"

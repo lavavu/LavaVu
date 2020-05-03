@@ -316,13 +316,11 @@ if __name__ == "__main__":
             else:
                 srcs += ['src/miniz/miniz.c']
 
-        print("TIFF:", find_library('tiff'))
         if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
             defines += [('HAVE_LIBTIFF', 1)]
             libs += ['tiff']
 
-        print("FFMPEG:", find_library('avcodec'), find_library('avformat'), find_library('avutil'))
-        inc_dirs += ['/usr/include/ffmpeg']
+        inc_dirs += ['/usr/include/ffmpeg'] #Required for centos/redhat ffmpeg-devel
         if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
             and check_libraries(['avcodec', 'avformat', 'avutil'],
                 ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',

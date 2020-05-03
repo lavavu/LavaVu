@@ -58,20 +58,20 @@ stages:
   # Only execute deployment stage on tagged commits, and from your repository
   # (e.g. not PRs).
   - name: deploy
-    if: repo = lavavu/LavaVu #FOR TESTING: always deploy
+    #if: repo = lavavu/LavaVu #FOR TESTING: always deploy
     #if: tag IS PRESENT AND repo = lavavu/LavaVu
     # To only build tags that look like X.Y.Z:
-    #if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
+    if: tag =~ ^\d+\.\d+\.\d+$ AND repo = lavavu/lavavu
 
 jobs:
   include:
     # Optional: run tests on Windows/MacOS
-    #- os: windows
-    #  language: shell
-    #  name: Test on Windows
-    #- os: osx
-    #  language: shell
-    #  name: Test on MacOS
+    - os: windows
+      language: shell
+      name: Test on Windows
+    - os: osx
+      language: shell
+      name: Test on MacOS
 
     # Deploy source distribution
     - stage: deploy
