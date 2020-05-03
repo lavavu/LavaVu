@@ -86,20 +86,6 @@ jobs:
     - stage: deploy
       name: Build and deploy Linux wheels
       services: docker
-      addons:
-        apt:
-          packages:
-          - libgl1-mesa-dev
-          - libx11-dev
-          - zlib1g-dev
-          - libtiff-dev
-          - libavcodec-dev
-          - libavformat-dev
-          - libavutil-dev
-          - libswscale-dev
-      #before_install: |
-      #  sudo apt-get update
-      #  sudo apt-get install libgl1-mesa-dev libx11-dev zlib1g-dev libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
       install: python3 -m pip install cibuildwheel==1.3.0
       script: python3 -m cibuildwheel --output-dir wheelhouse
       after_success: |
@@ -139,15 +125,16 @@ jobs:
 env:
   global:
     - CIBW_BUILD_VERBOSITY: 3
-    - CIBW_SKIP=cp27-*
-    - CIBW_SKIP=cp34-*
-    - CIBW_SKIP=cp35-*
-    - CIBW_BUILD=cp3?-*
-    # - CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
-    #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
-    - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
-    #- CIBW_MANYLINUX_X86_64_IMAGE=manylinux1
-    #- CIBW_MANYLINUX_I686_IMAGE=manylinux1
+    - CIBW_SKIP: cp27-*
+    - CIBW_SKIP: cp34-*
+    - CIBW_SKIP: cp35-*
+    - CIBW_BUILD: cp3?-*
+    #- CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
+    #- CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}
+    - CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
+    - CIBW_BEFORE_BUILD_LINUX: yum install -y libtiff-devel libavcodec-devel libavformat-devel libutil-devel libswscale-devel
+    - CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+    - CIBW_MANYLINUX_I686_IMAGE: manylinux2014
     # Note: TWINE_PASSWORD encrypted as secret
     - TWINE_USERNAME: OwKal
     - secure: "pNa4arGN+GjtdLLBYdgoJmbOPyoLWB1E24V+UZ7pQJ8ZZir6b6vIoLWBD8i9SoywipbIYDhQk+do5wu97hGwn/b8/kVU4ftHgYTUrdb2lvuwTlmuIxMRL+FRuw0p6HQ5i+GvxRatx71Sbb8mB/7FJ5MnEqYdY9IOqs/9BrrwkqO4fElDmpFsB0kHSNu1aP3owOCzdQFByiXWv50CE6U4S7Tn1vtBGuygFx85QQSpl9NRPGmgLrOR21Hat31HaBjaGk9SS2LT4mDjZt9kxyHkmMYoXjmakUgItw4cf5y6SUtGEeJwt+viGeKgK6fYr9lwJal3ZZ750BN1KC0YIm8hcdglHfcQ/Slik8jkLjkzdeHSODxb3ucUY3DIizk2TXQoY2rdby/cGpcq+VLl1aSNPjLCQIM0gnvdIfHBynDNyiulH9175O8o7pm7IoGvkonjukAFFFyYzvXe22pU7CslaopvnC2auSVJa3jhBmPvQtofi2W2jy5tpBN3GrsZv4AWMqbXBo0T8YSbrvconOjK3SzuLYSzC9kajJShKwi7S4FzyWSlhx6ua9xpv15DWt8dd1ePZ+Sz7dKhlNkKwNsvzGtI6AlCNmgkqIqBszMf/UzyGfOeFXsKTxo6SIWAJKyV3a7aCcMv8vjo7Gz8HuT4Sz7YdmHqtTVP2lMlIk/stw0="
