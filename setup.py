@@ -314,9 +314,13 @@ if __name__ == "__main__":
                 libs += ['z']
             else:
                 srcs += ['src/miniz/miniz.c']
+
+        print("TIFF:", find_library('tiff'))
         if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
             defines += [('HAVE_LIBTIFF', 1)]
             libs += ['tiff']
+
+        print("FFMPEG:", find_library('avcodec'), find_library('avformat'), find_library('avutil'))
         if (find_library('avcodec') and find_library('avformat')
             and find_library('avutil')
             and check_libraries(['avcodec', 'avformat', 'avutil'],
@@ -341,10 +345,10 @@ if __name__ == "__main__":
                 #OSMesa for software rendered offscreen OpenGL
                 defines += [('HAVE_OSMESA', '1')]
                 libs += ['OSMesa']
-            elif find_library('glfw') and check_libraries(['glfw'], ['GLFW/glfw3.h']):
-                #Use GLFW if installed
-                defines += [('HAVE_GLFW', '1')]
-                libs += ['GL', 'glfw']
+            #elif find_library('glfw') and check_libraries(['glfw'], ['GLFW/glfw3.h']):
+            #    #Use GLFW if installed
+            #    defines += [('HAVE_GLFW', '1')]
+            #    libs += ['GL', 'glfw']
             else:
                 #Fallback - X11
                 defines += [('HAVE_X11', '1')]
