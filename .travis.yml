@@ -86,17 +86,17 @@ jobs:
     - stage: deploy
       name: Build and deploy Linux wheels
       services: docker
-    addons:
-      apt:
-        packages:
-        - libgl1-mesa-dev
-        - libx11-dev
-        - zlib1g-dev
-        - libtiff-dev
-        - libavcodec-dev
-        - libavformat-dev
-        - libavutil-dev
-        - libswscale-dev
+      addons:
+        apt:
+          packages:
+          - libgl1-mesa-dev
+          - libx11-dev
+          - zlib1g-dev
+          - libtiff-dev
+          - libavcodec-dev
+          - libavformat-dev
+          - libavutil-dev
+          - libswscale-dev
       #before_install: |
       #  sudo apt-get update
       #  sudo apt-get install libgl1-mesa-dev libx11-dev zlib1g-dev libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
@@ -144,7 +144,7 @@ env:
     - CIBW_SKIP=cp35-*
     - CIBW_BUILD=cp3?-*
     # - CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
-      #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
+    #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
     - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
     #- CIBW_MANYLINUX_X86_64_IMAGE=manylinux1
     #- CIBW_MANYLINUX_I686_IMAGE=manylinux1
