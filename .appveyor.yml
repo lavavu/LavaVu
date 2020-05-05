@@ -42,7 +42,7 @@ build_script:
 #https://help.appveyor.com/discussions/problems/6946-opengl
 test_script:
   #Just run the doctests
-  - cmd: "cd C:\projects\lavavu"
+  - cd \projects\lavavu
   - pip install -e lavavu #Dev install
   - python lavavu/lavavu.py
 #  - git clone --depth 1 https://github.com/lavavu/Testing
