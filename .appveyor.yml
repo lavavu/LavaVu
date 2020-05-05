@@ -10,10 +10,6 @@ environment:
   pypipw:
     secure: Ay2WxyHxlSOaJBtn05cPBg==
   matrix:
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3-x64
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3
     - PYTHON_VERSION: 3.7
@@ -62,7 +58,7 @@ artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*
 
-on_success:
-  #Upload tagged version with twine
-  - cmd: "if [%APPVEYOR_REPO_TAG%]==[true] twine upload dist\\*.whl"
+#on_success:
+#  #Upload tagged version with twine
+#  - cmd: "if [%APPVEYOR_REPO_TAG%]==[true] twine upload dist\\*.whl"
 

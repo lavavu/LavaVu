@@ -285,10 +285,10 @@ if __name__ == "__main__":
         libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
         dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
                 os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
-        install = [('', dlls)]
-        #Also copy dlls into . for develop / in-place installs
+        install = [('lavavu', dlls)]
+        #Also copy dlls into ./lavavu for develop / in-place installs
         for d in dlls:
-            shutil.copy(d, '.')
+            shutil.copy(d, 'lavavu')
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
