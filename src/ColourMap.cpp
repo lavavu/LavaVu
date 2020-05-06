@@ -795,10 +795,11 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
 
       session.context.push();
       glEnable(GL_MULTISAMPLE);
+      float shiftf = (float)session.fonts.printWidth("T");
       if (vertical)
-        session.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)session.fonts.printWidth("M")),  string);
+        session.fonts.print(starty + breadth + 8 + 0.25 * shiftf, xpos - (int) (0.75 * shiftf),  string);
       else
-        session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)),  starty - 5 - session.fonts.printWidth("M"), string);
+        session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)), starty - 6 - 1.25 * shiftf, string);
       glDisable(GL_MULTISAMPLE);
       session.context.pop();
     }
