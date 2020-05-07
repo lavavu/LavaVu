@@ -1085,18 +1085,20 @@ Renderer.prototype.draw = function() {
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
   //General uniform vars
-  this.gl.uniform1i(this.program.uniforms["uLighting"], this.getprop('lit')); //TODO: fix this?
-  this.gl.uniform1f(this.program.uniforms["uOpacity"], vis.properties.opacity); //Global opacity
-  this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness || 0.0);
-  this.gl.uniform1f(this.program.uniforms["uContrast"], vis.properties.contrast || 1.0);
-  this.gl.uniform1f(this.program.uniforms["uAmbient"], vis.properties.ambient || 0.4);
-  this.gl.uniform1f(this.program.uniforms["uSaturation"], vis.properties.saturation || 1.0);
-  this.gl.uniform1f(this.program.uniforms["uAmbient"], vis.properties.ambient || 0.4);
-  this.gl.uniform1f(this.program.uniforms["uDiffuse"], vis.properties.diffuse || 0.65);
-  this.gl.uniform1f(this.program.uniforms["uSpecular"], vis.properties.specular || 0.0);
-  this.gl.uniform1f(this.program.uniforms["uShininess"], vis.properties.shininess || 0.5);
-  this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(vis.properties.lightpos || [0.1,-0.1,2.0]));
-  var colour = this.getprop('colour');
+  //TODO: fix this? can't us getprop() as draw is not per object - support per object renderers as in library?
+  this.gl.uniform1i(this.program.uniforms["uLighting"], this.getglobal('lit'));
+  this.gl.uniform1f(this.program.uniforms["uOpacity"], this.getglobal('opacity')); //Global opacity
+  this.gl.uniform1f(this.program.uniforms["uBrightness"], this.getglobal('brightness'));
+  this.gl.uniform1f(this.program.uniforms["uContrast"], this.getglobal('contrast'));
+  this.gl.uniform1f(this.program.uniforms["uAmbient"], this.getglobal('ambient'));
+  this.gl.uniform1f(this.program.uniforms["uSaturation"], this.getglobal('saturation'));
+  this.gl.uniform1f(this.program.uniforms["uAmbient"], this.getglobal('ambient'));
+  this.gl.uniform1f(this.program.uniforms["uDiffuse"], this.getglobal('diffuse'));
+  this.gl.uniform1f(this.program.uniforms["uSpecular"], this.getglobal('specular'));
+  this.gl.uniform1f(this.program.uniforms["uShininess"], this.getglobal('shininess'));
+  this.gl.uniform4fv(this.program.uniforms["uLightPos"], new Float32Array(this.getglobal('lightpos')));
+  this.gl.uniform4fv(this.program.uniforms["uLight"], new Float32Array(this.getglobal('light')));
+  var colour = this.getglobal('colour');
   //if (this.colour)
   if (colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], colour.red/255.0, colour.green/255.0, colour.blue/255.0, colour.alpha);
