@@ -1553,6 +1553,7 @@ void Geometry::colourMapTexture(DrawingObject* obj)
   // - All colourmaps used by this renderer's objects written to a single texture
   // - Generate texcoords for each object -> (x=value,y=mapindex)
   // - Delete all colour values
+  if (records.size() == 0) return;
   debug_print("TextureColouring %d elements...\n", elements);
 
   Texture_Ptr texture = std::make_shared<ImageLoader>(); //Add a new empty texture container

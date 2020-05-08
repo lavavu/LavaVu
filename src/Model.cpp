@@ -699,10 +699,6 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
         //Convert colourmap + value data into rgba
         g->convertColours(now, obj);
 
-      //Clear colourmap
-      if (texture || colours)
-        obj->properties.data.erase("colourmap");
-
       //dynamic_cast only works if a valid descendant class
       Glyphs* glyphs = dynamic_cast<Glyphs*>(g);
       if (glyphs)
@@ -713,14 +709,27 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
         //Copy entries
         //printf("L %d T %d P %d\n", glyphs->lines->records.size(), glyphs->tris->records.size(), glyphs->points->records.size());
         for (auto gp : glyphs->lines->records)
-          lines->records.push_back(gp);
+        {
+          if (!obj || gp->draw == obj)
+            lines->records.push_back(gp);
+        }
         for (auto gp : glyphs->tris->records)
-          tris->records.push_back(gp);
+        {
+          if (!obj || gp->draw == obj)
+            tris->records.push_back(gp);
+        }
         for (auto gp : glyphs->points->records)
-          points->records.push_back(gp);
+        {
+          if (!obj || gp->draw == obj)
+            points->records.push_back(gp);
+        }
       }
     }
   }
+
+  //Clear colourmap
+  if (texture || colours)
+    obj->properties.data.erase("colourmap");
 
   std::cout << std::endl;
 
