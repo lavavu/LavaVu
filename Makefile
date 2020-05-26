@@ -126,7 +126,7 @@ vpath %.c src/sqlite3
 vpath %.cc src
 
 #Always run this script to update version.cpp if git version changes
-TMP := $(shell $(PYTHON) version.py)
+TMP := $(shell $(PYTHON) _getversion.py)
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp)
 INC := $(wildcard src/*.h) $(wildcard src/Main/*.h)
@@ -205,6 +205,7 @@ swig : $(INC) src/LavaVuPython.i | paths
 	swig -v -Wextra -python -py3 -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
+	-rm -f $(PREFIX)/_LavaVuPython.*
 	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -l$(PROGNAME) -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC) | src/sqlite3/sqlite3.c
