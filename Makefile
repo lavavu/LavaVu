@@ -13,6 +13,10 @@ PYINC ?= -I$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfi
 OPATH ?= /tmp
 #HTML files path
 HTMLPATH = $(PREFIX)/html
+#Use OSMESA?
+ifeq ($(LV_OSMESA), 1)
+OSMESA = 1
+endif
 
 #Compilers
 CXX ?= g++
