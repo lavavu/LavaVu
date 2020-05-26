@@ -241,66 +241,74 @@ void Properties::check(json& props, json& defaults, bool strict)
 
 bool Properties::typecheck(json& val, json& defaults, const std::string& key, bool strict)
 {
-  if (key == "colourby" || key == "opacityby" || key == "sizeby" ||
-      key == "widthby" || key == "heightby" || key == "lengthby")
+  try
   {
-      //Skip these, can be int or string
-      return true;
-  }
-  json& def = defaults[key];
-  if (val.type() == def.type()) return true;
-  if (val.is_number() && def.is_number()) return true;
-  if (def.is_array()) return true; //Skip check on arrays
-
-  //Convert a json type to the correct type
-  //Only do this where a sensible conversion is possible
-  if (def.is_boolean())
-  {
-    //Bool conversion
-    debug_print("Attempting to coerce value to BOOLEAN\n");
-    val = val != 0;
-  }
-  if (def.is_number())
-  {
-    //Num conversion
-    debug_print("Attempting to coerce value to NUMBER\n");
-    if (val.is_boolean())
-      val = val ? 1 : 0;
-    else if (val.is_string())
+    if (key == "colourby" || key == "opacityby" || key == "sizeby" ||
+        key == "widthby" || key == "heightby" || key == "lengthby")
     {
-      std::string sval = val;
-      //Check for alias string values:
-      if (sval == "blur" || sval == "ellipsoid")
-        val = 0;
-      else if (sval == "smooth" || sval == "cuboid")
-        val = 1;
-      else if (sval == "sphere")
-        val = 2;
-      else if (sval == "shiny")
-        val = 3;
-      else if (sval == "flat")
-        val = 4;
-      else
-      {
-        std::stringstream ss;
-        ss << sval;
-        float v = 0.0;
-        ss >> v;
-        val = v;
-        if (v - (int)v == 0.0) val = (int)v;
-      }
+        //Skip these, can be int or string
+        return true;
     }
-    else
-      val = (float)val;
+    json& def = defaults[key];
+    if (val.type() == def.type()) return true;
+    if (val.is_number() && def.is_number()) return true;
+    if (def.is_array()) return true; //Skip check on arrays
+
+    //Convert a json type to the correct type
+    //Only do this where a sensible conversion is possible
+    if (def.is_boolean())
+    {
+      //Bool conversion
+      debug_print("Attempting to coerce value to BOOLEAN\n");
+      val = val != 0;
+    }
+    if (def.is_number())
+    {
+      //Num conversion
+      debug_print("Attempting to coerce value to NUMBER\n");
+      if (val.is_boolean())
+        val = val ? 1 : 0;
+      else if (val.is_string())
+      {
+        std::string sval = val;
+        //Check for alias string values:
+        if (sval == "blur" || sval == "ellipsoid")
+          val = 0;
+        else if (sval == "smooth" || sval == "cuboid")
+          val = 1;
+        else if (sval == "sphere")
+          val = 2;
+        else if (sval == "shiny")
+          val = 3;
+        else if (sval == "flat")
+          val = 4;
+        else
+        {
+          std::stringstream ss;
+          ss << sval;
+          float v = 0.0;
+          ss >> v;
+          val = v;
+          if (v - (int)v == 0.0) val = (int)v;
+        }
+      }
+      else
+        val = (float)val;
+    }
+    //Only convert to string if strict checking enabled (some props can be string or number)
+    if (strict && def.is_string() && !val.is_string())
+    {
+      //String conversion
+      debug_print("Attempting to coerce value to STRING\n");
+      std::stringstream ss;
+      ss << val;
+      val = ss.str();
+    }
   }
-  //Only convert to string if strict checking enabled (some props can be string or number)
-  if (strict && def.is_string() && !val.is_string())
+  catch (nlohmann::detail::type_error& e)
   {
-    //String conversion
-    debug_print("Attempting to coerce value to STRING\n");
-    std::stringstream ss;
-    ss << val;
-    val = ss.str();
+    std::cerr << "Type check error on property: " << e.what() << std::endl;
+    val = defaults[key];
   }
 
   return false;
