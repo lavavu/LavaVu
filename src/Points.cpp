@@ -434,7 +434,16 @@ void Points::draw()
 
 
   //Point size distance attenuation (disabled for 2d models)
-  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.context.scale2d; //Include 2d scale factor
+  float scale0 = (float)geom[0]->draw->properties["scalepoints"];
+  int pointspixels = session.global("pointpixelscale");
+  if (pointspixels == 1)
+    pointspixels = view->base_height; //Saved height at first render
+  //Adjust scaling by viewport aspect ratio?
+  if (pointspixels > 0)
+    scale0 *= view->height / (float)pointspixels;
+  else
+    scale0 *= session.context.scale2d; //Include 2d scale factor
+
   if (view->is3d && session.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);

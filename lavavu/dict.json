@@ -2361,6 +2361,17 @@
       true
     ]
   },
+  "pointpixelscale": {
+    "default": 1,
+    "target": "global",
+    "type": "int",
+    "desc": "Set to zero for constant point size in pixels, set to 1 to scale points when the viewport is resized after storing the initial render size. If set to > 1, this is the viewport height where pointsize = pixels. As the viewport height is adjusted points are scaled relative to this height - so points will appear the same regardless of render size",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "sort": {
     "default": true,
     "target": "global",

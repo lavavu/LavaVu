@@ -94,6 +94,7 @@ public:
   int ypos;         // Y coord
   int width;        // Viewport height
   int height;       // Viewport width
+  int base_height;  // Initial height
 
   //View properties data...
   Properties properties;

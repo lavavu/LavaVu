@@ -51,6 +51,7 @@ View::View(Session& session, float xf, float yf) : properties(session.globals, s
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
+  base_height = 0;
 
   x = xf;
   y = yf;
@@ -512,6 +513,9 @@ void View::port(int x, int y, int width, int height)
   glViewport(x, y, width, height);
   glScissor(x, y, width, height);
   //debug_print("Viewport set at %d,%d %d x %d\n", x, y, width, height);
+
+  //Save unscaled initial height
+  if (base_height == 0) base_height = height / session.context.scale2d;
 }
 
 //Viewport calculated using saved position & dim values
@@ -532,6 +536,9 @@ void View::port(int win_width, int win_height)
   glViewport(xpos, ypos, width, height);
   glScissor(xpos, ypos, width, height);
   //debug_print("-------Viewport (%f,%f %fx%f) set at %d,%d %d x %d\n", x,y,w,h, xpos, ypos, width, height);
+
+  //Save unscaled initial height
+  if (base_height == 0) base_height = height / session.context.scale2d;
 }
 
 bool View::hasPixel(int x, int y)
