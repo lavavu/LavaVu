@@ -55,7 +55,11 @@ winids = []
 id_random = Random() #Ensure we use our own default seed in case set in notebook
 def gen_id(length=10):
     alphabet = string.ascii_letters + string.digits
-    return ''.join(id_random.choices(alphabet, k=length))
+    try:
+        return ''.join(id_random.choices(alphabet, k=length))
+    except:
+        #Python 3.5
+        return ''.join(id_random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(length))
 
 basehtml = """
 <html>
