@@ -349,7 +349,9 @@ unsigned int GeomData::valuesLookup(const json& by)
         break;
       }
     }
-    if (valueIdx > MAX_DATA_ARRAYS)
+
+    //Not found, check for built in generated labels (except for internal/glyph renderers)
+    if (valueIdx > MAX_DATA_ARRAYS && !internal)
     {
       //Predefined / builtin labels
       Range range;
@@ -427,7 +429,8 @@ unsigned int GeomData::valuesLookup(const json& by)
       }
       else if (label == "magnitude")
       {
-        Coord3DValues& array = render->vectors.size() == count() ? render->vectors : render->vertices;
+        //No magnitude available when rendering glyphs
+        Coord3DValues& array = render->vectors.size() ? render->vectors : render->vertices;
         for (unsigned int i = 0; i < count(); i ++)
         {
           Vec3d vec(array[i]);
@@ -1150,6 +1153,16 @@ void Geometry::merge(int start, int end)
 
           //Update references in render container
           merge_dest->setRenderData();
+
+          //Copy dimensions and texture if none set in dest record
+          if (!merge_dest->width)
+            merge_dest->width = merge_source->width;
+          if (!merge_dest->height)
+            merge_dest->height = merge_source->height;
+          if (!merge_dest->depth)
+            merge_dest->depth = merge_source->depth;
+          if (!merge_dest->texture)
+            merge_dest->texture = merge_source->texture;
         }
 
       }
@@ -1783,6 +1796,7 @@ void Geometry::display(bool refresh)
   //Skip draw for internal sub-renderers, will be done by parent renderer
   if (!internal && newcount)
   {
+    //debug_print("Rendering %d %s - %s, %d elements\n", type, GeomData::names[type].c_str(), name.c_str(), geom.size());
     draw();
 
     labels();
@@ -1940,6 +1954,7 @@ Geom_Ptr Geometry::add(DrawingObject* draw)
   int timestep = session.now;
   if (draw->properties["fixed"]) timestep = -1;
   Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type, timestep);
+  geomdata->internal = internal;
   records.push_back(geomdata);
   //if (allhidden) draw->properties.data["visible"] = false;
   //printf("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", timestep, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
@@ -1950,16 +1965,17 @@ void Geometry::setup(View* vp, float* min, float* max)
 {
   view = vp;
 
-  if (!min || !max) return;
+  if (min && max)
+  {
+    //Iterate the selected viewport's drawing objects
+    //Apply geometry bounds from all object data within this viewport
+    //(includes only visible objects where the "inview" property is true)
+    for (unsigned int o=0; o<view->objects.size(); o++)
+      if (view->objects[o]->properties["visible"] && view->objects[o]->properties["inview"])
+        objectBounds(view->objects[o], min, max);
 
-  //Iterate the selected viewport's drawing objects
-  //Apply geometry bounds from all object data within this viewport
-  //(includes only visible objects where the "inview" property is true)
-  for (unsigned int o=0; o<view->objects.size(); o++)
-    if (view->objects[o]->properties["visible"] && view->objects[o]->properties["inview"])
-      objectBounds(view->objects[o], min, max);
-
-  //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
+    //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
+  }
 }
 
 void Geometry::clearBounds(DrawingObject* draw, bool allsteps)

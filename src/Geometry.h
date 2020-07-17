@@ -310,6 +310,7 @@ class ColourLookupLuminanceOpacityMapped : public ColourLookup
 class GeomData
 {
 public:
+  bool internal = false;
   static std::string names[lucMaxType];
   static std::string datalabels[lucMaxDataType+1];
   DrawingObject* draw; //Parent drawing object
@@ -386,6 +387,8 @@ public:
   ~GeomData()
   {
   }
+
+  void init();
 
   unsigned int count() {return render->vertices.count();}  //Number of vertices
 
