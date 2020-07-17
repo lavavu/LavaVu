@@ -254,7 +254,7 @@ def _get_objects(source):
     else:
         return source
 
-def export_OBJ(filepath, source):
+def export_OBJ(filepath, source, verbose=False):
     """
     Export given object(s) to an OBJ file
     Supports only triangle mesh object data
@@ -270,11 +270,11 @@ def export_OBJ(filepath, source):
         for obj in objects:
             if obj["visible"]:
                 f.write("g %s\n" % obj.name)
-                offset = _write_OBJ(f, m, filepath, obj, offset)
+                offset = _write_OBJ(f, m, filepath, obj, offset, verbose)
 
 def _write_MTL(m, name, texture=None, diffuse=[1.0, 1.0, 1.0], ambient=None, specular=None, opacity=1.0, illum=None):
     #http://paulbourke.net/dataformats/mtl/
-    print("Writing MTL ", texture, diffuse, opacity, name)
+    #print("Writing MTL ", texture, diffuse, opacity, name)
     mtl = "newmtl %s\n" % name
     mtl += "Kd %.06f %.06ff %.06f\n" % (diffuse[0], diffuse[1], diffuse[2])
     if ambient:
@@ -298,7 +298,7 @@ def _write_MTL(m, name, texture=None, diffuse=[1.0, 1.0, 1.0], ambient=None, spe
     mtl_line = "usemtl %s\n" % name
     return mtl_line
 
-def _write_OBJ(f, m, filepath, obj, offset=1):
+def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False):
     mtl_line = ""
     cmaptexcoords = []
     colourdict = None
@@ -311,7 +311,8 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
             fn = 'texture.png'
         #Write palette.png
         obj.parent.palette('image', 'texture')
-        print("Writing texture mtl ", fn)
+        if verbose:
+            print("Writing texture mtl ", fn)
         mtl_line = _write_MTL(m, name, texture=fn, opacity=obj["opacity"])
 
     elif m and colourcount > 0:
@@ -356,15 +357,15 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         """
 
     elif m and "colour" in obj:
-        print("Writing mtl lib (default colour)")
+        #print("Writing mtl lib (default colour)")
         c = obj.parent.parse_colour(obj["colour"])
         mtl_line = _write_MTL(m, 'default-' + name, diffuse=c, opacity=obj["opacity"])
 
     for o,data in enumerate(obj):
-        print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
+        if verbose: print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
         verts = data.vertices.reshape((-1,3))
         if len(verts) == 0:
-            print("No vertices")
+            if verbose: print("No vertices")
             continue
         f.write("o Surface_%d\n" % o)
         #f.write("o %s\n" % obj.name)
@@ -399,7 +400,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         if colourdict and len(data.colours):
             vperc = int(verts.shape[0] / len(data.colours))
 
-        print("- Writing vertices:",verts.shape)
+        if verbose: print("- Writing vertices:",verts.shape)
         for v in verts:
             if colourdict:
                 c = data.colours[ci]
@@ -407,10 +408,10 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 f.write("v %.6f %.6f %.6f %.6f %.6f %.6f\n" % (v[0], v[1], v[2], rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0))
             else:
                 f.write("v %.6f %.6f %.6f\n" % (v[0], v[1], v[2]))
-        print("- Writing normals:",normals.shape)
+        if verbose: print("- Writing normals:",normals.shape)
         for n in normals:
             f.write("vn %.6f %.6f %.6f\n" % (n[0], n[1], n[2]))
-        print("- Writing texcoords:",texcoords.shape)
+        if verbose: print("- Writing texcoords:",texcoords.shape)
         if len(texcoords.shape) == 2:
             for t in texcoords:
                 f.write("vt %.6f %.6f\n" % (t[0], t[1]))
@@ -421,18 +422,18 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         #Face elements v/t/n v/t v//n
         f.write(mtl_line)
         if len(normals) and len(texcoords):
-            print("- Writing faces (v/t/n):",indices.shape)
+            if verbose: print("- Writing faces (v/t/n):",indices.shape)
         elif len(texcoords):
-            print("- Writing faces (v/t):",indices.shape)
+            if verbose: print("- Writing faces (v/t):",indices.shape)
         elif len(normals):
-            print("- Writing faces (v//n):",indices.shape)
+            if verbose: print("- Writing faces (v//n):",indices.shape)
         else:
-            print("- Writing faces (v):",indices.shape)
-        print("- Colours :",data.colours.shape)
-        print("- Indices :",indices.shape)
+            if verbose: print("- Writing faces (v):",indices.shape)
+        if verbose: print("- Colours :",data.colours.shape)
+        if verbose: print("- Indices :",indices.shape)
 
         for n,i in enumerate(indices):
-            if n%1000==0: print(".", end=''); sys.stdout.flush()
+            if verbose and n%1000==0: print(".", end=''); sys.stdout.flush()
             i0 = i[0]+offset
             i1 = i[1]+offset
             i2 = i[2]+offset
@@ -460,7 +461,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 f.write("f %d//%d %d//%d %d//%d\n" % (i0, i0, i1, i1, i2, i2))
             else:
                 f.write("f %d %d %d\n" % (i0, i1, i2))
-        print()
+        if verbose: print()
 
         offset += verts.shape[0]
     return offset
