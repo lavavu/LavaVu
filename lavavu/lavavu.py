@@ -895,7 +895,7 @@ class Object(dict):
         """
         self._loadVector(data, LavaVuPython.lucTexCoordData, 2)
 
-    def vectors(self, data, magnitude=None):
+    def vectors(self, data):
         """
         Load 3d vector data for object
 
@@ -903,10 +903,8 @@ class Object(dict):
         ----------
         data : list or array
             Pass a list or numpy float32 3d array of vectors
-        magnitude : str
-            Pass a label to calculate the magnitude and save under provided name (for use in colouring etc)
         """
-        self._loadVector(data, LavaVuPython.lucVectorData, magnitude)
+        self._loadVector(data, LavaVuPython.lucVectorData)
 
     def values(self, data, label="default"):
         """
