@@ -41,7 +41,6 @@ import math
 import sys
 import glob
 import control
-import server
 import numpy
 import re
 import copy
@@ -50,6 +49,7 @@ import threading
 from collections import deque
 import time
 import weakref
+import asyncio
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -58,15 +58,18 @@ from vutils import is_ipython, is_notebook, getname, download, inject, hidecode,
 
 try:
     import moderngl
-    import moderngl_window
-    from moderngl_window.conf import settings as mgl_settings
-    from moderngl_window.timers.clock import Timer
 except (ImportError) as e:
-    pass
+    moderngl = None
+
+try:
+    import moderngl_window
+except (ImportError) as e:
+    moderngl_window = None
 
 #import swig module
 import LavaVuPython
 version = LavaVuPython.version
+server_ports = []
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
@@ -1940,10 +1943,15 @@ class Figure(dict):
         return self.parent.image(*args, **kwargs)
 
 
-class _LavaVuThreadSafe(LavaVuPython.LavaVu):
+class _LavaVuWrapper(LavaVuPython.LavaVu):
+    #Shared context
+    _ctx = None
+
     def __init__(self, threaded, runargs, resolution=None, binpath=None, context="default"):
         self.args = runargs
         self._closing = False
+        self.resolution = resolution
+        self._loop = None
 
         #OpenGL context creation options
         havecontext = False
@@ -1956,17 +1964,23 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             havecontext = True
             omegalib = True
         elif "moderngl" in context:
-            havecontext = True
-            self.use_moderngl = True
-            if len(context) > 8:
-                self.use_moderngl_window = context[9:]
+            if moderngl is not None:
+                havecontext = True
+                self.use_moderngl = True
+                if len(context) > 8:
+                    if moderngl_window is not None:
+                        self.use_moderngl_window = context[9:]
+                    else:
+                        print("moderngl_window not available, try pip install moderngl_window")
+            else:
+                print("moderngl not available, try pip install moderngl")
         self.wnd = None
         self.ctx = None
-        self.resolution = resolution
 
-        super(_LavaVuThreadSafe, self).__init__(binpath, havecontext, omegalib)
+        super(_LavaVuWrapper, self).__init__(binpath, havecontext, omegalib)
 
         self._thread = threaded
+        self._q = []
         if threaded:
             # Create a condition variable to synchronize resource access
             self._cv = threading.Condition()
@@ -1987,8 +2001,20 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                 self._thread.start()
                 self._cv.wait()
         else:
-            #Just run in main thread
-            self.run(runargs)
+            #Run in main thread using asyncio if event loop exists
+            #Just open the viewer to get OpenGL context
+            self._open()
+            #If loop isn't running, to handle events, will have to call .loop() later
+            try:
+                self._loop = asyncio.get_running_loop()
+                self._loop.create_task(self._async_run())
+            except (RuntimeError) as e:
+                pass
+
+            #Get event loop creates if none found...
+            #self._loop = asyncio.get_event_loop()
+            #if self._loop.is_running():
+            #    self._loop.create_task(self._async_run())
 
     def _shutdown(self):
         if self._thread:
@@ -1996,6 +2022,8 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             self._closing = True
             self._thread.join()
             self._thread = None
+        #Clean up anything left in single-thread mode
+        self._close()
 
     #def __getattr__(self, attr):
     #    #Lock?
@@ -2131,7 +2159,7 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         return self._openglviewer_call('events', True, *args, **kwargs)
         #self._openglviewer_call('events', False, *args, **kwargs)
         #self._openglviewer_call('execute', False, *args, **kwargs)
-        return not self.viewer.quitProgram
+        #return not self.viewer.quitProgram
 
     def execute(self, *args, **kwargs):
         #self._openglviewer_call('execute', False, *args, **kwargs)
@@ -2147,7 +2175,7 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     #Call LavaVu method from render thread
     def _lavavu_call(self, name, wait_return, *args, **kwargs):
-        method = getattr(super(_LavaVuThreadSafe, self), name)
+        method = getattr(super(_LavaVuWrapper, self), name)
         return self._thread_call(method, wait_return, *args, **kwargs)
 
     #Call OpenGLViewer method from render thread
@@ -2177,18 +2205,22 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             #Return the saved result data
             return self._returned
 
-    def _thread_run(self):
+    def _open(self):
         """
-        This function manages the render thread.
-        Used to: handle events, get images
-        All OpenGL calls must be made from here
+        Init/open the viewer window
         """
+        self.timer = 0
         try:
             if self.use_moderngl:
-                self.ctx = moderngl.create_standalone_context(require=330)
+                # Create the context
+                if _LavaVuWrapper._ctx:
+                    self.ctx = _LavaVuWrapper._ctx
+                else:
+                    self.ctx = moderngl.create_standalone_context(require=330)
+                    _LavaVuWrapper._ctx = self.ctx
 
             if self.use_moderngl_window and self.ctx:
-                # Make sure you activate this context
+                # Activate the context
                 moderngl_window.activate_context(ctx=self.ctx)
                 if self.use_moderngl_window == 'window':
                     # Configure with default window class / settings
@@ -2240,76 +2272,122 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
             #self.wnd.resize(self.viewer.width,self.viewer.height)
             self.resized(*self.wnd.size)
 
+    def _frame(self):
+        if not self.viewer: return
+
+        #Process commands that must be run on the render thread
+        if len(self._q):
+            #if not self.viewer.isopen or not self.amodel:
+            #    print("NOT OPEN!")
+            #    print('deferring : ' + self._q[0])
+            method, wait_return, args, kwargs = self._q.popleft()
+            #If set, must return result and notify waiting thread with condition variable
+            if wait_return:
+                #print("CALLING:",method.__name__)
+                self._returned = method(*args, **kwargs)
+                #Notify waiting thread result is ready
+                with self._cv:
+                    self._cv.notify()
+                #print("RETURNED:",type(self._returned))
+            else:
+                method(*args, **kwargs)
+            method = None
+
+        #### moderngl_window
+        if self.ctx:
+            if self.wnd:
+                self.wnd.clear()
+                self.viewer.display()
+                self.wnd.swap_buffers()
+        else:
+            #Process interactive and timer events
+            #if self.viewer.events(): #Disabled for now: can lock in python interpreter on reading stdin via pollInputs
+            #Run at half timer res
+            if self.timer >= self.TIMER_INC*2.:
+                self.viewer.execute() #Calls display and handles events
+            self.timer += self.TIMER_INC
+
+        #Detect window closed
+        if self.viewer.quitProgram:
+            if is_notebook():
+                #Just hide the window
+                self.viewer.hide()
+                self.viewer.quitProgram = False
+
+
+    def _close(self):
+        #print("CLOSING")
+        #Must be called from render thread to free OpenGL resources!
+        self.destroy()
+
+        if self.wnd:
+            self.wnd.close()
+            self.wnd.destroy()
+            self.wnd = None
+        if self.ctx:
+            #self.ctx.destroy()
+            self.ctx = None
+
+    def loop(self):
+        """
+        This function enters or awaits the render loop.
+        """
+        if self._thread:
+            #Already have a render loop, just spin
+            while self.viewer and not self._closing and not self.viewer.quitProgram:
+                time.sleep(self.sleep_time())
+        elif not self._loop or not self._loop.is_running():
+            self._loop = asyncio.get_event_loop()
+            #Start the asyncio loop
+            self._loop.run_until_complete(self._async_run())
+        else:
+            #Have an asyncio loop running, do nothing
+            pass
+
+    def sleep_time(self):
+        #Sleep between frames, determined by animation timer
+        FPS = self.viewer.timer_animate  #FPS for animate timer
+        self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
+        return self.TIMER_INC
+        #else:
+        #Sleep for 1 millisecond
+        return 0.001
+
+    async def _async_run(self):
+        """
+        This function manages the async render loop.
+        """
+        #Render event handling loop!
+        while self.viewer and not self._closing and not self.viewer.quitProgram:
+            #print('.', end='')
+            #sys.stdout.flush()
+            await asyncio.sleep(self.sleep_time()) #TODO: fix timer increment / allow set for animation
+
+            #Process interactive and timer events, render new frame
+            self._frame()
+
+        #self._closing = True
+        #self._close() #Will this get called???
+
+    def _thread_run(self):
+        """
+        This function manages the render thread.
+        Used to: handle events, get images
+        All OpenGL calls must be made from here
+        """
+        self._open()
+
         #Sync with main thread here to ensure render thread has initialised before it continues
         with self._cv:
             self._cv.notifyAll()
 
-        #Render event handling loop!
-        timer = 0
-        while not self._closing:
+        #Render event handling loop
+        while self.viewer and not self._closing:
             #Process interactive and timer events
-            FPS = self.viewer.timer_animate  #FPS for animate timer
-            self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-            #Process events at half the timer resolution
-            if timer >= self.TIMER_INC*2.:
-                #Process this every TIMER_INC milliseconds
-                if self.viewer.events(): #Disabled for now: can lock in python interpreter on reading stdin via pollInputs
-                    self.viewer.execute()
-                timer = 0
+            self._frame()
+            time.sleep(self.sleep_time())
 
-            #Process commands that must be run on the render thread
-            if len(self._q):
-                #if not self.viewer.isopen or not self.amodel:
-                #    print("NOT OPEN!")
-                #    print('deferring : ' + self._q[0])
-                method, wait_return, args, kwargs = self._q.popleft()
-                #If set, must return result and notify waiting thread with condition variable
-                if wait_return:
-                    #print("CALLING:",method.__name__)
-                    self._returned = method(*args, **kwargs)
-                    #Notify waiting thread result is ready
-                    with self._cv:
-                        self._cv.notify()
-                    #print("RETURNED:",type(self._returned))
-                else:
-                    method(*args, **kwargs)
-                method = None
-
-            #### moderngl_window
-            if self.ctx:
-                if self.wnd:
-                    self.wnd.clear()
-                #t, frame_time = mgl_timer.next_frame()
-                #print(t, frame_time)
-                if self.wnd:
-                    self.viewer.display()
-                    self.wnd.swap_buffers()
-
-                #Process interactive and timer events
-                FPS = self.viewer.timer_animate  #FPS for animate timer
-                self.TIMER_INC = 1.0 / FPS #Timer increment in milliseconds
-                time.sleep(self.TIMER_INC)
-            else:
-                #Sleep for 1 millisecond
-                time.sleep(0.001)
-
-            timer += self.TIMER_INC
-
-            #Detect window closed
-            if self.viewer.quitProgram:
-                if is_notebook():
-                    #Just hide the window
-                    self.viewer.hide()
-                    self.viewer.quitProgram = False
-
-        #Must be called from thread to free OpenGL resources!
-        self.destroy()
-
-        #if self.wnd:
-        #    self.wnd.destroy()
-        #if self.ctx:
-        #    self.ctx.destroy()
-
+        self._close()
 
     ###############################################################################
     def resized(self, width: int, height: int):
@@ -2317,17 +2395,15 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         self.resize(width, height)
 
     def closed(self):
-        #print("Window is closing")
-        self.viewer.quitProgram = True
-        self._closing = True
-        return
-        #self.wnd.close()
-        #self.wnd.destroy()
-        #self.wnd = None
+        #Don't quit on window close if in notebook
+        if not is_notebook():
+            if self.viewer:
+                self.viewer.quitProgram = True
+            self._closing = True
 
     def iconified(self, iconify: bool):
-        """Window hide/minimize and restore"""
         #print("Window was iconified:", iconify)
+        return
 
     def get_modifiers(self, modifiers=None):
         if modifiers is None:
@@ -2387,8 +2463,11 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
             #Quit from keyboard?
             if self.viewer.quitProgram:
-                self.wnd.close()
-                #self.wnd.destroy()
+                if is_notebook():
+                    self.viewer.quitProgram = False
+                else:
+                    self.wnd.close()
+                    #self.wnd.destroy()
 
     def mouse_position_event(self, x, y, dx, dy):
         self.mousepos = (x,y)
@@ -2518,7 +2597,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, **kwargs):
+    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, threads=False, **kwargs):
         """
         Create and init viewer instance
 
@@ -2538,6 +2617,12 @@ class Viewer(dict):
             "moderngl*" : create a context and a window in python using the moderngl module (experimental)
                            specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5
             "omegalib" : for use in multi-display VR mode
+        port : int
+            Web server port, open server on specific port for control/interaction
+            Viewer will be run in a separate thread, all rendering will be done in this thread
+            When disabled (None) creates the viewer in the current(main) thread and disables the server
+        threads : bool
+            Use threads instead of asyncio
         """
         self._ctr = 0
         self.app = None
@@ -2550,17 +2635,6 @@ class Viewer(dict):
         self._collections = {}
         self.validate = True #Property validation flag
 
-        #Launch in thread?
-        #(Can disable by setting port=0)
-        if port > 0:
-            #Start the web server
-            try:
-                self.server = server.serve(self, port, ipv6=True) #ipv6 flag pass through?
-            except:
-                #Failed, disable server and continue in single thread mode (no interactive support)
-                print('Failed to start server, continuing with interaction disabled')
-                port = 0
-
         #Exit handler to clean up threads
         #(__del__ does not always seem to get called on termination)
         def exitfn(vref):
@@ -2568,8 +2642,20 @@ class Viewer(dict):
             viewer = vref()
             if viewer:
                 viewer._shutdown()
+            #if self.app and self.app._loop:
+            #    self.app._loop.stop()
         import atexit
         atexit.register(exitfn, weakref.ref(self))
+
+        #Launch web server?
+        #(Can disable by setting port=0)
+        if port > 0:
+            #Start the web server
+            #port = self.serve(port, ipv6=False)  #ipv6 flag pass through?
+            port = self.serve(port, ipv6=True)  #ipv6 flag pass through?
+            #Store port in dict
+            global server_ports
+            server_ports.append(port)
 
         #Switch the default background to white if in a browser notebook
         if is_notebook() and not "background" in kwargs:
@@ -2580,6 +2666,7 @@ class Viewer(dict):
             kwargs["resolution"] = resolution
         else:
             self.output_resolution = (640,480)
+
         """
         Create and init the C++ viewer object
         """
@@ -2587,7 +2674,7 @@ class Viewer(dict):
         if not binpath:
             binpath = os.path.abspath(os.path.dirname(__file__))
         try:
-            self.app = _LavaVuThreadSafe(port > 0, self.args(*args, **kwargs), resolution, binpath, context)
+            self.app = _LavaVuWrapper(threads, self.args(*args, **kwargs), resolution, binpath, context)
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
@@ -2702,7 +2789,7 @@ class Viewer(dict):
         if self.server:
             #print("---SHUTDOWN-SERVER")
             self.server._closing = True
-            self.server.join()
+            #self.server.join() #Required if using threaded server
             self.server = None
 
     def __del__(self):
@@ -4154,8 +4241,15 @@ class Viewer(dict):
             Number of attempts to open a port, incrementing the port number each time
         """
         if self.server: return
-        import server
-        self.server = server.serve(self, *args, **kwargs)
+        #import server
+        import aserver as server
+        #Start the web server
+        try:
+            self.server = server.serve(self, *args, **kwargs)
+        except (Exception) as e:
+            #Failed, disable server and continue in single thread mode (no interactive support)
+            print('Failed to start server, continuing with interaction disabled', e)
+        return self.server.port
 
     def browser(self, resolution=None, inline=True):
         """
@@ -4182,20 +4276,27 @@ class Viewer(dict):
 
         WARNING: On MacOS this function will never return until the window closes
         """
-        if self.app.wnd and not is_notebook():
-            #Handle events until quit - allow interaction without exiting when run from python script
-            while self.app.viewer and not self.app.viewer.quitProgram:
-                time.sleep(0.05) #self.app.TIMER_INC)
-            return
+        #if self.app.wnd and not is_notebook():
+        #    #Handle events until quit - allow interaction without exiting when run from python script
+        #    while self.app.viewer and not self.app.viewer.quitProgram:
+        #        time.sleep(0.05) #self.app.TIMER_INC)
+        #    return
 
         self.app.show() #Need to manually call show now
+        """
         if args:
             self.commands("interactive " + args)
         elif is_notebook():
             self.commands("interactive noloop")
         else:
-            self.commands("interactive")
+            #Event loop is always handled in python now
+            self.commands("interactive noloop")
+            #self.commands("interactive")
+        """
         self.render()
+
+        #Enter event handling loop
+        self.app.loop()
 
     def interact(self, local=False, loop=False):
         """
@@ -4244,10 +4345,11 @@ class Viewer(dict):
                 """
                 display(Javascript(js.format(eid=eid)))
 
-            if loop and not is_notebook():
+            if loop: # and not is_notebook():
+                self.app.loop()
                 #Handle events until quit - allow interaction without exiting when run from python script
-                while not self.app.viewer.quitProgram:
-                    time.sleep(self.app.TIMER_INC)
+                #while not self.app.viewer.quitProgram:
+                #    time.sleep(self.app.TIMER_INC)
 
         except (Exception) as e:
             print("Interactive open error: " + str(e))
@@ -4812,7 +4914,8 @@ def player(filename):
             uid = uuid.uuid1()
             #Append a UUID based on host ID and current time
             filename_ts = filename + "?" + str(uid)
-            html = HTML(html.format(fn1=filename_ts, fn2=filename, port=server.ports[-1] if len(server.ports) else 8080))
+            global server_ports
+            html = HTML(html.format(fn1=filename_ts, fn2=filename, port=server_ports[-1] if len(server_ports) else 8080))
             display(html)
             #Add download link
             display(HTML('<a href="{fn}">Download Video</a>'.format(fn=filename)))
