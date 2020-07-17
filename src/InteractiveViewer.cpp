@@ -1599,8 +1599,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           //Hide/show all data for this object
           bool vis = (action == "show");
-          for (auto g : amodel->geometry)
-            g->showObj(list[c], vis);
+          if (vis)
+          {
+            //Only when "show" called, ensure all elements also set to visible
+            //(Previously did the same for "hide" but this prevents using the visible property to unhide)
+            for (auto g : amodel->geometry)
+              g->showObj(list[c], vis);
+          }
           list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
           printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
         }
