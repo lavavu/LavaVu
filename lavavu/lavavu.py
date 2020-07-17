@@ -54,6 +54,13 @@ import asyncio
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
 
+try:
+    #python 3.7+
+    from asyncio import get_running_loop as asyncio_get_running_loop
+except ImportError:
+    #python 3.6
+    from asyncio.events import _get_running_loop as asyncio_get_running_loop
+
 from vutils import is_ipython, is_notebook, getname, download, inject, hidecode, style, cellstyle, cellwidth
 
 try:
@@ -2004,7 +2011,7 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
             self._open()
             #If loop isn't running, to handle events, will have to call .loop() later
             try:
-                self._loop = asyncio.get_running_loop()
+                self._loop = asyncio_get_running_loop()
                 self._loop.create_task(self._async_run())
             except (RuntimeError) as e:
                 pass
