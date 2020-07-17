@@ -301,6 +301,11 @@ bool LavaVu::parseChar(unsigned char key)
     case 'l':
     case 'L':
       return parseCommands("scale lines down");
+    case '\\':
+    case '|':
+      return parseCommands("rulers");
+    case '=':
+      return parseCommands("pointsample up");
     default:
       return false;
     }
@@ -314,7 +319,7 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("model up");
     case KEY_DOWN:
       return parseCommands("model down");
-    case '*':
+    case '8':
       return parseCommands("autozoom");
     case '/':
       return parseCommands("stereo");
@@ -324,12 +329,8 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("pointtype all");
     case '-':
       return parseCommands("pointsample down");
-    case '+':
-      return parseCommands("pointsample up");
     case '=':
       return parseCommands("pointsample up");
-    case '|':
-      return parseCommands("rulers");
     case 'a':
     case 'A':
       return parseCommands("axis");
@@ -421,11 +422,11 @@ bool LavaVu::parseChar(unsigned char key)
     if (entry.length() == 1)
     {
       char ck = entry.at(0);
-      entry = "";
       //Digit? (9 == ascii 57)
       if (ck > 47 && ck < 58)
       {
         response = parseCommands(entry);
+        entry = "";
         return response;
       }
       switch (ck)
@@ -459,6 +460,7 @@ bool LavaVu::parseChar(unsigned char key)
         viewer->keyState.alt = true;
         response = parseChar(ck);
       }
+      entry = "";
     }
     else
     {
