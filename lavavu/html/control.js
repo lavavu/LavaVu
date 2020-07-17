@@ -18,7 +18,7 @@ function WindowInteractor(id, uid, port) {
 
   //Request type settings
   this.instant = true; //false; //Use image.src to issue commands, combines into single request;
-  this.post = false; //Set this to use POST instead of GET (only when instant = false)
+  this.post = false; //Set this to use POST instead of GET
 
   //Standalone? Always request images at the full window size
   this.fixedsize = 0;
@@ -82,10 +82,10 @@ function WindowInteractor(id, uid, port) {
     //Several possible modes to try
     //JupyterHub URL
     var regex = /\/user\/[a-z0-9-]+\//i;
-    var parsed = regex.exec(loc.pathname);
+    var parsed = regex.exec(loc.href);
     if (parsed && parsed.length > 0) {
       var base = parsed[0];
-      connect(loc.protocol + "//" + loc.hostname + base + "proxy/" + port);
+      connect(loc.href.substring(0,parsed.index) + base + "proxy/" + port);
     }
 
     if (loc.protocol != 'file:') {
@@ -164,11 +164,15 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
   if (cmd.charAt(0) != '{')
     cmd = cmd.replace(/\n/g,';');
 
-  //Base64 encode to avoid issues with jupyterlab and command urls
-  var url = this.baseurl + "/icommand=" + '_' + window.btoa(cmd) + this.image_args();
+  var usepost = this.post;
+  if (cmd.length > 1024)
+    usepost = true;
 
   //Use IMG.SRC to issue the command and retrieve new image in single action
-  if (this.instant && this.img) {
+  if (this.instant && this.img && !usepost) {
+    //Base64 encode to avoid issues with jupyterlab and command urls
+    var url = this.baseurl +  "/icommand=" + '_' + window.btoa(cmd) + this.image_args();
+
     //this.img.onload = null; //This breaks interact while timestepper animating
     this.img.onload = final_callback;
     this.img.src = url;
@@ -176,11 +180,13 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
   } else {
     var xhttp = new XMLHttpRequest();
     var params = undefined;
-    if (this.post) {
+    if (usepost) {
+      var url = this.baseurl + "/command";
       xhttp.open('POST', this.baseurl, true);
       params = cmd;
       //console.log("POST: " + params);
     } else {
+      var url = this.baseurl + "/command=" + '_' + window.btoa(cmd);
       xhttp.open('GET', url, true);
     }
     xhttp.onload = function() {
