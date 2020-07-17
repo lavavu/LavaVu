@@ -25,6 +25,7 @@ class TracerState(object):
         self.steps = [0]*N
         self.values = None
         self.positions = None
+        self.velocities = None
 
 def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0, height=None):
     """
@@ -86,6 +87,7 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
 
     if state.positions is None:
         state.positions = numpy.zeros(shape=(N,3))
+        state.velocities = numpy.zeros(shape=(N,3))
         state.values = numpy.zeros(shape=(N))
         for i in range(N):
             state.positions[i] = rand_vert()
@@ -112,6 +114,7 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
         else:
             #Index of nearest grid point is in q[1][r]
             #Lookup vector at this index, multiply by position to get delta and add
+            state.velocities[r] = vecs[q[1][r]] #Store velocity
             state.positions[r] += speed * vecs[q[1][r]]
             #Increment step tracking
             state.steps[r] += 1
