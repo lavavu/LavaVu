@@ -4385,7 +4385,7 @@ class Viewer(dict):
     def isosurface(self, dstref, srcref, properties, clearvol):
         return self.app.isoSurface(dstref, srcref, properties, clearvol)
 
-    def get_all_vertices(self, objectlist=None):
+    def get_all_vertices(self, objectlist=None, values=None):
         """
         Extract all vertex data from a list of objects
 
@@ -4393,6 +4393,8 @@ class Viewer(dict):
         ----------
         objectlist : list
             List of objects, defaults to all
+        values : str
+            Optional label of a value data set to collect alongside the vertices
 
         Returns
         -------
@@ -4400,11 +4402,14 @@ class Viewer(dict):
             the vertices, numpy array
         bb_all : tuple
             the bounding box of the combined data
+        pvals : array
+            the values, numpy array (only returned if values != None)
         """
         #Get vertices from a list of lavavu objects
         if objectlist is None:
             objectlist = self.objects.list
         pverts = None
+        pvals = None
         bb_all = [[float('Inf'), float('Inf'), float('Inf')], [float('-Inf'), float('-Inf'), float('-Inf')]]
         for o in objectlist:
             #Concatenate all elements
@@ -4413,10 +4418,16 @@ class Viewer(dict):
                 if bb[0][i] < bb_all[0][i]: bb_all[0][i] = bb[0][i]
                 if bb[1][i] > bb_all[1][i]: bb_all[1][i] = bb[1][i]
 
-            for v in self.objects[o].data.vertices:
-                v = v.reshape((-1,3))
-                pverts = v if pverts is None else numpy.concatenate([pverts, v])
-        return pverts, bb_all
+            for v in range(len(self.objects[o].data.vertices)):
+                verts = self.objects[o].data.vertices[v]
+                pverts = verts if pverts is None else numpy.concatenate([pverts, verts])
+                if values:
+                    vals = self.objects[o].data[values][v]
+                    pvals = vals if pvals is None else numpy.concatenate([pvals, vals])
+        if values:
+            return pverts, bb_all, pvals
+        else:
+            return pverts, bb_all
 
     def parse_colour(self, colour):
         """
