@@ -1993,14 +1993,31 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Clear all data of current model/timestep\n\n"
-              "**Usage:** clear [objects]\n\n"
+      help += "Clear data from current model/timestep\n\n"
+              "**Usage:** clear [type/\"objects\"]\n\n"
+              "type (string) : clear only data of this type, eg: \"indices\", applies to selected object.\n"
               "objects : optionally clear all object entries\n"
-              "          (if omitted, only the objects geometry data is cleared)\n";
+              "          (if omitted, only the object's geometry data is cleared)\n";
       return false;
     }
-
-    clearAll(parsed["clear"] == "objects");
+    std::string what = parsed["clear"];
+    if (what == "" || what == "objects")
+      clearAll(what == "objects");
+    else
+    {
+      auto res = std::find(std::begin(GeomData::datalabels), std::end(GeomData::datalabels), what);
+      if (res == std::end(GeomData::datalabels))
+      {
+        //Assume value label
+        clearValues(aobject, what);
+      }
+      else
+      {
+        //Get data type index
+        int pos = res - std::begin(GeomData::datalabels);
+        clearData(aobject, (lucGeometryDataType)pos);
+      }
+    }
   }
   else if (parsed.exists("reload"))
   {
