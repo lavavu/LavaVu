@@ -4775,13 +4775,13 @@ class DrawData(object):
             dims = [d for d in dims if d > 1]
             #Special case where only a single element returned
             if len(dims) == 1 and dims[0] == array.size and dims[0] > 1:
-                dims = [dims[0], 1]
-
-            if len(dims):
+                array = array.reshape((1, dims[0]))
+            elif len(dims):
                 #Shape the array to match object dims, and data element dims as final dimension
                 length = int(numpy.prod(dims))
                 #print(typename,"DIMS:",dims,"SIZE:",array.size, length)
-                if length == array.size:
+                #Never do this for arrays <= 3 in length
+                if length == array.size and length > 3:
                     #Need to reverse dims for numpy shape
                     #BUT, for vertices and other 3D data, keep the last dimension as 3
                     #numpy shape = (depth, height, width, d) or (height, width, d) or (height, width)
@@ -4799,7 +4799,7 @@ class DrawData(object):
                 elif array.shape[0] == array.size and dims[-1] <= 3:
                     #Didn't work out, just reshape to element size
                     array = array.reshape((-1, dims[-1]))
-                #print(typename,"DIMS:",dims,"SHAPE:",array.shape)
+            #print(typename,"DIMS:",dims,"SHAPE:",array.shape)
         
         return array
 
