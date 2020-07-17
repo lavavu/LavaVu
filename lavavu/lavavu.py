@@ -2012,6 +2012,8 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
             #If loop isn't running, to handle events, will have to call .loop() later
             try:
                 self._loop = asyncio_get_running_loop()
+                if not self._loop:
+                    raise(RuntimeError('No loop'))
                 self._loop.create_task(self._async_run())
             except (RuntimeError) as e:
                 pass
