@@ -1838,6 +1838,7 @@ DrawingObject* LavaVu::addObject(DrawingObject* obj)
 
 void LavaVu::open(int width, int height)
 {
+  GL_Check_Thread(viewer->render_thread);
   //Init geometry containers
   for (auto g : amodel->geometry)
     g->init();
@@ -3440,6 +3441,8 @@ void LavaVu::appendToObject(DrawingObject* target)
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
     container->add(target);
+  else
+    std::cerr << "Container not found to append, object:" << target->name() << std::endl;
 }
 
 void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split)
@@ -3452,6 +3455,8 @@ void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <floa
       container->addTriangle(target, &array[i+0][0], &array[i+1][0], &array[i+2][0], split);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for tris, object:" << target->name() << std::endl;
 }
 
 void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
@@ -3468,6 +3473,8 @@ void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
     }
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for colours, object:" << target->name() << std::endl;
 }
 
 void LavaVu::loadLabels(DrawingObject* target, std::vector <std::string> labels)
@@ -3476,6 +3483,8 @@ void LavaVu::loadLabels(DrawingObject* target, std::vector <std::string> labels)
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
     container->label(target, labels);
+  else
+    std::cerr << "Container not found for labels, object:" << target->name() << std::endl;
 }
 
 void LavaVu::clearObject(DrawingObject* target)
@@ -3526,6 +3535,8 @@ Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len
       p = container->read(target, len, type, array, width, height, depth);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
   return p;
 }
 
@@ -3539,6 +3550,8 @@ Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, 
     p = container->read(target, len, type, array, width, height, depth);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
   return p;
 }
 
@@ -3554,6 +3567,8 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeo
     p = container->read(target, len/dsize, type, array, width, height, depth);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
   return p;
 }
 
@@ -3567,6 +3582,8 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::s
     p = container->read(target, len, array, label, width, height, depth);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found for data label: " << label << ", object:" << target->name() << std::endl;
   return p;
 }
 
@@ -3580,6 +3597,8 @@ void LavaVu::clearTexture(DrawingObject* target)
     container->clearTexture(target);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
 void LavaVu::setTexture(DrawingObject* target, std::string texpath)
@@ -3593,6 +3612,8 @@ void LavaVu::setTexture(DrawingObject* target, std::string texpath)
     container->setTexture(target, texture);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
@@ -3604,6 +3625,8 @@ void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, 
     container->loadTexture(target, array, width, height, channels, flip, filter, bgr);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
 void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
@@ -3615,6 +3638,8 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
     container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, filter, bgr);
     reloadObject(target);
   }
+  else
+    std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
 //GeomData interface, for loading/acessing geom store directly
