@@ -145,7 +145,7 @@ def loadpointcloud(filename, subsample=1, dtype=numpy.float32, components=['x', 
 
             return (V, C)
 
-    elif ext == '.las':
+    elif ext == '.las' or ext == '.laz':
         print("Loading LAS")
         import laspy
         infile = laspy.file.File(filename, mode="r")
