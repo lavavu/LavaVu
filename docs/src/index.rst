@@ -3,8 +3,9 @@
 .. figure:: images/LavaVu.png
    :alt: # logo
 
-A scientific visualisation tool with a python interface for fast and
-flexible visual analysis.
+A lightweight scientific visualisation tool with a python interface for fast and flexible visual analysis.
+
+LavaVu provides access to OpenGL powered 3D rendering of point, line, surface and volume data with minimal setup and an interface focused on simple mapping of values to visual properties while abstracting all the intricacies of OpenGL.
 
 .. figure:: images/examples.png
    :alt: examplevis
@@ -48,19 +49,12 @@ AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 Introduction
 ~~~~~~~~~~~~
 
-The acronym stands for: Lightweight, Automatable Visualisation and
-Analysis Viewing Utility, but “lava” is also a reference to its origins
-as a viewer for geophysical simulations.
-It's also unique enough to find the repository with google.
+Originally a set of tools for visualising geodynamics simulations on HPC facilities without GPU access (in the gLucifer [#]_ framework, part of the `Underworld2 <https://github.com/underworldcode/underworld2/>`__ geodynamics simulation code).
 
-The project started in the gLucifer [#]_ framework for visualising
-geodynamics simulations. The OpenGL visualisation module was separated
-from the simulation and sampling libraries and became a more general
-purpose visualisation tool. gLucifer continues as a set of sampling
-tools for Underworld simulations as part of the
-`Underworld2 <https://github.com/underworldcode/underworld2/>`__ code.
-LavaVu provides the rendering library for creating 2d and 3d
-visualisations to view this sampled data, inline within interactive
+LavaVu is now a separate library and general purpose visualisation tool..
+
+LavaVu provides a rendering engine for creating 2d and 3d
+visualisations, particularly focused on time varying simulation data, 3D volume (eg: medical CT/MRI) capable of interactively viewing sampled data inline within interactive
 IPython notebooks and offline through saved visualisation databases and
 images/movies.
 
@@ -74,10 +68,10 @@ tracers (streamlines).
 
 Control is via python and a set of simple verbose scripting commands
 along with mouse/keyboard interaction. GUI components can be generated
-for use from a web browser via the python “control” module and a built
+for use from a web browser and a built
 in web server.
 
-A native data format called GLDB is used to store and visualisations in
+A native data format called GLDB is used to store and serialise visualisation data and state in
 a compact single file, using SQLite for storage and fast loading. A
 small number of other data formats are supported for import (OBJ
 surfaces, TIFF stacks etc). Further data import formats are supported
@@ -89,6 +83,11 @@ A CAVE2 virtual reality mode is provided by utilising Omegalib
 Immersive Visualisation facilities, such as the CAVE2 at Monash, see
 (https://github.com/mivp/LavaVR). Side-by-side and quad buffer
 stereoscopic 3D support is also provided for other 3D displays.
+VR output can also be used to view WebGL content using a WebVR capable browser.
+
+(The acronym stands for: Lightweight, Automatable Visualisation and
+Analysis Viewing Utility, but “lava” is also a reference to its origins
+as a viewer for geophysical simulations. It's also unique enough to find the repository with google.)
 
 How do I get started?
 ~~~~~~~~~~~~~~~~~~~~~
@@ -164,8 +163,8 @@ Citation
 ~~~~~~~~
 If you use LavaVu in any published work we would appreciate a citation of the code using the zenodo DOI. There is a master DOI for all releases and releases after 1.3.2 are automatically given a DOI under the master.
 
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2585377.svg
-   :target: https://doi.org/10.5281/zenodo.2585377
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2585376.svg
+   :target: https://doi.org/10.5281/zenodo.2585376
 
 
 --------------

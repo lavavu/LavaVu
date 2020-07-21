@@ -1,23 +1,12 @@
 LavaVu Installation
 ===================
 
-
-Dependencies
-------------
-
--  OpenGL and Zlib, present on most systems, headers may need to be
-   installed
--  To use with python requires python 2.7+ and NumPy, python 3.6+ is recommended
--  For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
--  To build the python interface from source requires swig (http://www.swig.org/)
-
-
 Python
 ------
 
-LavaVu is in the python package index, so you can install with *pip*:
+LavaVu is compatible with Python 3.6+ and is available in the python package index, so you can install with *pip*:
 
-It is recommended you do this in a virtualenv (like anaconda) or create you own:
+It is recommended you install in a virtualenv (by installing Anaconda or creating your own):
 
 ::
 
@@ -26,7 +15,7 @@ It is recommended you do this in a virtualenv (like anaconda) or create you own:
   #Create a virtual env called 'python-default' and activate it:
 
   virtualenv python-default
-  source ~/python-default/bin/activate;
+  source python-default/bin/activate;
 
 ..
 
@@ -48,10 +37,8 @@ Now you can go ahead and install LavaVu:
    pip and a whole lot of other useful packages for scientific work with
    python.
 
-   Currently no binaries are provided and the installer needs to compile
-   the library, so on Linux you may need some developer tools and
-   headers first, eg: for Ubuntu:
-   ``sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev``
+   Binary wheels are provided that include all dependencies for MacOS, Linux and Windows,
+   if building from source some of the dependencies below may need to be installed.
 
 
 To try it out:
@@ -63,6 +50,23 @@ To try it out:
   > lv = lavavu.Viewer() #Create a viewer
   > lv.test()            #Plot some sample data
   > lv.display()         #Render an image
+
+
+Dependencies
+------------
+
+-  OpenGL and Zlib, present on most systems, headers may need to be
+   installed, eg: on Ubuntu
+   ``sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev``
+-  To use with python requires python 3.6+ and NumPy.
+-  For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
+   Can be installed on Ubuntu with 
+   ``sudo apt install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev``
+   Or on Mac with ``brew install ffmpeg``
+-  TIFF loading support requires libtiff
+-  To build the python interface from source requires swig (http://www.swig.org/) but the source code
+   includes pre-built interface files so this is only necessary if modifying the interface or C++ library.
+
 
 IPython
 ~~~~~~~
@@ -185,13 +189,6 @@ A base dockerfile is provided in the repository root.
 You can try it out on binder
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.4.14?filepath=notebooks
-
-Windows
--------
-
-Currently the windows build is very out of date, bringing it up to date, including building a windows version of the python interface is a work in progress.
-
-TODO : update windows build and add binary release
+ :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.6?filepath=notebooks
 
 

@@ -26,7 +26,7 @@ import setup as lsetup
 # -- Project information -----------------------------------------------------
 
 project = 'LavaVu'
-copyright = '2019, Monash University'
+copyright = '2020, Monash University'
 author = 'Owen Kaluza, Monash University'
 
 # The short X.Y version
@@ -53,6 +53,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.githubpages',
     'sphinx_markdown_tables',
+    'myst_parser',
     # 'nbsphinx',
 ]
 
@@ -75,11 +76,7 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-from recommonmark.parser import CommonMarkParser
 
-source_parsers = {
-    '.md': 'recommonmark.parser.CommonMarkParser',
-}
 source_suffix = ['.rst', '.md']
 #source_suffix = '.rst'
 

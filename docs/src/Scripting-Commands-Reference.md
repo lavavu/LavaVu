@@ -9,16 +9,16 @@
 [file](#file), [script](#script), [figure](#figure), [savefigure](#savefigure), [view](#view), [scan](#scan)
  - **[Output](#output-commands)**  
 
-[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [bake](#bake), [bakecolour](#bakecolour), [glaze](#glaze), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
+[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
  - **[View](#view-commands)**  
 
 [rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [fov](#fov), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [fixbb](#fixbb), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
  - **[Object](#object-commands)**  
 
-[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [name](#name), [isosurface](#isosurface), [texture](#texture)
+[hide](#hide), [show](#show), [delete](#delete), [load](#load), [select](#select), [add](#add), [append](#append), [name](#name), [isosurface](#isosurface), [texture](#texture), [populate](#populate), [bake](#bake), [bakecolour](#bakecolour), [glaze](#glaze), [csv](#csv), [json](#json), [tiles](#tiles), [valuerange](#valuerange), [colourmap](#colourmap), [colourbar](#colourbar), [pointtype](#pointtype), [scale](#scale)
  - **[Display](#display-commands)**  
 
-[background](#background), [alpha](#alpha), [axis](#axis), [rulers](#rulers), [antialias](#antialias), [valuerange](#valuerange), [colourmap](#colourmap), [colourbar](#colourbar), [pointtype](#pointtype), [pointsample](#pointsample), [border](#border), [title](#title), [scale](#scale), [modelscale](#modelscale)
+[background](#background), [alpha](#alpha), [axis](#axis), [rulers](#rulers), [colourmap](#colourmap), [antialias](#antialias), [pointtype](#pointtype), [pointsample](#pointsample), [border](#border), [title](#title), [scale](#scale), [modelscale](#modelscale)
  - **[Scripting](#scripting-commands)**  
 
 [next](#next), [play](#play), [stop](#stop), [open](#open), [interactive](#interactive), [display](#display)
@@ -152,12 +152,13 @@
 
 ### clear
 
- > Clear all data of current model/timestep  
+ > Clear data from current model/timestep  
  >   
- > **Usage:** clear [objects]  
+ > **Usage:** clear [type/"objects"]  
  >   
+ > type (string) : clear only data of this type, eg: "indices", applies to selected object.  
  > objects : optionally clear all object entries  
- >           (if omitted, only the objects geometry data is cleared)  
+ >           (if omitted, only the object's geometry data is cleared)  
 
 
 ---
@@ -284,69 +285,6 @@
  >   
  > framerate (integer): frames per second (default 30)  
  > quality (integer): 1=low/2=medium/3=high (default 1)  
-
-
-### bake
-
- > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
- > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
- > This removes the ability to change the glyph properties used to create primitives,  
- > but makes the meshes render much faster in animations as they don't need to be regenerated  
- >   
- > **Usage:** bake [object]  
- >   
- > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
- >   
- > **Usage:** bakecolour [object]  
- >   
- > As above, but also convert colourmap + value data into calculated RGBA values  
- >   
- > **Usage:** glaze [object]  
- >   
- > As above, but also convert colourmap + value data into a texture image and associated texcoords  
- >   
-
-
-### bakecolour
-
- > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
- > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
- > This removes the ability to change the glyph properties used to create primitives,  
- > but makes the meshes render much faster in animations as they don't need to be regenerated  
- >   
- > **Usage:** bake [object]  
- >   
- > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
- >   
- > **Usage:** bakecolour [object]  
- >   
- > As above, but also convert colourmap + value data into calculated RGBA values  
- >   
- > **Usage:** glaze [object]  
- >   
- > As above, but also convert colourmap + value data into a texture image and associated texcoords  
- >   
-
-
-### glaze
-
- > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
- > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
- > This removes the ability to change the glyph properties used to create primitives,  
- > but makes the meshes render much faster in animations as they don't need to be regenerated  
- >   
- > **Usage:** bake [object]  
- >   
- > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
- >   
- > **Usage:** bakecolour [object]  
- >   
- > As above, but also convert colourmap + value data into calculated RGBA values  
- >   
- > **Usage:** glaze [object]  
- >   
- > As above, but also convert colourmap + value data into a texture image and associated texcoords  
- >   
 
 
 ### export
@@ -793,6 +731,167 @@
  > Set or clear object texture data  
 
 
+### populate
+
+ > Populate generated data set  
+ >   
+ > **Usage:** populate label  
+ >   
+ > label (string) : the label of the built in data to copy to a value data set, one of:  
+ >                  x,y,z,index,count,width,height,length,size,x0,y0,z0,x1,y1,z1,magnitude,nx,ny,nz,nmean  
+
+
+### bake
+
+ > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
+ > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
+ > This removes the ability to change the glyph properties used to create primitives,  
+ > but makes the meshes render much faster in animations as they don't need to be regenerated  
+ >   
+ > **Usage:** bake [object]  
+ >   
+ > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
+
+
+### bakecolour
+
+ > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
+ > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
+ > This removes the ability to change the glyph properties used to create primitives,  
+ > but makes the meshes render much faster in animations as they don't need to be regenerated  
+ >   
+ > **Usage:** bake [object]  
+ >   
+ > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
+
+
+### glaze
+
+ > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
+ > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
+ > This removes the ability to change the glyph properties used to create primitives,  
+ > but makes the meshes render much faster in animations as they don't need to be regenerated  
+ >   
+ > **Usage:** bake [object]  
+ >   
+ > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
+
+
+### csv
+
+ > Export CSV data  
+ >   
+ > **Usage:** csv [objects]  
+ >   
+ > objects (integer/string) : the indices or names of the objects to export (see: "list objects")  
+ > If object ommitted all will be exported  
+
+
+### json
+
+ > Export json data  
+ >   
+ > **Usage:** json [object]  
+ >   
+ > objects (integer/string) : the indices or names of the objects to export (see: "list objects")  
+ > If object ommitted all will be exported  
+
+
+### tiles
+
+ > Save a tiled image of selected volume dataset  
+ > **Usage:** tiles (object)  
+
+
+### valuerange
+
+ > Adjust colourmaps on object to fit actual value range or provided min/max  
+ >   
+ > **Usage:** valuerange [min max]  
+ > min (number) : minimum of user defined range, default is to use the data minimum  
+ > max (number) : maximum of user defined range, default is to use the data maximum  
+ >   
+
+
+### colourmap
+
+ > Set colourmap on object or create a new colourmap  
+ >   
+ > **Usage:** colourmap [colourmap / data]  
+ > If an object is selected, the colourmap will be set on that object, otherwise a new colourmap will be created  
+ >   
+ > colourmap (integer/string) : the index or name of the colourmap to apply (see: "list colourmaps")  
+ > data (string) : data to load into selected object's colourmap, if no colourmap one will be added  
+
+
+### colourbar
+
+ > Add a colour bar display to selected object  
+ >   
+ > **Usage:** colourbar [alignment] [size]  
+ >   
+ > alignment (string) : viewport alignment (left/right/top/bottom)  
+
+
+### pointtype
+
+ > Set point-rendering type on object  
+ >   
+ > **Usage:** pointtype all/object type/up/down  
+ >   
+ > all : use 'all' to set the global default point type  
+ > object (integer/string) : the index or name of the object to set (see: "list objects")  
+ > type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)  
+ > up/down : use 'up' or 'down' to switch to the previous/next type in list  
+
+
+### scale
+
+ > Scale model or applicable objects  
+ >   
+ > **Usage:** scale axis value  
+ >   
+ > axis : x/y/z  
+ > value (number) : scaling value applied to all geometry on specified axis (multiplies existing)  
+ >   
+ > **Usage:** scale geometry_type value/up/down  
+ >   
+ > geometry_type : points/vectors/tracers/shapes  
+ > value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  
+ >   
+ > **Usage:** scale object value/up/down  
+ >   
+ > object (integer/string) : the index or name of the object to scale (see: "list objects")  
+ > value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  
+
+
 ---
 ## Display commands:
 
@@ -835,16 +934,6 @@
  > Enable/disable axis rulers (unfinished)  
 
 
-### antialias
-
- > Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)  
-
-
-### valuerange
-
- > Adjust colourmaps on object to fit actual value range  
-
-
 ### colourmap
 
  > Set colourmap on object or create a new colourmap  
@@ -856,13 +945,9 @@
  > data (string) : data to load into selected object's colourmap, if no colourmap one will be added  
 
 
-### colourbar
+### antialias
 
- > Add a colour bar display to selected object  
- >   
- > **Usage:** colourbar [alignment] [size]  
- >   
- > alignment (string) : viewport alignment (left/right/top/bottom)  
+ > Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)  
 
 
 ### pointtype

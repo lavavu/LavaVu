@@ -2618,12 +2618,10 @@ class Viewer(dict):
         binpath : str
             Override the executable path
         context : str
-            OpenGL context type, "default" will create a context and window based on available configurations
-            "provided" user provided context, set this if you have already created and activated the context
-            "moderngl" : create a context in python using the moderngl module (experimental)
-            "moderngl*" : create a context and a window in python using the moderngl module (experimental)
-                           specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5
-            "omegalib" : for use in multi-display VR mode
+            OpenGL context type, *"default"* will create a context and window based on available configurations.
+            *"provided"* specifies a user provided context, set this if you have already created and activated the context. 
+            *"moderngl"* creates a context in python using the moderngl module (experimental). 
+            *"moderngl."* creates a context and a window in python using the moderngl module (experimental) specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5. *"omegalib"* is for use in multi-display VR mode.
         port : int
             Web server port, open server on specific port for control/interaction
             Viewer will be run in a separate thread, all rendering will be done in this thread
@@ -2830,8 +2828,8 @@ class Viewer(dict):
 
         Parameters: see __init__ docs
 
-        *args : passed directly to viewer, eg: filenames or initial script commands
-        **kwargs: parsed as below to specific switches
+        args : passed directly to viewer, eg: filenames or initial script commands
+        kwargs: parsed as below to specific switches
 
         """
         #Convert options to args

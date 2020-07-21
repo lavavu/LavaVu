@@ -1,5 +1,5 @@
 
-## User Interface commands
+# User Interface commands
 
 Hold the Left mouse button and drag to Rotate about the X & Y axes  
 Hold the Right mouse button and drag to Pan (left/right/up/down)  

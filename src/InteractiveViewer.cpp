@@ -37,7 +37,7 @@
 #include "ColourMap.h"
 
 #define HELP_INTERACTION "\
-\n## User Interface commands\n\n\
+\n# User Interface commands\n\n\
 Hold the Left mouse button and drag to Rotate about the X & Y axes  \n\
 Hold the Right mouse button and drag to Pan (left/right/up/down)  \n\
 Hold the Middle mouse button and drag to Rotate about the Z axis  \n\
@@ -3449,15 +3449,18 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
         if (defp == FLT_MAX) def = "Infinity";
         if (defp == -FLT_MAX) def = "-Infinity";
       }
+      if (defp.is_array() && defp.size() > 4)
+        def = "[...]";
 
       if (target != last)
       {
         std::string anchor = target;
         std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
-        anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &ispunct), anchor.end());
-        anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &isspace), anchor.end());
+        //anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &ispunct), anchor.end());
+        //anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &isspace), anchor.end());
+        std::replace(anchor.begin(), anchor.end(), ',', '-');
         TOC += " * [" + target + "](#" + anchor + ")\n";
-        content << "\n### " << target << "\n\n";
+        content << "\n## " << target << "\n\n";
         content << "| Property         | Type       | Default            | Description                               |\n";
         content << "| ---------------- | ---------- | ------------------ | ----------------------------------------- |\n";
         last = target;

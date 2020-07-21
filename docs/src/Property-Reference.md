@@ -4,26 +4,23 @@
  * [all](#all)
  * [timestep](#timestep)
  * [object](#object)
- * [object(shapes)](#objectshapes)
- * [object](#object)
- * [object(line)](#objectline)
- * [object(point)](#objectpoint)
- * [object(surface)](#objectsurface)
- * [object(volume)](#objectvolume)
- * [object(vector)](#objectvector)
- * [object(vector/shapes)](#objectvectorshapes)
- * [object(tracer)](#objecttracer)
- * [object(shape)](#objectshape)
+ * [object,line](#object-line)
+ * [object,point](#object-point)
+ * [object,surface](#object-surface)
+ * [object,volume](#object-volume)
+ * [object,vector](#object-vector)
+ * [object,tracer](#object-tracer)
+ * [object,shape](#object-shape)
  * [colourbar](#colourbar)
  * [colourmap](#colourmap)
  * [view](#view)
  * [global](#global)
 
-### all
+## all
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
-|*renderers*       | object     | [{"labels":"labels"},{"particles":"points","pointcubes":"cuboids","points":"points","pointspheres":"spheres","sortedpoints":"points"},{"grid":"quads","quads":"quads"},{"basictriangles":"basictriangles","mesh":"basictriangles","sortedtriangles":"sortedtriangles","surface":"basictriangles","triangles":"sortedtriangles"},{"arrows":"vectors","vectors":"vectors"},{"streamlines":"tracers","tracers":"tracers"},{"lines":"lines","links":"lines","simplelines":"simplelines","sortedlines":"sortedlines"},{"cubes":"cuboids","cuboids":"cuboids","shapes":"shapes","spheres":"spheres"},{"volume":"volume","volumes":"volume"},{"fullscreen":"screen","screen":"screen"}] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
+|*renderers*       | object     | [...]          | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
 |*renderlist*      | string     | ""             | Sets a list of renderers to create and order they are displayed. This allows overriding the default renderer order, defined by the object order. For valid types see "renderers" property.|
 |*subrenderers*    | string     | "sortedtriangles points simplelines" | List of renderers created for rendering primitives (points, lines, triangles) from more complex renderers (eg: vectors). Allows selection of different primitive rendering modes, globally or per object.|
 |*font*            | string     | "vector"       | Font typeface vector (thicker, better for larger text) or line (better for small labels)|
@@ -31,13 +28,13 @@
 |*fontsize*        | real       | 1.0            | Font size, absolute scaling that overrides all automatic calculations of the font size|
 |*fontcolour*      | colour     | [0,0,0,0]      | Font colour RGB(A)|
 
-### timestep
+## timestep
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*time*            | real       | 0.0            | Time value for timestep|
 
-### object
+## object
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -69,7 +66,8 @@
 |*diffuse*         | real       | 0.65           | Diffuse lighting level (shading light/dark)|
 |*specular*        | real       | 0.0            | Specular highlight lighting level (spot highlights)|
 |*shininess*       | real       | 0.5            | Specular shininess factor, controls size of highlight|
-|*lightpos*        | real[3]    | [0.1,-0.1,2.0] | Light position X Y Z relative to camera position (follows camera)|
+|*light*           | real[4]    | [1.0,1.0,1.0,0.0] | Light properties, colour Red,Green,Blue values and fourth component if provided is two-sided lighting flag, set to 1.0 to switch to single-sided lighting|
+|*lightpos*        | real[4]    | [0.1,-0.1,2.0,0.0] | Light position X Y Z. Default is relative to camera (light moves follows camera, rotating the scene changes the illuminated area). Fourth component, if provided, is scene light flag, set to 1.0 to switch to a position in the scene, regardless of camera/view position the same parts of the scene will be illuminated.|
 |*clip*            | boolean    | true           | Allow object to be clipped|
 |*clipmap*         | boolean    | true           | Clipping mapped to range normalised [0,1]|
 |*clipmin*         | real[3]    | [0.0,0.0,0.0]  | Object clipping minimum [x,y,z]|
@@ -81,18 +79,7 @@
 |*ymax*            | real       | 1.0            | (legacy) Object clipping, maximum y|
 |*zmax*            | real       | 1.0            | (legacy) Object clipping, maximum z|
 |*filters*         | object     | []             | Filter list|
-|*glyphs*          | integer [0,n] | 2              | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)|
-
-### object(shapes)
-
-| Property         | Type       | Default            | Description                               |
-| ---------------- | ---------- | ------------------ | ----------------------------------------- |
-|*segments*        | integer [4,n] | 32             | Triangulation quality for spheres, number of segments to draw (minimum 4)|
-
-### object
-
-| Property         | Type       | Default            | Description                               |
-| ---------------- | ---------- | ------------------ | ----------------------------------------- |
+|*glyphs*          | integer    | 2              | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)|
 |*scaling*         | real       | 1.0            | Object scaling factor|
 |*texture*         | string     | ""             | Apply a texture, either external texture image file path to load or colourmap|
 |*fliptexture*     | boolean    | true           | Flip texture image after loading, usually required|
@@ -101,7 +88,7 @@
 |*colourby*        | string or integer | 0              | Index or label of data set to colour object by (requires colour map)|
 |*opacityby*       | string or integer | ""             | Index or label of data set to apply transparency to object by (requires opacity map)|
 
-### object(line)
+## object,line
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -112,7 +99,7 @@
 |*linewidth*       | real       | 1.0            | Line width scaling|
 |*tubes*           | boolean    | false          | Draw lines as 3D tubes|
 
-### object(point)
+## object,point
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -121,7 +108,7 @@
 |*scalepoints*     | real       | 1.0            | Point scaling multiplier, applies to all points objects|
 |*sizeby*          | string or integer | ""             | Index or label of data set to apply to point sizes|
 
-### object(surface)
+## object,surface
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -131,7 +118,7 @@
 |*smoothangle*     | int        | 90             | Angle between surface normals (in degrees) below which normals will be smoothed. Reduce this to preserve hard edges.|
 |*flip*            | boolean    | false          | Set this flag to reverse the surface faces (currently implemented for grids only)|
 
-### object(volume)
+## object,volume
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -152,7 +139,7 @@
 |*texturesize*     | int[3]     | [0,0,0]        | Volume texture size limit (for crop)|
 |*textureoffset*   | int[3]     | [0,0,0]        | Volume texture offset (for crop)|
 
-### object(vector)
+## object,vector
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -163,14 +150,9 @@
 |*length*          | real       | 0.0            | Arrow fixed length, default is to use vector magnitude|
 |*normalise*       | real       | 1.0            | Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant "length" property (if property length=0.0, this is ignored).|
 |*autoscale*       | boolean    | true           | Automatically scale vectors based on maximum magnitude|
-
-### object(vector/shapes)
-
-| Property         | Type       | Default            | Description                               |
-| ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*radius*          | real       | 0.02           | When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.|
 
-### object(tracer)
+## object,tracer
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -180,7 +162,7 @@
 |*connect*         | boolean    | true           | Set false to render tracers as points instead of connected lines|
 |*scaletracers*    | real       | 1.0            | Tracer scaling multiplier, applies to all tracer objects|
 
-### object(shape)
+## object,shape
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -192,8 +174,9 @@
 |*widthby*         | string or integer | "widths"       | Index or label of data set to apply to shape widths|
 |*heightby*        | string or integer | "heights"      | Index or label of data set to apply to shape heights|
 |*lengthby*        | string or integer | "lengths"      | Index or label of data set to apply to shape lengths|
+|*segments*        | integer    | 32             | Triangulation quality for spheres, number of segments to draw (minimum 4)|
 
-### colourbar
+## colourbar
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -210,7 +193,7 @@
 |*position*        | real       | 0              | Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top|
 |*binlabels*       | boolean    | false          | Set to true to label discrete bins rather than tick points|
 
-### colourmap
+## colourmap
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -221,7 +204,7 @@
 |*range*           | real[2]    | [0.0,0.0]      | Fixed scale range, default is to automatically calculate range based on data min/max|
 |*locked*          | boolean    | false          | Set to true to lock colourmap ranges to current values|
 
-### view
+## view
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -239,7 +222,7 @@
 |*coordsystem*     | integer    | 1              | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed|
 |*follow*          | boolean    | false          | Enable to follow the model bounding box centre with camera as it changes|
 
-### global
+## global
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -287,6 +270,7 @@
 |*pointdistsample* | integer    | 0              | Point distance sub-sampling factor|
 |*pointattribs*    | boolean    | true           | Point size/type attributes can be applied per object (requires more GPU ram)|
 |*pointattenuate*  | boolean    | true           | Point distance size attenuation (points shrink when further from viewer ie: perspective)|
+|*pointpixelscale* | int        | 1              | Set to zero for constant point size in pixels, set to 1 to scale points when the viewport is resized after storing the initial render size. If set to > 1, this is the viewport height where pointsize = pixels. As the viewport height is adjusted points are scaled relative to this height - so points will appear the same regardless of render size|
 |*sort*            | boolean    | true           | Automatic depth sorting enabled|
 |*cache*           | boolean    | false          | Cache all time varying data in ram on initial load|
 |*gpucache*        | boolean    | false          | Cache timestep varying data on gpu as well as ram (only if model size permits)|

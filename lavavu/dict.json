@@ -725,17 +725,6 @@
       }
     ]
   },
-  "segments": {
-    "default": 32,
-    "target": "object(shapes)",
-    "type": "integer",
-    "desc": "Triangulation quality for spheres, number of segments to draw (minimum 4)",
-    "strict": true,
-    "redraw": 2,
-    "control": [
-      true
-    ]
-  },
   "scaling": {
     "default": 1.0,
     "target": "object",
@@ -815,7 +804,7 @@
   },
   "limit": {
     "default": 0,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "real",
     "desc": "Line length limit, can be used to skip drawing line segments that cross periodic boundary",
     "strict": true,
@@ -826,7 +815,7 @@
   },
   "link": {
     "default": false,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "boolean",
     "desc": "To chain line vertices into longer lines set to true",
     "strict": true,
@@ -837,7 +826,7 @@
   },
   "loop": {
     "default": false,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "boolean",
     "desc": "To join the start and end of linked lines set to true",
     "strict": true,
@@ -848,7 +837,7 @@
   },
   "scalelines": {
     "default": 1.0,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "real",
     "desc": "Line scaling multiplier, applies to all line objects",
     "strict": true,
@@ -859,7 +848,7 @@
   },
   "linewidth": {
     "default": 1.0,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "real",
     "desc": "Line width scaling",
     "strict": true,
@@ -870,7 +859,7 @@
   },
   "tubes": {
     "default": false,
-    "target": "object(line)",
+    "target": "object,line",
     "type": "boolean",
     "desc": "Draw lines as 3D tubes",
     "strict": true,
@@ -881,7 +870,7 @@
   },
   "pointsize": {
     "default": 1.0,
-    "target": "object(point)",
+    "target": "object,point",
     "type": "real",
     "desc": "Point size scaling",
     "strict": true,
@@ -897,7 +886,7 @@
   },
   "pointtype": {
     "default": 1,
-    "target": "object(point)",
+    "target": "object,point",
     "type": "integer/string",
     "desc": "Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat",
     "strict": true,
@@ -916,7 +905,7 @@
   },
   "scalepoints": {
     "default": 1.0,
-    "target": "object(point)",
+    "target": "object,point",
     "type": "real",
     "desc": "Point scaling multiplier, applies to all points objects",
     "strict": true,
@@ -927,7 +916,7 @@
   },
   "sizeby": {
     "default": "",
-    "target": "object(point)",
+    "target": "object,point",
     "type": "string or integer",
     "desc": "Index or label of data set to apply to point sizes",
     "strict": false,
@@ -938,7 +927,7 @@
   },
   "opaque": {
     "default": false,
-    "target": "object(surface)",
+    "target": "object,surface",
     "type": "boolean",
     "desc": "If opaque flag is set skips depth sorting step and allows individual surface properties to be applied",
     "strict": true,
@@ -949,7 +938,7 @@
   },
   "optimise": {
     "default": true,
-    "target": "object(surface)",
+    "target": "object,surface",
     "type": "boolean",
     "desc": "Disable this flag to skip the mesh optimisation step",
     "strict": true,
@@ -960,7 +949,7 @@
   },
   "vertexnormals": {
     "default": true,
-    "target": "object(surface)",
+    "target": "object,surface",
     "type": "boolean",
     "desc": "Disable this flag to skip calculating vertex normals",
     "strict": true,
@@ -971,7 +960,7 @@
   },
   "smoothangle": {
     "default": 90,
-    "target": "object(surface)",
+    "target": "object,surface",
     "type": "int",
     "desc": "Angle between surface normals (in degrees) below which normals will be smoothed. Reduce this to preserve hard edges.",
     "strict": true,
@@ -982,7 +971,7 @@
   },
   "flip": {
     "default": false,
-    "target": "object(surface)",
+    "target": "object,surface",
     "type": "boolean",
     "desc": "Set this flag to reverse the surface faces (currently implemented for grids only)",
     "strict": true,
@@ -993,7 +982,7 @@
   },
   "power": {
     "default": 1.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Power used when applying transfer function, 1.0=linear mapping",
     "strict": true,
@@ -1009,7 +998,7 @@
   },
   "bloom": {
     "default": 0.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Bloom effect, brightens colours, particularly around edges of transparent areas, by using a more additive blend equation. Setting this to ~0.5 will replicate the old (technically incorrect) volume shader blending for lavavu pre v1.5.",
     "strict": true,
@@ -1025,7 +1014,7 @@
   },
   "samples": {
     "default": 256,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "integer",
     "desc": "Number of samples to take per ray cast, higher = better quality, but slower",
     "strict": true,
@@ -1041,7 +1030,7 @@
   },
   "density": {
     "default": 5.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Density multiplier for volume data",
     "strict": true,
@@ -1057,7 +1046,7 @@
   },
   "isovalue": {
     "default": 0.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Isovalue for dynamic isosurface (normalised to [0,1] over actual data range)",
     "strict": true,
@@ -1073,7 +1062,7 @@
   },
   "isovalues": {
     "default": [],
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real[]",
     "desc": "Isovalues to extract from volume into mesh isosurface",
     "strict": true,
@@ -1084,7 +1073,7 @@
   },
   "isoalpha": {
     "default": 1.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Transparency value for isosurface",
     "strict": true,
@@ -1100,7 +1089,7 @@
   },
   "isosmooth": {
     "default": 0.1,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "Isosurface smoothing factor for normal calculation",
     "strict": true,
@@ -1116,7 +1105,7 @@
   },
   "isowalls": {
     "default": true,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "boolean",
     "desc": "Connect isosurface enclosed area with walls",
     "strict": true,
@@ -1127,7 +1116,7 @@
   },
   "tricubicfilter": {
     "default": false,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "boolean",
     "desc": "Apply a tricubic filter for increased smoothness",
     "strict": true,
@@ -1138,7 +1127,7 @@
   },
   "densityclip": {
     "default": [0.0, 1.0],
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real[2]",
     "desc": "Density range [min,max] to map, values outside the range are discarded",
     "strict": true,
@@ -1154,7 +1143,7 @@
   },
   "minclip": {
     "default": 0.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "(legacy) Minimum density value to map, lower discarded",
     "strict": true,
@@ -1170,7 +1159,7 @@
   },
   "maxclip": {
     "default": 1.0,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "real",
     "desc": "(legacy) Maximum density value to map, higher discarded",
     "strict": true,
@@ -1186,7 +1175,7 @@
   },
   "compresstextures": {
     "default": false,
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "boolean",
     "desc": "Compress volume textures where possible",
     "strict": true,
@@ -1201,7 +1190,7 @@
       0,
       0
     ],
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "int[3]",
     "desc": "Volume texture size limit (for crop)",
     "strict": true,
@@ -1216,7 +1205,7 @@
       0,
       0
     ],
-    "target": "object(volume)",
+    "target": "object,volume",
     "type": "int[3]",
     "desc": "Volume texture offset (for crop)",
     "strict": true,
@@ -1227,7 +1216,7 @@
   },
   "scalemax": {
     "default": 0.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Length scaling maximum, sets the range over which vectors will be scaled [0,scalemax]. Default automatically calculated based on data max",
     "strict": true,
@@ -1238,7 +1227,7 @@
   },
   "arrowhead": {
     "default": 5.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius",
     "strict": true,
@@ -1249,7 +1238,7 @@
   },
   "scalevectors": {
     "default": 1.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Vector scaling multiplier, applies to all vector objects",
     "strict": true,
@@ -1260,7 +1249,7 @@
   },
   "thickness": {
     "default": 0.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Arrow shaft thickness as fixed value (overrides \"radius\")",
     "strict": true,
@@ -1271,7 +1260,7 @@
   },
   "length": {
     "default": 0.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Arrow fixed length, default is to use vector magnitude",
     "strict": true,
@@ -1282,7 +1271,7 @@
   },
   "normalise": {
     "default": 1.0,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "real",
     "desc": "Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant \"length\" property (if property length=0.0, this is ignored).",
     "strict": true,
@@ -1293,7 +1282,7 @@
   },
   "autoscale": {
     "default": true,
-    "target": "object(vector)",
+    "target": "object,vector",
     "type": "boolean",
     "desc": "Automatically scale vectors based on maximum magnitude",
     "strict": true,
@@ -1304,7 +1293,7 @@
   },
   "radius": {
     "default": 0.02,
-    "target": "object(vector/shapes)",
+    "target": "object,vector",
     "type": "real",
     "desc": "When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.",
     "strict": true,
@@ -1315,7 +1304,7 @@
   },
   "steps": {
     "default": 0,
-    "target": "object(tracer)",
+    "target": "object,tracer",
     "type": "integer",
     "desc": "Number of time steps to trace particle path",
     "strict": true,
@@ -1326,7 +1315,7 @@
   },
   "taper": {
     "default": true,
-    "target": "object(tracer)",
+    "target": "object,tracer",
     "type": "boolean",
     "desc": "Taper width of tracer arrow up as we get closer to current timestep",
     "strict": true,
@@ -1337,7 +1326,7 @@
   },
   "fade": {
     "default": false,
-    "target": "object(tracer)",
+    "target": "object,tracer",
     "type": "boolean",
     "desc": "Fade opacity of tracer arrow in from transparent as we get closer to current timestep",
     "strict": true,
@@ -1348,7 +1337,7 @@
   },
   "connect": {
     "default": true,
-    "target": "object(tracer)",
+    "target": "object,tracer",
     "type": "boolean",
     "desc": "Set false to render tracers as points instead of connected lines",
     "strict": true,
@@ -1359,7 +1348,7 @@
   },
   "scaletracers": {
     "default": 1.0,
-    "target": "object(tracer)",
+    "target": "object,tracer",
     "type": "real",
     "desc": "Tracer scaling multiplier, applies to all tracer objects",
     "strict": true,
@@ -1370,7 +1359,7 @@
   },
   "shapewidth": {
     "default": 1.0,
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "real",
     "desc": "Shape width scaling factor",
     "strict": true,
@@ -1381,7 +1370,7 @@
   },
   "shapeheight": {
     "default": 1.0,
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "real",
     "desc": "Shape height scaling factor",
     "strict": true,
@@ -1392,7 +1381,7 @@
   },
   "shapelength": {
     "default": 1.0,
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "real",
     "desc": "Shape length scaling factor",
     "strict": true,
@@ -1403,7 +1392,7 @@
   },
   "shape": {
     "default": 0,
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "integer",
     "desc": "Shape type: 0=ellipsoid, 1=cuboid",
     "strict": true,
@@ -1414,7 +1403,7 @@
   },
   "scaleshapes": {
     "default": 1.0,
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "real",
     "desc": "Shape scaling multiplier, applies to all shape objects",
     "strict": true,
@@ -1425,7 +1414,7 @@
   },
   "widthby": {
     "default": "widths",
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "string or integer",
     "desc": "Index or label of data set to apply to shape widths",
     "strict": false,
@@ -1436,7 +1425,7 @@
   },
   "heightby": {
     "default": "heights",
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "string or integer",
     "desc": "Index or label of data set to apply to shape heights",
     "strict": false,
@@ -1447,10 +1436,21 @@
   },
   "lengthby": {
     "default": "lengths",
-    "target": "object(shape)",
+    "target": "object,shape",
     "type": "string or integer",
     "desc": "Index or label of data set to apply to shape lengths",
     "strict": false,
+    "redraw": 2,
+    "control": [
+      true
+    ]
+  },
+  "segments": {
+    "default": 32,
+    "target": "object,shape",
+    "type": "integer",
+    "desc": "Triangulation quality for spheres, number of segments to draw (minimum 4)",
+    "strict": true,
     "redraw": 2,
     "control": [
       true

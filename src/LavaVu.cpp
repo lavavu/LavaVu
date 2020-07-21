@@ -233,7 +233,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     //Help?
     if (args[i] == "-?" || args[i] == "-help")
     {
-      std::cout << "## Command line arguments\n\n";
+      std::cout << "# Command line arguments\n\n";
       std::cout << "|         | General options\n";
       std::cout << "| ------- | ---------------\n";
       std::cout << "| -#      | Any integer entered as a switch will be interpreted as the initial timestep to load. ";

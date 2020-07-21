@@ -620,10 +620,9 @@ def _get_PLY_colours(element):
 def plot_PLY(lv, filename):
     """
     Plot triangles from a PlyData instance. Assumptions:
-        `ply' has a 'vertex' element with 'x', 'y', and 'z'
-            properties;
-        `ply' has a 'face' element with an integral list property
-            'vertex_indices', all of whose elements have length 3.
+    has a 'vertex' element with 'x', 'y', and 'z' properties,
+    has a 'face' element with an integral list property 'vertex_indices',
+    all of whose elements have length 3.
     """
     import plyfile
     plydata = plyfile.PlyData.read(filename)
