@@ -15,7 +15,7 @@ The following python packages are required to build the documentation:
 * jupyter
 * pandoc
 * mock
-* recommonmark
+* myst_parser
 
 A requirements.txt file is provided, install them with
 

@@ -126,7 +126,11 @@ vpath %.c src/sqlite3
 vpath %.cc src
 
 #Always run this script to update version.cpp if git version changes
+#When releasing, just build with the clean version from setup.py
+ifneq ($(LV_RELEASE), 1)
+#Otherwise update version using git tag
 TMP := $(shell $(PYTHON) _getversion.py)
+endif
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp)
 INC := $(wildcard src/*.h) $(wildcard src/Main/*.h)

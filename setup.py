@@ -31,38 +31,36 @@ version = "1.6"
 """
 To release a new verison:
 
-    1) Edit the version number above, then commit the change
+    1) Edit the version number above, then run
+    This will rebuild lib and docs in release mode with the new version
+    (may need to reset notebooks to documentation versions)
+    (docs repo is at: git@github.com:lavavu/Documentation.git)
+    (may need: `cd docs/src; pip install -r requirements.txt`)
 
-    2) Tag the release with git using below command (this will push changes and tags)
+    >>> python setup.py new
+
+    2) Check the docs, and make any further commits necessary to get them in order, push to doc repo
+
+    >>> cd docs
+    >>> git add -u
+    >>> git commit -m "Docs rebuilt for release"
+    >>> git push
+    >>> cd ..
+
+    3) Commit the new version in this file and newly generated docs
+
+    >>> git add -u
+    >>> git commit -m "Release version x.xx"
+
+    4) Tag the release with git using below command (this will push changes and tags)
 
     >>> python setup.py tag
-
-    3) Rebuild to update version in library and rebuild docs
-       (may need to reset notebooks to documentation versions)
-       (docs repo is at: git@github.com:lavavu/Documentation.git)
-       (may need: `cd docs/src; pip install -r requirements.txt`)
-
-    >>> make
-    >>> make docs -B
 
 NOTE:
     To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
     LV_LIB_DIRS=${MESA_PATH/lib/x86_64-linux-gnu LV_INC_DIRS=${MESA_PATH}/include python setup.py install
 
 """
-
-#Run with "tag" arg to create a release tag
-if sys.argv[-1] == 'tag':
-    os.system("git tag -a %s -m 'version %s'" % (version, version))
-    os.system("git push origin %s" % version)
-    os.system("git push")
-    sys.exit()
-
-#Run with "publish" arg to upload the release
-if sys.argv[-1] == 'publish':
-    os.system("python setup.py sdist")
-    os.system("twine upload dist/lavavu-%s.tar.gz" % version)
-    sys.exit()
 
 def write_version():
     """
@@ -80,6 +78,28 @@ def write_version():
             f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
     else:
         print("Version matches: " + version)
+
+#Run with "new" to prepare for a new version after changing above
+if sys.argv[-1] == 'new':
+    write_version()
+    os.system("LV_RELEASE=1 make")
+    os.system("LV_RELEASE=1 make docs -B")
+    import webbrowser
+    webbrowser.open("docs/index.html")
+    sys.exit()
+#Run with "tag" arg to create a release tag
+if sys.argv[-1] == 'tag':
+    os.system("git tag -a %s -m 'version %s'" % (version, version))
+    os.system("git push origin %s" % version)
+    os.system("git push")
+    sys.exit()
+
+#Run with "publish" arg to upload the release
+if sys.argv[-1] == 'publish':
+    os.system("python setup.py sdist")
+    os.system("twine upload dist/lavavu-%s.tar.gz" % version)
+    sys.exit()
+
 
 #Get extra lib and include dirs
 inc_dirs = []
