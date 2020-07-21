@@ -9,14 +9,12 @@
 #ifdef WEBGL
 uniform sampler2D uVolume;
 #define NO_DEPTH_WRITE
-#define TEX texture3D
 #define outColour gl_FragColor
 #define texture(a,b) texture2D(a,b)
 #else
 //Included dynamically before compile in WebGL mode...
 const int maxSamples = 2048;
 uniform sampler3D uVolume;
-#define TEX texture
 out vec4 outColour;
 #endif
 
@@ -119,36 +117,26 @@ float sample(vec3 pos)
   return mix(texture2D(uVolume, z1offset).x, texture2D(uVolume, z2offset).x, Z);
 }
 
-float tex3D(vec3 pos)
-{
-#ifdef ENABLE_TRICUBIC
-  if (uFilter > 0)
-    return interpolate_tricubic_fast(pos);
-#endif
-  return sample(pos);
-}
-
 #else
-
-#define sample(pos) TEX(uVolume, pos).x
+#define sample(pos) (texture(uVolume, pos).x)
+#endif
 
 float tex3D(vec3 pos)
 {
   float density;
+//TODO: this can't be enabled outside WebGL currently
 #ifdef ENABLE_TRICUBIC
   if (uFilter > 0)
     density = interpolate_tricubic_fast(pos);
   else
 #endif
-    density = TEX(uVolume, pos).x;
+    density = sample(pos);
 
   //Normalise the density over provided range
   //(used for float textures only, all other formats are already [0,1])
   density = (density - uRange.x) * irange;
   return density;
 }
-
-#endif
 
 void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
 {
