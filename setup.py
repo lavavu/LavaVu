@@ -26,12 +26,13 @@ except ImportError:
 
 
 #Current version
-version = "1.6"
+#(must be of the form X.Y.Z to trigger wheel builds)
+version = "1.6.0"
 
 """
 To release a new verison:
 
-    1) Edit the version number above, then run
+    1) Edit the version number above, then run below command.
     This will rebuild lib and docs in release mode with the new version
     (may need to reset notebooks to documentation versions)
     (docs repo is at: git@github.com:lavavu/Documentation.git)
