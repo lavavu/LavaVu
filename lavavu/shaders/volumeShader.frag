@@ -54,6 +54,7 @@ uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
 uniform vec3 uLightPos;
+uniform bool uLighting;
 
 vec3 bbMin;
 vec3 bbMax;
@@ -148,7 +149,7 @@ void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
   colour *= lightWeighting;
 }
 
-vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
+vec3 isoNormal(in vec3 pos, in vec3 shift)
 {
   //Detect bounding box hit (walls)
   if (uIsoWalls > 0)
@@ -162,13 +163,8 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
   }
 
   //Calculate normal
-  /*
-  return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
-                                        tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
-                                        tex3D(vec3(pos.x, pos.y, pos.z+shift.z))));
-  /*/
-  //Compute central difference gradient 
-  //(slow, faster way would be to precompute a gradient texture)
+  //by central difference gradient 
+  //(slower, faster way would be to precompute a gradient texture)
   vec3 pos1 = vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
                    tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
                    tex3D(vec3(pos.x, pos.y, pos.z+shift.z)));
@@ -176,7 +172,6 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
                    tex3D(vec3(pos.x, pos.y-shift.y, pos.z)), 
                    tex3D(vec3(pos.x, pos.y, pos.z-shift.z)));
   return normalize(pos1 - pos2);
-  //*/
 }
 
 vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
@@ -291,10 +286,14 @@ void main()
           if (uIsoWalls > 0 || all(greaterThanEqual(pos, bbMin)) && all(lessThanEqual(pos, bbMax)))
           {
             vec4 value = vec4(uIsoColour.rgb, 1.0);
+            vec3 light = vec3(1.0, 1.0, 1.0);
+            if (uLighting)
+            {
+              vec3 normal = normalize((uNMatrix * vec4(isoNormal(pos, shift), 1.0)).xyz);
+              light = value.rgb;
+              lighting(pos, normal, light);
+            }
 
-            vec3 normal = normalize((uNMatrix * vec4(isoNormal(pos, shift, density), 1.0)).xyz);
-            vec3 light = value.rgb;
-            lighting(pos, normal, light);
             //Front-to-back blend equation
             colour += T * uIsoColour.a * light;
             //Render normals
