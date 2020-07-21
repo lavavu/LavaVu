@@ -43,7 +43,7 @@ EGLViewer::EGLViewer() : OpenGLViewer()
 {
   visible = false;
   eglContext = NULL;
-  debug_printf("Using EGL Viewer (offscreen only)\n");
+  debug_print("Using EGL Viewer (offscreen only)\n");
 }
 
 EGLViewer::~EGLViewer()
