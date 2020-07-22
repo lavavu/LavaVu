@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/lavavu/LavaVu.svg?branch=master)](https://travis-ci.org/lavavu/LavaVu)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/uyhh4a1t7wx42q4j?svg=true)](https://ci.appveyor.com/project/OKaluza/lavavu)
 [![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.6.0?filepath=notebooks)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.6.1?filepath=notebooks)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 

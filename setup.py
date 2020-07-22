@@ -27,35 +27,26 @@ except ImportError:
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
-version = "1.6.0"
+version = "1.6.1"
 
 """
 To release a new verison:
 
-    1) Edit the version number above, then run below command.
+    1) Edit the version number above, then run below command (in a fresh checkout!).
     This will rebuild lib and docs in release mode with the new version
     (may need to reset notebooks to documentation versions)
     (docs repo is at: git@github.com:lavavu/Documentation.git)
     (may need: `cd docs/src; pip install -r requirements.txt`)
 
-    >>> python setup.py new
+    >>> python setup.py check
 
-    2) Check the docs, and make any further commits necessary to get them in order, push to doc repo
+    2) Check the docs, and make any further commits necessary to get them in order,
+       and run above command again until docs are ready.
 
-    >>> cd docs
-    >>> git add -u
-    >>> git commit -m "Docs rebuilt for release"
-    >>> git push
-    >>> cd ..
+    Now ready for release, run this to commit and push changes to docs,
+    then tag, commit and push new version.
 
-    3) Commit the new version in this file and newly generated docs
-
-    >>> git add -u
-    >>> git commit -m "Release version x.xx"
-
-    4) Tag the release with git using below command (this will push changes and tags)
-
-    >>> python setup.py tag
+    >>> python setup.py release
 
 NOTE:
     To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
@@ -81,7 +72,7 @@ def write_version():
         print("Version matches: " + version)
 
 #Run with "new" to prepare for a new version after changing above
-if sys.argv[-1] == 'new':
+if sys.argv[-1] == 'check':
     write_version()
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
@@ -89,8 +80,20 @@ if sys.argv[-1] == 'new':
     webbrowser.open("docs/index.html")
     sys.exit()
 #Run with "tag" arg to create a release tag
-if sys.argv[-1] == 'tag':
-    os.system("git tag -a %s -m 'version %s'" % (version, version))
+if sys.argv[-1] == 'release':
+    #Commit and push docs
+    wd = os.getcwd()
+    os.chdir("docs")
+    os.system("git add -u")
+    os.system('git commit -m "Docs rebuilt for release"')
+    os.system("git push")
+    #Commit main repo
+    os.chdir(wd)
+    os.system("git add -u")
+    os.system('git commit -m "Release version {0}"'.format(version))
+
+    #Tag and push
+    os.system("git tag -a {0} -m 'version {0}'".format(version))
     os.system("git push origin %s" % version)
     os.system("git push")
     sys.exit()
@@ -207,7 +210,6 @@ if __name__ == "__main__":
             subprocess.check_call([sys.executable, '-m', 'pip3', 'install', 'numpy>=1.11.0'])
             import numpy
     inc_dirs += [numpy.get_include()]
-    install = []  #Extra files to install in package root
 
     P = platform.system()
     if _debug:
@@ -306,8 +308,7 @@ if __name__ == "__main__":
         libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
         dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
                 os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
-        install = [('lavavu', dlls)]
-        #Also copy dlls into ./lavavu for develop / in-place installs
+        #Copy dlls into ./lavavu so can be found by package_data
         for d in dlls:
             shutil.copy(d, 'lavavu')
     else:
@@ -412,6 +413,13 @@ if __name__ == "__main__":
     with open('requirements.txt') as f:
         requirements = f.read().splitlines()
 
+    #Binary package data for wheels
+    #Package_data works for wheels(binary) only - so add everything we need for the wheels here
+    #(MANIFEST.in contents will be included with sdist only unless include_package_data is enabled)
+    package_data = {'lavavu': ['font.bin', 'dict.json', 'shaders/*', 'html/*']}
+    if P == 'Windows':
+        package_data['lavavu'] += ['*.dll']
+
     setup(name = 'lavavu',
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
@@ -422,6 +430,7 @@ if __name__ == "__main__":
           long_description  = 'See https://github.com/lavavu/LavaVu for more info',
           packages          = ['lavavu'],
           package_dir       = {'lavavu': 'lavavu'},
+          package_data      = package_data,
           install_requires  = requirements,
           platforms         = ['any'],
           entry_points      = {
@@ -431,9 +440,7 @@ if __name__ == "__main__":
               ]
           },
           #Use below to include files from MANIFEST.in or specify package_data, not both
-          include_package_data = True,
-          #Not generally recommend to use this, but is required for windows to install dlls
-          data_files        = install,
+          #include_package_data = True,
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
