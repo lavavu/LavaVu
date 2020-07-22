@@ -119,7 +119,7 @@ html_theme_options = {
     # Set the width of the content area. Defaults to '900px'
     'sidebar_width': '300px',
     'page_width': '90%',
-    'fixed_sidebar': 'true',
+    #'fixed_sidebar': 'true', #Need to scroll for full table of contents
     'font_family': 'sans',
 }
 
