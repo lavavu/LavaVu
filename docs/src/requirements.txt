@@ -1,9 +1,10 @@
 #May require: apt install python3-pandoc
-sphinx
+#sphinx
 #sphinx_rtd_theme
 sphinxcontrib-napoleon
 jupyter
 pandoc
 mock
+#Requires sphinx<3,>=2
 myst_parser
 sphinx-markdown-tables

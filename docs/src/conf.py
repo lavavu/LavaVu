@@ -104,8 +104,8 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
-html_theme = 'pyramid'
+html_theme = 'alabaster'
+#html_theme = 'pyramid'
 
 #import sphinx_rtd_theme
 #html_theme = "sphinx_rtd_theme"
@@ -115,7 +115,13 @@ html_theme = 'pyramid'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    # Set the width of the content area. Defaults to '900px'
+    'sidebar_width': '300px',
+    'page_width': '90%',
+    'fixed_sidebar': 'true',
+    'font_family': 'sans',
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -130,8 +136,16 @@ html_theme = 'pyramid'
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
-
+#html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -209,12 +223,6 @@ todo_include_todos = True
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
 add_module_names = False
-
-# Add/Update "html_theme_options" like this on your conf.py
-html_theme_options = {'body_max_width': '80%'}
-
-#OK: don't sort API doc output alphabetically (has no effect)
-#autodoc_member_order = 'bysource'
 
 # setup mock classes so no building is required
 

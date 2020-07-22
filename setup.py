@@ -83,7 +83,7 @@ def write_version():
 #Run with "new" to prepare for a new version after changing above
 if sys.argv[-1] == 'new':
     write_version()
-    os.system("LV_RELEASE=1 make")
+    os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
     import webbrowser
     webbrowser.open("docs/index.html")

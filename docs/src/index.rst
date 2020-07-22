@@ -16,7 +16,8 @@ Modelling component of the `NCRIS
 AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 
 .. toctree::
-    :maxdepth: 1
+    :hidden:
+    :maxdepth: 3
 
     Installation <Installation>
     Python Tutorials <Tutorials>
@@ -44,7 +45,6 @@ AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2585377.svg
    :target: https://doi.org/10.5281/zenodo.2585377
-
 
 Introduction
 ~~~~~~~~~~~~
