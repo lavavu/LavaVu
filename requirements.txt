@@ -1,4 +1,4 @@
 numpy>=1.11
-jupyter-server-proxy
 aiohttp
+jupyter-server-proxy
 

@@ -7,7 +7,6 @@ from setuptools.command.egg_info import egg_info
 from setuptools import Extension
 from setuptools import find_packages
 import distutils
-from distutils.command.build import build
 import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, LinkError
@@ -256,6 +255,8 @@ if __name__ == "__main__":
             arc = '32'
 
         #Download, extract and install ffmpeg files
+        #(NOTE: sdist on windows is currently useless as does not include dlls,
+        #a fix would need to download other dll's here as we do for ffmpeg)
         ffmpeg_dlls = []
         ffmpeg_libs = []
         try:
@@ -412,6 +413,9 @@ if __name__ == "__main__":
 
     with open('requirements.txt') as f:
         requirements = f.read().splitlines()
+    #For some reason, jupyter_server_proxy requirement breaks python setup.py bdist_conda
+    if sys.argv[-1] == 'bdist_conda':
+        requirements = requirements[0:2]
 
     #Binary package data for wheels
     #Package_data works for wheels(binary) only - so add everything we need for the wheels here
