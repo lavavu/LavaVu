@@ -175,7 +175,7 @@ public:
   int addTimeStep(int step=0, const std::string& props="", const std::string& path="");
   int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1);
-  int loadFixedGeometry();
+  int loadFixedGeometry(int obj_id=0);
   int readGeometryRecords(sqlite3_stmt* statement, bool cache=true);
   void mergeDatabases();
   void updateObject(DrawingObject* target, lucGeometryType type, bool compress=true);

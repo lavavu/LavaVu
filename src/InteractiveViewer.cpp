@@ -2585,6 +2585,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
+      amodel->loadFixedGeometry(list[c]->dbid);
       amodel->loadGeometry(list[c]->dbid);
     }
     //Update the views

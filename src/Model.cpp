@@ -1441,14 +1441,14 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop)
   //(Skip tracers, they are loaded with timesteps combined as fixed data)
   if (obj_id > 0)
   {
-    sprintf(objfilter, "WHERE type != %d AND object_id=%d", lucTracerType, obj_id);
+    sprintf(objfilter, "type != %d AND object_id=%d", lucTracerType, obj_id);
     //Remove the skip flag now we have explicitly loaded object
     DrawingObject* obj = findObject(obj_id);
 
     if (obj) obj->skip = false;
   }
   else
-    sprintf(objfilter, "WHERE type != %d", lucTracerType);
+    sprintf(objfilter, "type != %d", lucTracerType);
 
   //...timestep...(if ts db attached, just load all data from attached db assuming geometry is at current step)
   if (time_start >= 0 && time_stop >= 0 && !database.attached)
@@ -1459,14 +1459,14 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop)
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
   //minX, minY, minZ, maxX, maxY, maxZ, data)
-  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
+  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE %s ORDER BY timestep,object_id", database.prefix, filter);
 
   //Old database compatibility
   if (statement == NULL)
   {
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,NULL,NULL,NULL,NULL,NULL,NULL,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
+    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,NULL,NULL,NULL,NULL,NULL,NULL,data FROM %sgeometry WHERE %s ORDER BY timestep,object_id", database.prefix, filter);
     printf("Using legacy GLDB format\n");
   }
 
@@ -1476,16 +1476,28 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop)
   return readGeometryRecords(statement);
 }
 
-int Model::loadFixedGeometry()
+int Model::loadFixedGeometry(int obj_id)
 {
   if (!database)
     return 0;
+
+  //Setup filters, object...
+  char filter[64] = {'\0'};
+  if (obj_id > 0)
+  {
+    sprintf(filter, "(timestep=-1 OR type=%d) AND object_id=%d", lucTracerType, obj_id);
+    //Remove the skip flag now we have explicitly loaded object
+    DrawingObject* obj = findObject(obj_id);
+    if (obj) obj->skip = false;
+  }
+  else
+    sprintf(filter, "(timestep=-1 OR type=%d)", lucTracerType);
 
   //Load geometry (fixed time records only)
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
   //minX, minY, minZ, maxX, maxY, maxZ, data)
-  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM geometry WHERE (timestep=-1 OR type=%d) ORDER BY timestep,object_id", lucTracerType);
+  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM geometry WHERE %s ORDER BY timestep,object_id", filter);
 
   if (!statement) return 0;
 
