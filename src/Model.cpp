@@ -1763,6 +1763,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   // Create new tables when not present
   outdb.issue("CREATE TABLE IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
 
+  //Index for more efficient geometry queries (and avoids writing temp index files)
+  outdb.issue("CREATE INDEX idx_timestep_object ON geometry (timestep,object_id)");
 
   outdb.issue("CREATE TABLE IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
 
