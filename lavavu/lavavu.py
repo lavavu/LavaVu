@@ -2737,6 +2737,7 @@ class Viewer(dict):
                         def method(self, *args, **kwargs):
                             arglist = [name]
                             for a in args:
+                                #Convert list/tuple args to space separated for command parser
                                 if isinstance(a, (tuple, list)):
                                     arglist += [str(b) for b in a]
                                 else:
@@ -3864,7 +3865,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", fps=30, quality=1, resolution=(0,0)):
+    def video(self, filename="", fps=30, quality=1, resolution=(0,0), **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -3888,15 +3889,17 @@ class Viewer(dict):
             encoding artifacts at cost of larger file size
         resolution : list or tuple
             Video resolution in pixels [x,y]
+        **kwargs :
+            Any additional keyword args will be passed to lavavu.player()
 
         Returns
         -------
         recorder : Video(object)
             Context manager object that controls the video recording
         """
-        return Video(self, filename, resolution, fps, quality)
+        return Video(self, filename, resolution, fps, quality, **kwargs)
 
-    def video_steps(self, filename="", start=0, end=0, fps=10, quality=1, resolution=(0,0)):
+    def video_steps(self, filename="", start=0, end=0, fps=10, quality=1, resolution=(0,0), **kwargs):
         """
         Record a video of the model by looping through all time steps
 
@@ -3922,10 +3925,12 @@ class Viewer(dict):
             encoding artifacts at cost of larger file size
         resolution : list or tuple
             Video resolution in pixels [x,y]
+        **kwargs :
+            Any additional keyword args will be passed to lavavu.player()
         """
 
         try:
-            fn = self.app.video(filename, fps, resolution[0], resolution[1], start, end, quality)
+            fn = self.app.video(filename, fps, resolution[0], resolution[1], start, end, quality, **kwargs)
             player(fn)
         except (Exception) as e:
             print("Video output error: " + str(e))
@@ -4896,7 +4901,7 @@ class DrawData(object):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
-def player(filename):
+def player(filename, width=None, height=None, params="", nocache=True):
     """
     Shows a video inline within an ipython notebook.
     If IPython is not running, just returns
@@ -4905,39 +4910,55 @@ def player(filename):
     ----------
     filename : str
         Path and name of the file to play
+    width : int
+        Fixed width of player window, otherwise will use video resolution
+    height : int
+        Fixed height of player window, otherwise will use video resolution
+    params : str
+        Any other parameters to add to the <video> tag, eg: "autoplay"
+    nocache : bool
+        Add a timestamp to the filename url to prevent caching
     """
 
-    try:
-        if is_notebook():
-            from IPython.display import display,HTML
-            #try:
-            #    #Newer IPython versions have a Video display function
-            #    from IPython.display import Video
-            #    display(Video(filename))
-            #except (ImportError) as e:
-            html = """
-            <video controls loop>
-              <source src="{fn1}">
-              <source src="{fn2}">
-              <source src="http://localhost:{port}/{fn1}">
-            Sorry, your browser doesn't support embedded videos, 
-            </video><br>
-            """
-            #Jupyterlab adds it's own timestamp but notebook doesn't
-            #don't know a way to detect jupyterlab, so provide source url with and without
-            #Browser should load the first working url
-            import uuid
-            uid = uuid.uuid1()
-            #Append a UUID based on host ID and current time
-            filename_ts = filename + "?" + str(uid)
-            global server_ports
-            html = HTML(html.format(fn1=filename_ts, fn2=filename, port=server_ports[-1] if len(server_ports) else 8080))
-            display(html)
-            #Add download link
-            display(HTML('<a href="{fn}">Download Video</a>'.format(fn=filename)))
-    except (Exception) as e:
-        print("Video output error: " + str(e))
-        pass
+    if is_notebook():
+        from IPython.display import display,HTML
+        #try:
+        #    #Newer IPython versions have a Video display function
+        #    from IPython.display import Video
+        #    display(Video(filename))
+        #except (ImportError) as e:
+        extra_params = params
+        if width and height:
+            extra_params += ' width=' + str(width) + ' height=' + str(height) 
+        html = """
+        <video controls loop {params}>
+          <source src="{fn1}">
+          <source src="{fn2}">
+          <source src="http://localhost:{port}/{fn1}">
+        Sorry, your browser doesn't support embedded videos, 
+        </video><br>
+        """
+        #Jupyterlab adds it's own timestamp but notebook doesn't
+        #don't know a way to detect jupyterlab, so provide source url with and without
+        #Browser should load the first working url
+
+        #Get path relative to cwd
+        #(this works in notebook/lab but not voila)
+        #import pathlib
+        #path = pathlib.Path(filename)
+        #filename = str(path.relative_to(os.getcwd()))
+
+        global server_ports
+        import uuid
+        uid = uuid.uuid1()
+        #Append a UUID based on host ID and current time
+        filename_ts = filename
+        if nocache:
+            filename_ts += "?" + str(uid)
+        html = HTML(html.format(params=extra_params, fn1=filename_ts, fn2=filename, port=server_ports[-1] if len(server_ports) else 8080))
+        display(html)
+        #Add download link
+        display(HTML('<a href="{fn}">Download Video</a>'.format(fn=filename)))
 
 #Class for managing video animation recording
 class Video(object):
@@ -4955,12 +4976,39 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=1):
+    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=1, **kwargs):
+        """
+        Record and show the generated video inline within an ipython notebook.
+
+        If IPython is installed, displays the result video content inline
+
+        If IPython is not installed, will save the result in the current directory
+
+        This function is best used with the "with" statement as the object is a context manager.
+        Alternatively recording can be manually started, stopped and the video displayed
+
+        Parameters
+        ----------
+        viewer : lavavu.Viewer()
+            Viewer object
+        filename : str
+            Name of the file to save, if not provided a default will be used
+        fps : int
+            Frames to output per second of video
+        quality : int
+            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            encoding artifacts at cost of larger file size
+        resolution : list or tuple
+            Video resolution in pixels [x,y]
+        **kwargs :
+            Any additional keyword args will be passed to lavavu.player()
+        """
         self.resolution = resolution
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
         self.filename = filename
+        self.kwargs = kwargs
         if not viewer:
             self.encoder = LavaVuPython.VideoEncoder(filename, framerate, quality);
         else:
@@ -5033,7 +5081,7 @@ class Video(object):
         """
         Show the video in an inline player if in an interative notebook
         """
-        player(self.filename)
+        player(self.filename, **self.kwargs)
 
     def __enter__(self):
         self.start()
