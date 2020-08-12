@@ -1712,7 +1712,7 @@ void Model::mergeDatabases()
     setTimeStep(i);
     if (database.attached->step == step())
     {
-      database.issue("insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", database.prefix);
+      database.issue("INSERT INTO geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ FROM %sgeometry", database.prefix);
     }
   }
 }
@@ -1730,7 +1730,7 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compr
   }
 
   //Update object
-  database.issue("update object set properties = '%s' where name = '%s'", target->properties.data.dump().c_str(), target->name().c_str());
+  database.issue("UPDATE OBJECT set properties = '%s' WHERE name = '%s'", target->properties.data.dump().c_str(), target->name().c_str());
 
   database.issue("COMMIT");
 }
@@ -1761,13 +1761,12 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   //outdb.issue("drop table IF EXISTS state");
 
   // Create new tables when not present
-  outdb.issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
+  outdb.issue("CREATE TABLE IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
 
-  outdb.issue(
-    "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
 
-  outdb.issue(
-    "create table IF NOT EXISTS object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))");
+  outdb.issue("CREATE TABLE IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
+
+  outdb.issue("CREATE TABLE IF NOT EXISTS object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))");
 
   //Write state
   writeState(outdb);
@@ -1793,8 +1792,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
-    outdb.issue("delete from timestep where id == '%d'", i);
-    outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
+    outdb.issue("DELETE FROM timestep WHERE id == '%d'", i);
+    outdb.issue("INSERT INTO timestep (id, time, properties) values (%d, %g, '%s');",
                 i, timesteps[i]->time(),  timesteps[i]->properties.data.dump().c_str());
 
     //Get data at this timestep
@@ -1819,15 +1818,15 @@ void Model::writeState(Database& outdb)
   storeFigure();
 
   //Write state
-  outdb.issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)");
+  outdb.issue("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)");
 
   char SQL[SQL_QUERY_MAX];
   for (unsigned int f=0; f<fignames.size(); f++)
   {
     // Delete any state entry with same name
-    outdb.issue("delete from state where name == '%s'", fignames[f].c_str());
+    outdb.issue("DELETE FROM state WHERE name == '%s'", fignames[f].c_str());
 
-    snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[f].c_str());
+    snprintf(SQL, SQL_QUERY_MAX, "INSERT INTO state (name, data) VALUES ('%s', ?)", fignames[f].c_str());
     sqlite3_stmt* statement;
 
     if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1945,7 +1944,7 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
     if (!std::isfinite(max[c])) max[c] = 0.0;
   }
 
-  snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
+  snprintf(SQL, SQL_QUERY_MAX, "INSERT INTO geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 
   /* Prepare statement... */
   if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1986,7 +1985,7 @@ void Model::deleteObjectRecord(unsigned int id)
   if (!database) return;
   database.reopen(true);  //Open writable
   database.issue("DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
-  database.issue("vacuum");
+  database.issue("VACUUM");
   //Update state
   writeState();
 }
