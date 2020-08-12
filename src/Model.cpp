@@ -54,6 +54,7 @@ Database::~Database()
 bool Database::open(bool write)
 {
   //Single file database
+  if (db) sqlite3_close(db);
   char path[FILE_PATH_MAX];
   int flags = SQLITE_OPEN_READONLY;
   if (write)
@@ -92,7 +93,6 @@ bool Database::open(bool write)
 void Database::reopen(bool write)
 {
   if (!readonly || !db) return;
-  if (db) sqlite3_close(db);
   open(write);
 
   //Re-attach any attached db file
