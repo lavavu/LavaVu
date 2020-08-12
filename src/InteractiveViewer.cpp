@@ -678,7 +678,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   if (!gethelp && cmd != "display" && cmd != "asyncsort" && cmd != "history" && cmd != "idle")
   {
     history.push_back(cmd);
-    //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
+    if (!gethelp && verbose) std::cerr << "CMD: " << cmd << std::endl;
   }
 
   //If the command contains only one double-quote, append until another received before parsing as a single string
@@ -1077,7 +1077,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Rotate model\n\n"
               "**Usage:** rotate axis degrees\n\n"
-              "axis (x/y/z) : axis of rotation\n"
+              "axis (x/y/z) : axis of rotation 'x/y/z' or a series of 3 numbers / json array defining a 3d vector\n"
               "degrees (number) : degrees of rotation\n\n"
               "**Usage:** rotate x y z\n\n"
               "x (number) : x axis degrees of rotation\n"
@@ -1086,21 +1086,42 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    float xr = 0, yr = 0, zr = 0;
+    float x = 0, y = 0, z = 0, d = 0;
     std::string axis = parsed["rotate"];
     if (axis == "x")
-      parsed.has(xr, "rotate", 1);
-    else if (axis == "y")
-      parsed.has(yr, "rotate", 1);
-    else if (axis == "z")
-      parsed.has(zr, "rotate", 1);
-    else
     {
-      parsed.has(xr, "rotate", 0);
-      parsed.has(yr, "rotate", 1);
-      parsed.has(zr, "rotate", 2);
+      if (!parsed.has(x, "rotate", 1)) return false;
+      aview->rotate(x, 0, 0);
     }
-    aview->rotate(xr, yr, zr);
+    else if (axis == "y")
+    {
+      if (!parsed.has(y, "rotate", 1)) return false;
+      aview->rotate(0, y, 0);
+    }
+    else if (axis == "z")
+    {
+      if (!parsed.has(z, "rotate", 1)) return false;
+      aview->rotate(0, 0, z);
+    }
+    else if (parsed.has(x, "rotate", 0) && parsed.has(y, "rotate", 1) && parsed.has(z, "rotate", 2))
+    {
+      if (parsed.has(d, "rotate", 3))
+        aview->rotate(d, Vec3d(x, y, z)); //d defines degrees, x,y,z define axis
+      else
+        aview->rotate(x, y, z);
+    }
+    else if (parsed.has(d, "rotate", 1))
+    {
+      try
+      {
+        json ax = json::parse(axis);
+        aview->rotate(d, Vec3d(ax[0], ax[1], ax[2]));
+      }
+      catch (std::exception& e)
+      {
+        std::cout << "Error parsing rotation: " << e.what() << std::endl;
+      }
+    }
   }
   else if (parsed.has(fval, "rotatex"))
   {
