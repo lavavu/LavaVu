@@ -437,7 +437,6 @@ void Volumes::update()
 
 void Volumes::render(Geom_Ptr g)
 {
-  session.context.push();
   Properties& props = g->draw->properties;
 
   float dims[3] = {g->render->vertices[1][0] - g->render->vertices[0][0],
@@ -582,47 +581,6 @@ void Volumes::render(Geom_Ptr g)
 
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
 
-  //Object rotation/translation
-  Quaternion* qrot = NULL;
-  Quaternion orot, vrot;
-  if (props.has("rotate"))
-  {
-    float rot[4];
-    json jrot = props["rotate"];
-    if (jrot.size() == 4)
-    {
-      Properties::toArray<float>(jrot, rot, 4);
-      orot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
-    }
-    else
-    {
-      Properties::toArray<float>(jrot, rot, 3);
-      orot.fromEuler(rot[0], rot[1], rot[2]);
-    }
-
-    qrot = &orot;
-  }
-
-  Vec3d translate;
-  if (props.has("translate"))
-  {
-    float trans[3];
-    Properties::toArray<float>(props["translate"], trans, 3);
-    translate = trans;
-  }
-
-  //Get modelview without focal point / rotation centre adjustment
-  bool rotatable = props["rotatable"]; //Object rotation by view flag
-  if (rotatable)
-  {
-    //Rotate this object with view rotation setting as well as its own rotation
-    vrot = view->getRotation() * orot;
-    qrot = &vrot;
-  }
-
-  //Apply model view
-  view->apply(rotatable, qrot, &translate);
-
   //Translate to our origin
   session.context.translate3(g->render->vertices[0][0],
                              g->render->vertices[0][1],
@@ -685,7 +643,6 @@ void Volumes::render(Geom_Ptr g)
 
   //Calibrate colourmap on data now so if colour bar drawn it will have correct range
   g->colourCalibrate();
-  session.context.pop();
   glUseProgram(0);
 }
 

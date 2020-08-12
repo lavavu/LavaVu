@@ -66,7 +66,7 @@ View::View(Session& session, float xf, float yf) : properties(session.globals, s
   localcam = new Camera();
 
   //Use the local cam by default
-  rotate_centre = localcam->rotate_centre;
+  rotate_origin = localcam->rotate_origin;
   focal_point = localcam->focal_point;
   model_trans = localcam->model_trans;
   rotation = &localcam->rotation;
@@ -145,7 +145,7 @@ bool View::init(bool force, float* newmin, float* newmax)
       }
 
       //Currently just a copy of focal point, no way to set this yet
-      rotate_centre[i] = focal_point[i];
+      rotate_origin[i] = focal_point[i];
     }
   }
 
@@ -200,7 +200,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     GL_Error_Check;
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
-    debug_print("   Rotate Origin: %f,%f,%f\n", rotate_centre[0], rotate_centre[1], rotate_centre[2]);
+    debug_print("   Rotate Origin: %f,%f,%f\n", rotate_origin[0], rotate_origin[1], rotate_origin[2]);
     debug_print("   Clip planes: near %f far %f. Focal length %f Eye separation ratio: %f\n", (float)properties["near"], (float)properties["far"], focal_length, eye_sep_ratio);
     debug_print("   Translate: %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
 
@@ -354,15 +354,23 @@ std::string View::adjustStereo(float fov, float focal_len, float eye_sep)
 
 void View::focus(float x, float y, float z, float fov, bool setdefault)
 {
-  focal_point[0] = rotate_centre[0] = x;
-  focal_point[1] = rotate_centre[1] = y;
-  focal_point[2] = rotate_centre[2] = z;
+  focal_point[0] = rotate_origin[0] = x;
+  focal_point[1] = rotate_origin[1] = y;
+  focal_point[2] = rotate_origin[2] = z;
   if (fov > 0)
     this->fov = fov;
   //reset(); //reset view
   //Set as the default
   if (setdefault)
     memcpy(default_focus, focal_point, sizeof(float)*3);
+  updated = true;
+}
+
+void View::origin(float x, float y, float z)
+{
+  rotate_origin[0] = x;
+  rotate_origin[1] = y;
+  rotate_origin[2] = z;
   updated = true;
 }
 
@@ -473,7 +481,7 @@ void View::reset()
   {
     model_trans[i] = 0;
     //Default focal point and rotation centre = model bounding box centre point
-    focal_point[i] = rotate_centre[i] = FLT_MIN;
+    focal_point[i] = rotate_origin[i] = FLT_MIN;
     //if (focal_point[i] == FLT_MIN)
     //   focal_point[i] = min[i] + dims[i] / 2.0f;
   }
@@ -492,7 +500,7 @@ void View::print()
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
-  printf("Rotate Centre %f,%f,%f\n", rotate_centre[0], rotate_centre[1], rotate_centre[2]);
+  printf("Rotate Centre %f,%f,%f\n", rotate_origin[0], rotate_origin[1], rotate_origin[2]);
   printf("------------------------------\n");
   printf("%s\n", translateString().c_str());
   printf("%s\n", rotateString().c_str());
@@ -615,10 +623,10 @@ void View::projection(int eye)
   GL_Error_Check;
 }
 
-void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translation)
+void View::apply(Properties* objprops)
 {
   // Right-handed (GL default) or Left-handed
-    GL_Error_Check;
+  GL_Error_Check;
   int orientation = properties["coordsystem"];
   if (properties["globalcam"])
   {
@@ -626,7 +634,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
       session.globalcam = new Camera(localcam);
 
     //Global camera override
-    rotate_centre = session.globalcam->rotate_centre;
+    rotate_origin = session.globalcam->rotate_origin;
     focal_point = session.globalcam->focal_point;
     model_trans = session.globalcam->model_trans;
     rotation = &session.globalcam->rotation;
@@ -634,7 +642,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   else
   {
     //Use the local cam by default
-    rotate_centre = localcam->rotate_centre;
+    rotate_origin = localcam->rotate_origin;
     focal_point = localcam->focal_point;
     model_trans = localcam->model_trans;
     rotation = &localcam->rotation;
@@ -657,26 +665,77 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   }
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
-  float adjust[3] = {(focal_point[0]-rotate_centre[0]), (focal_point[1]-rotate_centre[1]), (focal_point[2]-rotate_centre[2])};
+  float adjust[3] = {(focal_point[0]-rotate_origin[0]), (focal_point[1]-rotate_origin[1]), (focal_point[2]-rotate_origin[2])};
   session.context.translate3(-adjust[0], -adjust[1], -adjust[2]);
   GL_Error_Check;
 
   // Rotate model
-  if (*rotation && !no_rotate)
+  if (*rotation)
   {
     rotation->apply(session.context.MV);
     is3d = true; //Applying rotation requires 3d mode
   }
 
-  // Translate object
-  if (obj_translation)
-    session.context.translate3(obj_translation->x, obj_translation->y, obj_translation->z);
-
-  // Rotate object
-  if (obj_rotation && *obj_rotation)
+  //Object specific view
+  if (objprops)
   {
-    obj_rotation->apply(session.context.MV);
-    is3d = true; //Applying rotation requires 3d mode
+    // Translate object
+    if (objprops->has("translate"))
+    {
+      float obj_translation[3];
+      Properties::toArray<float>((*objprops)["translate"], obj_translation, 3);
+      session.context.translate3(obj_translation[0], obj_translation[1], obj_translation[2]);
+    }
+
+    Quaternion* obj_rotation = NULL;
+    Quaternion orot;
+    if (objprops->has("rotate"))
+    {
+      float rot[4];
+      json jrot = (*objprops)["rotate"];
+      if (jrot.size() == 4)
+      {
+        //std::cout << "QROT: " << jrot << std::endl;
+        Properties::toArray<float>(jrot, rot, 4);
+        orot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
+      }
+      else
+      {
+        //std::cout << "EROT: " << jrot << std::endl;
+        Properties::toArray<float>(jrot, rot, 3);
+        orot.fromEuler(rot[0], rot[1], rot[2]);
+
+        Quaternion xrot, yrot, zrot;
+        xrot.fromAxisAngle(Vec3d(1, 0, 0), rot[0]);
+        xrot.normalise();
+        yrot.fromAxisAngle(Vec3d(0, 1, 0), rot[1]);
+        yrot.normalise();
+        zrot.fromAxisAngle(Vec3d(0, 0, 1), rot[2]);
+        zrot.normalise();
+
+        orot = xrot * yrot * zrot;
+      }
+
+      obj_rotation = &orot;
+    }
+
+    // Rotate object
+    if (obj_rotation && *obj_rotation)
+    {
+      //NOTE: this breaks sorting, need to account for object rotations in View::eyePlaneDistance
+      if (objprops->has("origin"))
+      {
+        float obj_origin[3];
+        Properties::toArray<float>((*objprops)["origin"], obj_origin, 3);
+        session.context.translate3(obj_origin[0], obj_origin[1], obj_origin[2]);
+        obj_rotation->apply(session.context.MV);
+        session.context.translate3(-obj_origin[0], -obj_origin[1], -obj_origin[2]);
+      }
+      else
+        obj_rotation->apply(session.context.MV);
+
+      is3d = true; //Applying rotation requires 3d view
+    }
   }
 
   GL_Error_Check;
@@ -694,7 +753,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   GL_Error_Check;
 
   // Translate to align eye with model centre - view focal point
-  //session.context.translate3(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
+  //session.context.translate3(-rotate_origin[0], -rotate_origin[1], -rotate_origin[2]);
   //if (use_fp) session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   if (!session.omegalib)
     session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
@@ -778,6 +837,13 @@ void View::importProps(bool force)
       json foc = properties["focus"];
       if (foc.is_array())
         focus(foc[0], foc[1], foc[2]);
+    }
+
+    if (properties.has("origin"))
+    {
+      json cor = properties["origin"];
+      if (cor.is_array())
+        origin(cor[0], cor[1], cor[2]);
     }
 
     if (properties.has("scale"))

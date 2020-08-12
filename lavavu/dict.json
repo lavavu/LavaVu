@@ -316,17 +316,6 @@
       false
     ]
   },
-  "rotatable": {
-    "default": false,
-    "target": "object",
-    "type": "boolean",
-    "desc": "Set to true to apply the view rotation to this object",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
   "shift": {
     "default": 0.0,
     "target": "object",
@@ -1743,6 +1732,22 @@
       false
     ]
   },
+  "origin": {
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "target": "view",
+    "type": "real[3]",
+    "desc": "Origin / centre of rotation [x,y,z] if not set, defaults to same as focal point.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+
   "scale": {
     "default": [
       1.0,

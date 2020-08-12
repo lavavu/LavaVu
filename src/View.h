@@ -54,7 +54,7 @@
 class Camera
 {
 public:
-  float rotate_centre[3];    // Centre of rotation
+  float rotate_origin[3];    // Centre of rotation
   float focal_point[3];      // Focal point
 
   float model_trans[3];
@@ -64,7 +64,7 @@ public:
   {
     for (int i=0; i<3; i++)
     {
-      rotate_centre[i]     = cam ? cam->rotate_centre[i] : 0.0;
+      rotate_origin[i]     = cam ? cam->rotate_origin[i] : 0.0;
       focal_point[i]       = cam ? cam->focal_point[i]   : FLT_MIN;
       model_trans[i]       = cam ? cam->model_trans[i]   : 0.0;
       rotation[i]          = cam ? cam->rotation[i]      : 0.0;
@@ -117,7 +117,7 @@ public:
 private:
   Session& session;
   Camera* localcam;
-  float* rotate_centre;      // Centre of rotation
+  float* rotate_origin;      // Centre of rotation
   float* focal_point;        // Focal point
 
   float default_focus[3];    // Default Focal point
@@ -166,6 +166,7 @@ public:
   void getCamera(float rotate[4], float translate[3], float focus[3]);
   std::string adjustStereo(float aperture, float focal_len, float eye_sep);
   void focus(float x, float y, float z, float aperture=0, bool setdefault=false);
+  void origin(float x, float y, float z);
   void translate(float x, float y, float z);
   void setTranslation(float x, float y, float z);
   void setRotation(float x, float y, float z, float w);
@@ -186,7 +187,7 @@ public:
   bool hasPixel(int x, int y);
 
   void projection(int eye);
-  void apply(bool no_rotate=false, Quaternion* obj_rotation=NULL, Vec3d* obj_translation=NULL);
+  void apply(Properties* objprops=NULL);
   int switchCoordSystem();
   void zoomToFit();
   void exportProps();

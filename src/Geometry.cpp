@@ -1512,6 +1512,13 @@ void Geometry::setState(Geom_Ptr g)
   }
   GL_Error_Check;
 
+  //Object rotation/translation
+  if (props.has("translate") || props.has("rotate") || props.has("origin"))
+  {
+    //Apply model view
+    view->apply(&props);
+  }
+
   //Send the matrix uniforms
   mat4 nMatrix = linalg::transpose(linalg::inverse(session.context.MV));
   prog->setUniformMatrixf("uMVMatrix", session.context.MV);
@@ -1797,7 +1804,9 @@ void Geometry::display(bool refresh)
   if (!internal && newcount)
   {
     //debug_print("Rendering %d %s - %s, %d elements\n", type, GeomData::names[type].c_str(), name.c_str(), geom.size());
+    session.context.push();
     draw();
+    session.context.pop();
 
     labels();
   }
