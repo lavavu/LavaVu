@@ -103,7 +103,6 @@ if sys.argv[-1] == 'publish':
     os.system("twine upload dist/lavavu-%s.tar.gz" % version)
     sys.exit()
 
-
 #Get extra lib and include dirs
 inc_dirs = []
 lib_dirs = []
@@ -424,7 +423,12 @@ if __name__ == "__main__":
     if P == 'Windows':
         package_data['lavavu'] += ['*.dll']
 
-    setup(name = 'lavavu',
+    #If built with libOSMesa, rename package so can be distributed as an alternative
+    dist_name = "lavavu"
+    if "OSMesa" in libs:
+        dist_name = "lavavu-osmesa"
+
+    setup(name = dist_name,
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
           url               = "https://github.com/lavavu/LavaVu",
