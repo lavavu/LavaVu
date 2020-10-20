@@ -1,0 +1,59 @@
+{% set name = "lavavu" %}
+{% set version = "1.6.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+    #url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    #sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
+  git_url: "https://github.com/rbeucher/LavaVu.git"   
+
+build:
+  number: 0
+  skip: true  # [win64]
+  skip: true  # [osx]
+  entry_points:
+    - LV = lavavu.__main__:main
+    - LavaVu = lavavu.__main__:main
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - xorg-libx11
+    - aiohttp
+    - jupyter-server-proxy
+    - numpy >=1.11
+    - pip
+    - swig
+    - python
+  run:
+    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - xorg-libx11
+    - aiohttp
+    - jupyter-server-proxy
+    - numpy >=1.11
+    - python
+
+test:
+  imports:
+    - lavavu
+  commands:
+    - LV --help
+    - LavaVu --help
+
+about:
+  home: "https://github.com/lavavu/LavaVu"
+  license: "GNU Lesser General Public v3 (LGPLv3)"
+  license_family: LGPL
+  license_file: LICENSE.md 
+  summary: "Python interface to LavaVu OpenGL 3D scientific visualisation utilities"
+  doc_url: https://lavavu.github.io/Documentation/ 
+
+extra:
+  recipe-maintainers:
+    - rbeucher
