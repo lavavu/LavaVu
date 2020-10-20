@@ -1,8 +1,9 @@
 name: Conda Deployment 
 
 on:
-  release:
-    types: [created, edited]
+    push
+    #release:
+    #types: [created, edited]
 
 jobs:
 
