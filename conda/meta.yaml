@@ -22,9 +22,9 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     # https://conda-forge.org/docs/maintainer/knowledge_base.html#libgl
-    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - {{ cdt('mesa-libgl-devel') }}
     - xorg-libx11
-    - xorg-libxfixes  # [linux]
+    - xorg-libxfixes
     - aiohttp
     - jupyter-server-proxy
     - numpy >=1.11
@@ -32,7 +32,7 @@ requirements:
     - swig
     - python
   run:
-    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - {{ cdt('mesa-libgl-devel') }}
     - xorg-libx11
     - aiohttp
     - jupyter-server-proxy
