@@ -12,8 +12,6 @@ source:
 
 build:
   number: 0
-  skip: true  # [win64]
-  skip: true  # [osx]
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
@@ -23,8 +21,10 @@ requirements:
   host:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
+    # https://conda-forge.org/docs/maintainer/knowledge_base.html#libgl
     - {{ cdt('mesa-libgl-devel') }}  # [linux]
     - xorg-libx11
+    - xorg-libxfixes  # [linux]
     - aiohttp
     - jupyter-server-proxy
     - numpy >=1.11
