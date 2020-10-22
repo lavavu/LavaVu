@@ -6,40 +6,55 @@ package:
   version: "{{ version }}"
 
 source:
-    #url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
-    #sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
-  git_url: "https://github.com/rbeucher/LavaVu.git"   
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
 
 build:
   number: 0
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
-  script: "{{ PYTHON }} -m pip install . -vv"
+  script: {{ PYTHON }} -m pip install . -vv
 
 requirements:
-  host:
+  build:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     # https://conda-forge.org/docs/maintainer/knowledge_base.html#libgl
-    - {{ cdt('mesa-libgl-devel') }}
-    - xorg-libx11
-    - xorg-libxfixes
-    - aiohttp
-    - jupyter-server-proxy
-    - numpy >=1.11
+    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - {{ cdt('mesa-dri-drivers') }}  # [linux]
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+    - {{ cdt('libx11-devel') }}  # [linux]
+    - {{ cdt('libxfixes') }}  # [linux]
+    - {{ cdt('libxfixes-devel') }}  # [linux]
     - pip
     - swig
+  host:
+    - libglu  # [linux]
+    - xorg-libx11  # [linux]
+    - xorg-libxext  # [linux]
+    - jupyter-server-proxy
+    - aiohttp
     - python
+    - numpy >=1.11
   run:
-    - {{ cdt('mesa-libgl-devel') }}
-    - xorg-libx11
+    - libglu  # [linux]
+    - xorg-libx11  # [linux]
+    - xorg-libxext  # [linux]
     - aiohttp
     - jupyter-server-proxy
     - numpy >=1.11
     - python
 
 test:
+  # Tests require visual context not present on CIs
+  test:
+    requires:
+      - {{ cdt('libxcb') }}            # [linux]
+      - {{ cdt('libxdamage') }}        # [linux]
+      - {{ cdt('libxfixes') }}         # [linux]
+      - {{ cdt('mesa-libgl-devel') }}  # [linux]
+      - {{ cdt('mesa-dri-drivers') }}  # [linux]
   imports:
     - lavavu
   commands:
@@ -50,7 +65,6 @@ about:
   home: "https://github.com/lavavu/LavaVu"
   license: "GNU Lesser General Public v3 (LGPLv3)"
   license_family: LGPL
-  license_file: LICENSE.md 
   summary: "Python interface to LavaVu OpenGL 3D scientific visualisation utilities"
   doc_url: https://lavavu.github.io/Documentation/ 
 
