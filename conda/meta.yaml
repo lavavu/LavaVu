@@ -6,14 +6,15 @@ package:
   version: "{{ version }}"
 
 source:
-  git_url: https://github.com/lavavu/LavaVu.git
+  #git_url: https://github.com/lavavu/LavaVu.git
   #git_rev: 1.6.1
-  git_tag: condabuild
-  git_depth: 1 # (Defaults to -1/not shallow)
+  #git_tag: condabuild
+  #git_depth: 1 # (Defaults to -1/not shallow)
 
-#source:
 #  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
 #  sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
+#url: "https://github.com/lavavu/LavaVu/archive/master.zip"
+  url: "https://github.com/lavavu/LavaVu/archive/condabuild.zip"
 
 build:
   number: 1
