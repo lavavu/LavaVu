@@ -46,6 +46,7 @@ requirements:
     - jupyter-server-proxy
     - aiohttp
   run:
+    - glfw
     - numpy >=1.11
     - jupyter-server-proxy
     - aiohttp
