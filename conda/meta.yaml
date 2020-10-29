@@ -6,15 +6,21 @@ package:
   version: "{{ version }}"
 
 source:
-  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
-  sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
+  git_url: https://github.com/lavavu/LavaVu.git
+  git_rev: condabuild #1.6.1
+  git_depth: 1 # (Defaults to -1/not shallow)
+
+#source:
+#  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+#  sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
 
 build:
   number: 0
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
-  script: {{ PYTHON }} -m pip install . -vv
+  #script: LV_OSMESA=1 {{ PYTHON }} -m pip install . -vv
+  #script: {{ PYTHON }} -m pip install -vv $(../setup.py wheelname)
 
 requirements:
   build:
@@ -28,39 +34,30 @@ requirements:
     - {{ cdt('libxfixes') }}  # [linux]
     - {{ cdt('libxfixes-devel') }}  # [linux]
     - pip
-    - swig
   host:
+    - python
+    #- glfw
     - libglu  # [linux]
-    - mesa  # [linux]
-    - xorg-libx11  # [linux]
-    - xorg-libxext  # [linux]
+    #- mesalib  # [linux]
+    #- ffmpeg
+    #- sqlite
+    #- libtiff
+    - numpy >=1.11
     - jupyter-server-proxy
     - aiohttp
-    - python
-    - numpy >=1.11
-  run:
-    - libglu  # [linux]
-    - mesa  # [linux]
-    - xorg-libx11  # [linux]
-    - xorg-libxext  # [linux]
-    - aiohttp
-    - jupyter-server-proxy
-    - numpy >=1.11
-    - python
 
 test:
   # Tests require visual context not present on CIs
-  test:
-    requires:
-      - {{ cdt('libxcb') }}            # [linux]
-      - {{ cdt('libxdamage') }}        # [linux]
-      - {{ cdt('libxfixes') }}         # [linux]
-      - {{ cdt('mesa-libgl-devel') }}  # [linux]
-      - {{ cdt('mesa-dri-drivers') }}  # [linux]
+  #test:
+  #  requires:
+  #    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+  #    - {{ cdt('mesa-dri-drivers') }}  # [linux]
   imports:
     - lavavu
   commands:
-    - printf "test\nimage\nquit" | LavaVu
+    #This will not work on CI without opengl context / osmesa
+    #- printf "test\nimage\nquit" | LavaVu
+    - python -c "import lavavu; print(lavavu.__version__);"
 
 about:
   home: "https://github.com/lavavu/LavaVu"
