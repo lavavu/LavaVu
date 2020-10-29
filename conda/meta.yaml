@@ -16,7 +16,7 @@ source:
 #  sha256: 5b818b28c8e9e224dc75cfb35d48686f579eef5ab5a232585b1e3065ad34df32
 
 build:
-  number: 0
+  number: 1
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
@@ -46,19 +46,28 @@ requirements:
     - numpy >=1.11
     - jupyter-server-proxy
     - aiohttp
+  run:
+    - numpy >=1.11
+    - jupyter-server-proxy
+    - aiohttp
 
 test:
   # Tests require visual context not present on CIs
-  #test:
-  #  requires:
+  test:
+    requires:
+    - numpy >=1.11
+    - jupyter-server-proxy
+    - aiohttp
   #    - {{ cdt('mesa-libgl-devel') }}  # [linux]
   #    - {{ cdt('mesa-dri-drivers') }}  # [linux]
-  imports:
-    - lavavu
+  #imports:
+  #  - lavavu #Implicit
   commands:
     #This will not work on CI without opengl context / osmesa
-    #- printf "test\nimage\nquit" | LavaVu
-    - python -c "import lavavu; print(lavavu.__version__);"
+    #- printf "test\nimage\nquit\n" | LavaVu
+    - printf "quit\n" | LavaVu
+    #- printf "dummy tests"
+    #- {{ PYTHON }} -c "import lavavu; print(lavavu.__version__);"
 
 about:
   home: "https://github.com/lavavu/LavaVu"
