@@ -1,10 +1,10 @@
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo PYTHON $PYTHON
-echo SP_DIR $SP_DIR
-echo STDLIB_DIR $STDLIB_DIR
-#export LV_LIB_DIRS=${MESA_PATH/lib/x86_64-linux-gnu
-#export LV_INC_DIRS=${MESA_PATH}/include python setup.py install
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+ls $PREFIX/lib
+export LV_LIB_DIRS=$PREFIX/lib
+export LV_INC_DIRS=$PREFIX/include
+export LV_GLFW=1
 $PYTHON setup.py install -vv
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 #WHEEL=$(python setup.py wheelname)

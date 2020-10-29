@@ -373,10 +373,11 @@ if __name__ == "__main__":
                 #OSMesa for software rendered offscreen OpenGL
                 defines += [('HAVE_OSMESA', '1')]
                 libs += ['OSMesa']
-            #elif find_library('glfw') and check_libraries(['glfw'], ['GLFW/glfw3.h']):
-            #    #Use GLFW if installed
-            #    defines += [('HAVE_GLFW', '1')]
-            #    libs += ['GL', 'glfw']
+            elif ("LV_GLFW" in os.environ and find_library('glfw')
+            and check_libraries(['glfw'], ['GLFW/glfw3.h'])):
+                #Use GLFW
+                defines += [('HAVE_GLFW', '1')]
+                libs += ['GL', 'glfw']
             else:
                 #Fallback - X11
                 defines += [('HAVE_X11', '1')]

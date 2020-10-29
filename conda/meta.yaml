@@ -27,6 +27,7 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     # https://conda-forge.org/docs/maintainer/knowledge_base.html#libgl
+    - {{ cdt('mesa-libgl') }}  # [linux]
     - {{ cdt('mesa-libgl-devel') }}  # [linux]
     - {{ cdt('mesa-dri-drivers') }}  # [linux]
     - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
@@ -36,12 +37,11 @@ requirements:
     - pip
   host:
     - python
-    #- glfw
-    - libglu  # [linux]
-    #- mesalib  # [linux]
-    #- ffmpeg
-    #- sqlite
-    #- libtiff
+    - glfw
+    - mesalib  # [linux]
+    - ffmpeg
+    - sqlite
+    - libtiff
     - numpy >=1.11
     - jupyter-server-proxy
     - aiohttp
