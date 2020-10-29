@@ -64,7 +64,7 @@ test:
   commands:
     #This will not work on CI without opengl context / osmesa
     #- printf "test\nimage\nquit\n" | LavaVu
-    - printf "quit\n" | LavaVu
+    - printf "quit\n" | LavaVu # [linux]
     #- printf "dummy tests"
     #- {{ PYTHON }} -c "import lavavu; print(lavavu.__version__);"
 
