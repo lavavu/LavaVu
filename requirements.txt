@@ -1,4 +1,4 @@
-numpy>=1.11
-aiohttp
-jupyter-server-proxy
+--index-url https://pypi.python.org/simple/
+
+-e .
 

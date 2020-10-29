@@ -17,13 +17,6 @@ import platform
 import glob
 import shutil
 
-
-try: 
-    from distutils.command import bdist_conda
-except ImportError:
-    pass
-
-
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
 version = "1.6.1"
@@ -101,6 +94,20 @@ if sys.argv[-1] == 'release':
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist")
     os.system("twine upload dist/lavavu-%s.tar.gz" % version)
+    sys.exit()
+
+# Just output the wheel name for current arch + environment
+if sys.argv[-1] == 'wheelname':
+    # https://stackoverflow.com/a/60644659/866759
+    from setuptools.dist import Distribution
+    lavavu = Extension('lavavu', [])
+    dist = Distribution(attrs={'name': 'lavavu', 'version': version, 'ext_modules': [lavavu]})
+    bdist_wheel_cmd = dist.get_command_obj('bdist_wheel')
+    bdist_wheel_cmd.ensure_finalized()
+    distname = bdist_wheel_cmd.wheel_dist_name
+    tag = '-'.join(bdist_wheel_cmd.get_tag())
+    wheel_name = f'{distname}-{tag}.whl'
+    print(wheel_name)
     sys.exit()
 
 #Get extra lib and include dirs
@@ -262,14 +269,14 @@ if __name__ == "__main__":
             sys.path.append('lavavu')
             import vutils
             import zipfile
-            src = 'https://ffmpeg.zeranoe.com/builds/win' + arc
+            src = "https://github.com/OKaluza/ffmpeg.zeranoe.com/raw/main/"
             fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
             fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
             LIBS = 'lib' + arc
-            outfn = vutils.download(src + '/shared/' + fn1 + '.zip')
+            outfn = vutils.download(src + fn1 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
-            outfn = vutils.download(src + '/dev/' + fn2 + '.zip')
+            outfn = vutils.download(src + fn2 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
                 zip_ref.extractall('.')
             #Now copy into windows build dirs
@@ -410,11 +417,10 @@ if __name__ == "__main__":
                     extra_objects=extra_objects,
                     sources = srcs)
 
-    with open('requirements.txt') as f:
-        requirements = f.read().splitlines()
-    #For some reason, jupyter_server_proxy requirement breaks python setup.py bdist_conda
-    if sys.argv[-1] == 'bdist_conda':
-        requirements = requirements[0:2]
+    #For some reason, jupyter_server_proxy requirement breaks conda build
+    requirements = ['numpy>=1.11', 'aiohttp', 'jupyter_server_proxy']
+    if 'CONDA_BUILD' in os.environ:
+        del requirements[-1]
 
     #Binary package data for wheels
     #Package_data works for wheels(binary) only - so add everything we need for the wheels here
