@@ -225,8 +225,6 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	#Update binder links
 	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' README.md
 	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/Installation.rst
-	#Update conda/meta.yaml
-	sed -i "s/version = \"[0-9\.]*\"/version = \"$(LV_VERSION)\"/g" conda/meta.yaml
 	sphinx-build docs/src docs/
 
 clean:
