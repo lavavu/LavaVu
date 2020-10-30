@@ -53,7 +53,6 @@
 |*depthtest*       | boolean    | true           | Set to false to disable depth test when drawing object so always drawn regardless of 3d position|
 |*depthwrite*      | boolean    | true           | Set to false to disable depth buffer write when drawing object, so other objects behind it will still be drawn and will appear in front if drawn after this object|
 |*dims*            | integer[3] | [0,0,0]        | Width,Height,Depth override for geometry. Usually this data will be determined from the numpy array shape when loaded from python but setting this property overrides the shape, unless it doesn't match the data size. Note this property is the reverse of the numpy array shape (Depth,Height,Width) or (Height,Width).|
-|*rotatable*       | boolean    | false          | Set to true to apply the view rotation to this object|
 |*shift*           | real       | 0.0            | Apply a shift to object position by this amount multiplied by model size*10^-7, to fix depth fighting when visualising objects drawn at same depth|
 |*colour*          | colour     | [0,0,0,255]    | Object colour RGB(A)|
 |*colourmap*       | string     | ""             | name of the colourmap to use|
@@ -214,6 +213,7 @@
 |*xyzrotate*       | real[3]    | [0.0,0.0,0.0]  | Camera rotation as Euler angles [x,y,z] - output only|
 |*translate*       | real[3]    | [0.0,0.0,0.0]  | Camera translation [x,y,z]|
 |*focus*           | real[3]    | [0.0,0.0,0.0]  | Camera focal point [x,y,z]|
+|*origin*          | real[3]    | [0.0,0.0,0.0]  | Origin / centre of rotation [x,y,z] if not set, defaults to same as focal point.|
 |*scale*           | real[3]    | [1.0,1.0,1.0]  | Global model scaling factors [x,y,z]|
 |*near*            | real       | 0.0            | Near clipping plane position, adjusts where geometry close to the camera is clipped|
 |*far*             | real       | 0.0            | Far clip plane position, adjusts where far geometry is clipped|

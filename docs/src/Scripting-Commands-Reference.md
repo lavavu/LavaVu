@@ -346,7 +346,7 @@
  >   
  > **Usage:** rotate axis degrees  
  >   
- > axis (x/y/z) : axis of rotation  
+ > axis (x/y/z) : axis of rotation 'x/y/z' or a series of 3 numbers / json array defining a 3d vector  
  > degrees (number) : degrees of rotation  
  >   
  > **Usage:** rotate x y z  
