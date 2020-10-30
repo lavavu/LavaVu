@@ -126,8 +126,7 @@ jobs:
 env:
   global:
     - CIBW_BUILD_VERBOSITY: 3
-    - CIBW_SKIP: "cp27-* cp34-* cp35-*"
-    - CIBW_BUILD: "cp3?-*"
+    - CIBW_SKIP: cp27-* cp35-*
     #- CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
     #- CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
     - CIBW_REPAIR_WHEEL_COMMAND_MACOS='delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
