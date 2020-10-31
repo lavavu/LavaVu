@@ -21,14 +21,12 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r"
-            sudo apt-get install mesa-utils libgl1-mesa-dev
+            sudo apt-get install mesa-utils libgl1-mesa-dev libosmesa-dev
           fi
       - name: Install prereqs
         run: python -m pip install -r requirements.txt
       - name: Build/install
-        env:
-          LV_OSMESA: 1
-        run: python setup.py install
+        run: LV_OSMESA=1 python setup.py install
       - name: Run headless test (linux only)
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
