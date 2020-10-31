@@ -14,10 +14,20 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      CIBW_BUILD_VERBOSITY: 3
+      CIBW_SKIP: cp35-*
+      CIBW_BUILD: cp3?-*
+      #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
+      #CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
+      CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}'
+      CIBW_BEFORE_BUILD_LINUX: 'export LV_INC_DIRS=/usr/include/ffmpeg && yum install epel-release && rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel || true'
+      CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+      CIBW_MANYLINUX_I686_IMAGE: manylinux2014
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.8] #[3.6, 3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -72,6 +82,6 @@ jobs:
 
       - uses: pypa/gh-action-pypi-publish@master
         with:
-          user: __token__
+          user: ${{ secrets.pypi_username }}
           password: ${{ secrets.pypi_password }}
           # To test: repository_url: https://test.pypi.org/legacy/
