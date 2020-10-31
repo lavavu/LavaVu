@@ -5,8 +5,8 @@ jobs:
     strategy:
       matrix:
         #os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]        
+        os: [ubuntu-latest]
+        python-version: [3.8] #[3.6, 3.7, 3.8, 3.9]        
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -26,18 +26,16 @@ jobs:
       - name: Install prereqs
         run: python -m pip install -r requirements.txt
       - name: Build/install
+        env:
+          LV_OSMESA: 1
         run: python setup.py install
       - name: Run headless test (linux only)
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          working-directory: ./ #optional
-          run: |
-            if [ "$RUNNER_OS" == "Linux" ]; then
-              git clone --depth 1 https://github.com/lavavu/Testing
-              cd Testing
-              export GALLIUM_DRIVER="llvmpipe"
-              export LV_ECHO_FAIL=1
-              export LV_ARGS="-v"
-              python runall.py
-              cd ..
-            fi
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            git clone --depth 1 https://github.com/lavavu/Testing
+            cd Testing
+            export LV_ECHO_FAIL=1
+            export LV_ARGS="-v"
+            python runall.py
+            cd ..
+          fi
