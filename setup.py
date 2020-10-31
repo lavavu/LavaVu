@@ -270,8 +270,8 @@ if __name__ == "__main__":
             import vutils
             import zipfile
             src = "https://github.com/OKaluza/ffmpeg.zeranoe.com/raw/main/"
-            fn1 = 'ffmpeg-4.2.1-win' + arc + '-shared'
-            fn2 = 'ffmpeg-4.2.1-win' + arc + '-dev'
+            fn1 = 'ffmpeg-4.3.1-win' + arc + '-shared'
+            fn2 = 'ffmpeg-4.3.1-win' + arc + '-dev'
             LIBS = 'lib' + arc
             outfn = vutils.download(src + fn1 + '.zip')
             with zipfile.ZipFile(outfn, 'r') as zip_ref:
