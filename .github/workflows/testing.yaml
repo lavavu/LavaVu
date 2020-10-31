@@ -22,12 +22,15 @@ jobs:
       - name: Build/install
         run: python setup.py install
       - name: Run headless test (linux only)
-        uses: openrndr/setup-opengl@v1
+        uses: GabrielBB/xvfb-action@v1
+        with:
+          working-directory: ./ #optional
           run: |
             if [ "$RUNNER_OS" == "Linux" ]; then
+              sudo apt-get install mesa-utils libgl1-mesa-dev
               git clone --depth 1 https://github.com/lavavu/Testing
               cd Testing
-              #export GALLIUM_DRIVER="llvmpipe"
+              export GALLIUM_DRIVER="llvmpipe"
               export LV_ECHO_FAIL=1
               export LV_ARGS="-v"
               python runall.py
