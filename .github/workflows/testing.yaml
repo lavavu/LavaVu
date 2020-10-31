@@ -22,14 +22,12 @@ jobs:
       - name: Build/install
         run: python setup.py install
       - name: Run headless test (linux only)
-        uses: GabrielBB/xvfb-action@v1
-        with:
-          working-directory: ./ #optional
+        uses: openrndr/setup-opengl@v1
           run: |
             if [ "$RUNNER_OS" == "Linux" ]; then
               git clone --depth 1 https://github.com/lavavu/Testing
               cd Testing
-              export GALLIUM_DRIVER="llvmpipe"
+              #export GALLIUM_DRIVER="llvmpipe"
               export LV_ECHO_FAIL=1
               export LV_ARGS="-v"
               python runall.py
