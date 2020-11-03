@@ -1,12 +1,12 @@
 name: OSMesa-Deploy
 
 # Build on every branch push, tag push, and pull request change:
-on: [push]
-# Runs when a (published) GitHub Release is created
-#on:
-#  release:
-#    types:
-#      - published
+#on: [push]
+ Runs when a (published) GitHub Release is created
+on:
+  release:
+    types:
+      - published
 
 jobs:
   build_wheels:
