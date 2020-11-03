@@ -115,6 +115,12 @@ inc_dirs = []
 lib_dirs = []
 if 'LV_LIB_DIRS' in os.environ:
     lib_dirs += os.environ['LV_LIB_DIRS'].split(':')
+    #Add dirs to ld_library_path
+    old = os.environ.get("LD_LIBRARY_PATH")
+    if old:
+        os.environ["LD_LIBRARY_PATH"] = old + ":" + os.environ['LV_LIB_DIRS']
+    else:
+        os.environ["LD_LIBRARY_PATH"] = LV_LIB_DIRS
 if 'LV_INC_DIRS' in os.environ:
     inc_dirs += os.environ['LV_INC_DIRS'].split(':')
 
