@@ -1621,7 +1621,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Setting > 1 also divides triangles into smaller pieces first
     int trisplit = session.global("trisplit");
     float trilimit = session.global("trilimit");
-    if (trilimit > 0 and trisplit == 0) trisplit = 1;
+    if (trilimit > 0 && trisplit == 0) trisplit = 1;
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     //Load
     int voffset = 0;

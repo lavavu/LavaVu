@@ -153,7 +153,7 @@ int Session::parse(Properties* target, const std::string& property)
       //Set to default first
       if (!dest.count(key) || dest[key].is_null())
         dest[key] = defaults[key];
-      if (dest[key].is_array() and (int)dest[key].size() > IDX)
+      if (dest[key].is_array() && (int)dest[key].size() > IDX)
         dest[key][IDX] = json::parse(value);
     }
     //Parse simple increments and decrements

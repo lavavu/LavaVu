@@ -1539,7 +1539,7 @@ void Geometry::convertColours(int step, DrawingObject* obj)
       continue;
     ColourMap* cmap = records[index]->draw->colourMap;
     FloatValues* vals = records[index]->colourData();
-    if (records[index]->render->colours.size() == 0 and cmap and vals)
+    if (records[index]->render->colours.size() == 0 && cmap && vals)
     {
       //Calibrate colour maps on range for this object
       ColourLookup& getColour = records[index]->colourCalibrate();
@@ -1651,7 +1651,7 @@ void Geometry::colourMapTexture(DrawingObject* obj)
     //Calibrate on current data
     records[index]->colourCalibrate();
     FloatValues* vals = records[index]->colourData();
-    if (records[index]->count() && records[index]->render->texCoords.size() == 0 and cmap and vals)
+    if (records[index]->count() && records[index]->render->texCoords.size() == 0 && cmap && vals)
     {
       //Apply the texture
       //records[index]->texture = texture;
