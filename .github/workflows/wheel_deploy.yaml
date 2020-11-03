@@ -2,7 +2,7 @@ name: Deploy
 
 # Build on every branch push, tag push, and pull request change:
 #on: [push, pull_request]
-# Runs when a (published) GitHub Release is created::w
+# Runs when a (published) GitHub Release is created
 on:
   release:
     types:
