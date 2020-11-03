@@ -1,0 +1,60 @@
+name: OSMesa-Deploy
+
+# Build on every branch push, tag push, and pull request change:
+on: [push]
+# Runs when a (published) GitHub Release is created
+#on:
+#  release:
+#    types:
+#      - published
+
+jobs:
+  build_wheels:
+    name: Build lavavu-osmesa wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      CIBW_BUILD_VERBOSITY: 3
+      CIBW_SKIP: cp35-*
+      CIBW_BUILD: cp3?-*
+      CIBW_BEFORE_BUILD_LINUX: export LV_INC_DIRS=/usr/include/ffmpeg:/mesa-19.1.7/build/install/include/ && export LB_LIB_DIRS=/mesa-19.1.7/build/install/lib64/ && yum install epel-release && rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel meson llvm-devel python3 && yum-builddep -y mesa-libglapi && pip3 install mako && curl -OJ ftp://ftp.freedesktop.org/pub/mesa/mesa-19.1.7.tar.xz && tar xvf mesa-19.1.7.tar.xz && rm -f mesa-19.1.7.tar.xz && cd mesa-19.1.7/ && meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && meson configure build/ -Dprefix=${PWD}/build/install && ninja -C build/ -j5 && ninja -C build/ install || true
+      CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+      CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install cibuildwheel
+        run: |
+          python -m pip install cibuildwheel==1.6.3
+
+      - name: Build wheels
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse
+
+      - uses: actions/upload-artifact@v2
+        with:
+          path: ./wheelhouse/*.whl
+
+  upload_pypi:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: ${{ secrets.pypi_username }}
+          password: ${{ secrets.pypi_password }}
+          # To test: repository_url: https://test.pypi.org/legacy/
+
