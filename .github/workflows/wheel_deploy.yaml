@@ -4,8 +4,6 @@ name: Deploy
 #on: [push, pull_request]
 # Runs when a (published) GitHub Release is created::w
 on:
-  push:
-  pull_request:
   release:
     types:
       - published
