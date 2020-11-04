@@ -200,7 +200,8 @@ if __name__ == "__main__":
         os.system("git submodule update --init")
 
     _debug = False
-    #_debug = True
+    if "develop" in sys.argv:
+        _debug = True
     srcs = [os.path.join('src', 'LavaVuPython_wrap.cxx')]
     srcs += glob.glob(os.path.join('src', '*.cpp'))
     srcs += glob.glob(os.path.join('src', 'Main', '*.cpp'))
