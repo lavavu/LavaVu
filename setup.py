@@ -120,7 +120,7 @@ if 'LV_LIB_DIRS' in os.environ:
     if old:
         os.environ["LD_LIBRARY_PATH"] = old + ":" + os.environ['LV_LIB_DIRS']
     else:
-        os.environ["LD_LIBRARY_PATH"] = LV_LIB_DIRS
+        os.environ["LD_LIBRARY_PATH"] = os.environ['LV_LIB_DIRS']
 if 'LV_INC_DIRS' in os.environ:
     inc_dirs += os.environ['LV_INC_DIRS'].split(':')
 
