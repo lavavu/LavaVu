@@ -55,8 +55,8 @@ jobs:
         shell: bash -l {0}
         run: |
           sudo apt update
-          sudo sed -i '/^#\sdeb-src /s/^# *//' "/etc/apt/sources.list"
-          sudo apt build-dep mesa #Needs deb-src entries 
+          sudo sed -i 's/^deb \(.*$\)/&\ndeb-src \1/' /etc/apt/sources.list
+          sudo apt build-dep mesa #Needs deb-src entries
           python -m pip install mako
           curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz
           tar xf mesa-19.1.7.tar.xz
