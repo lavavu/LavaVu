@@ -294,7 +294,15 @@ OpenGLViewer::OpenGLViewer()
 
 OpenGLViewer::~OpenGLViewer()
 {
-  close();
+  setTimer(0);
+  // cleanup opengl memory - required before resize if context destroyed, then call open after resize
+  GL_Check_Thread(render_thread);
+  fbo.destroy();
+  fbo_blit.destroy();
+
+  //Call the application close function
+  app->close();
+  isopen = false;
 }
 
 void OpenGLViewer::open(int w, int h)
@@ -450,23 +458,6 @@ void OpenGLViewer::resizeOutputs(int w, int h)
   //Call resize on any output interfaces
   for (unsigned int o=0; o<outputs.size(); o++)
     outputs[o]->resize(w, h);
-}
-
-void OpenGLViewer::close()
-{
-  setTimer(0);
-  // cleanup opengl memory - required before resize if context destroyed, then call open after resize
-  GL_Check_Thread(render_thread);
-  fbo.destroy();
-  fbo_blit.destroy();
-
-  //Call the application close function
-  app->close();
-  isopen = false;
-
-  //Call close on any output interfaces
-  for (unsigned int o=0; o<outputs.size(); o++)
-    outputs[o]->close();
 }
 
 void OpenGLViewer::execute()

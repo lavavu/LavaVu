@@ -153,7 +153,7 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void resizeOutputs(int w, int h);
   virtual void display(bool redraw=true);
-  virtual void close();
+  virtual void close() {}
   virtual void setTimer(int msec);
 
   // Default virtual functions for interactivity (call application interface)
