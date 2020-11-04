@@ -15,6 +15,9 @@ build:
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
+  script_env:
+   - LV_OSMESA
+   - LV_GLFW
 
 requirements:
   build:
