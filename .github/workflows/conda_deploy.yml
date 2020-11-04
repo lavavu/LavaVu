@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest"]
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8"]
     steps:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
@@ -43,7 +43,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8"]
     steps:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
@@ -56,7 +56,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install autopoint debhelper dh-autoreconf dh-strip-nondeterminism diffstat flex gettext intltool-debian lib32gcc1 lib32stdc++6 libarchive-zip-perl libc6-i386 libclang-8-dev libclang-common-8-dev libclang1-8 libclc-dev libfile-stripnondeterminism-perl libgc1c2 libobjc-7-dev libobjc4 libsensors4-dev libset-scalar-perl libtimedate-perl libva-dev libva-drm2 libva-glx2 libva-wayland2 libva-x11-2 libva2 libvdpau-dev libvdpau1 libvulkan-dev libvulkan1 libwayland-bin libwayland-dev libwayland-egl-backend-dev libxrandr-dev llvm-8 llvm-8-dev llvm-8-runtime meson ninja-build po-debconf python3-mako quilt wayland-protocols x11proto-randr-dev
-          python install mako
+          python -m pip install mako
           curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz
           tar xf mesa-19.1.7.tar.xz
           rm -f mesa-19.1.7.tar.xz
