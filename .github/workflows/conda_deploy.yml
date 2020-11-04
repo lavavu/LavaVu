@@ -63,7 +63,7 @@ jobs:
           meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false
           meson configure build/
           ninja -C build/ -j5
-          ninja -C build/ install
+          sudo ninja -C build/ install
 
       - name: Conda Upload
         shell: bash -l {0}
