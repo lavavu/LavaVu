@@ -39,6 +39,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       LV_OSMESA: 1
+      LV_LIB_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/lib/x86_64-linux-gnu
+      LV_INC_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/include
     strategy:
       fail-fast: false
       matrix:
@@ -61,9 +63,9 @@ jobs:
           rm -f mesa-19.1.7.tar.xz
           cd mesa-19.1.7/
           meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false
-          meson configure build/
+          meson configure build/ -Dprefix=/home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install
           ninja -C build/ -j5
-          sudo ninja -C build/ install
+          ninja -C build/ install
 
       - name: Conda Upload
         shell: bash -l {0}
