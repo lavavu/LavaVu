@@ -34,47 +34,48 @@ jobs:
             conda-build --channel conda-forge --user underworldcode conda
             anaconda logout
 
-  conda_build_osmesa:
-    name: Conda Build OSMesa (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    env:
-      LV_OSMESA: 1
-      LV_LIB_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/lib/x86_64-linux-gnu
-      LV_INC_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/include
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.8"]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: goanpeca/setup-miniconda@v1
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-
-      - name: OSMesa build
-        shell: bash -l {0}
-        run: |
-          sudo apt update
-          sudo apt install autopoint debhelper dh-autoreconf dh-strip-nondeterminism diffstat flex gettext intltool-debian lib32gcc1 lib32stdc++6 libarchive-zip-perl libc6-i386 libclang-8-dev libclang-common-8-dev libclang1-8 libclc-dev libfile-stripnondeterminism-perl libgc1c2 libobjc-7-dev libobjc4 libsensors4-dev libset-scalar-perl libtimedate-perl libva-dev libva-drm2 libva-glx2 libva-wayland2 libva-x11-2 libva2 libvdpau-dev libvdpau1 libvulkan-dev libvulkan1 libwayland-bin libwayland-dev libwayland-egl-backend-dev libxrandr-dev llvm-8 llvm-8-dev llvm-8-runtime meson ninja-build po-debconf python3-mako quilt wayland-protocols x11proto-randr-dev libdrm-dev libglvnd-dev libx11-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-glx0-dev libxcb-present-dev libxcb-sync-dev libxdamage-dev libxext-dev libxfixes-dev libxshmfence-dev libxxf86vm-dev mesa-common-dev x11proto-dev
-          curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz
-          tar xf mesa-19.1.7.tar.xz
-          rm -f mesa-19.1.7.tar.xz
-          cd mesa-19.1.7/
-          meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false --prefix /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install
-          meson configure build/
-          ninja -C build/ -j5
-          ninja -C build/ install
-
-      - name: Conda Upload
-        shell: bash -l {0}
-        run: |
-            conda install --channel conda-forge conda-build anaconda-client conda-verify
-            conda config --add channels conda-forge
-            conda config --add channels underworldcode
-            conda config --set anaconda_upload yes
-            anaconda login --hostname github-actions-${{ matrix.os  }}-$RANDOM --username ${{ secrets.ANACONDA_USERNAME }} --password ${{ secrets.ANACONDA_PASSWORD }}
-            conda-build --channel conda-forge --user underworldcode conda
-            anaconda logout
+#This works, but needs a different channel to provide alternate package
+#  conda_build_osmesa:
+#    name: Conda Build OSMesa (${{ matrix.os }})
+#    runs-on: ${{ matrix.os }}
+#    env:
+#      LV_OSMESA: 1
+#      LV_LIB_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/lib/x86_64-linux-gnu
+#      LV_INC_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/include
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: ["ubuntu-latest"]
+#        python-version: ["3.7", "3.8"]
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: goanpeca/setup-miniconda@v1
+#        with:
+#          auto-update-conda: true
+#          python-version: ${{ matrix.python-version }}
+#
+#      - name: OSMesa build
+#        shell: bash -l {0}
+#        run: |
+#          sudo apt update
+#          sudo apt install autopoint debhelper dh-autoreconf dh-strip-nondeterminism diffstat flex gettext intltool-debian lib32gcc1 lib32stdc++6 libarchive-zip-perl libc6-i386 libclang-8-dev libclang-common-8-dev libclang1-8 libclc-dev libfile-stripnondeterminism-perl libgc1c2 libobjc-7-dev libobjc4 libsensors4-dev libset-scalar-perl libtimedate-perl libva-dev libva-drm2 libva-glx2 libva-wayland2 libva-x11-2 libva2 libvdpau-dev libvdpau1 libvulkan-dev libvulkan1 libwayland-bin libwayland-dev libwayland-egl-backend-dev libxrandr-dev llvm-8 llvm-8-dev llvm-8-runtime meson ninja-build po-debconf python3-mako quilt wayland-protocols x11proto-randr-dev libdrm-dev libglvnd-dev libx11-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-glx0-dev libxcb-present-dev libxcb-sync-dev libxdamage-dev libxext-dev libxfixes-dev libxshmfence-dev libxxf86vm-dev mesa-common-dev x11proto-dev
+#          curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz
+#          tar xf mesa-19.1.7.tar.xz
+#          rm -f mesa-19.1.7.tar.xz
+#          cd mesa-19.1.7/
+#          meson build/ -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false --prefix /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install
+#          meson configure build/
+#          ninja -C build/ -j5
+#          ninja -C build/ install
+#
+#      - name: Conda Upload
+#        shell: bash -l {0}
+#        run: |
+#            conda install --channel conda-forge conda-build anaconda-client conda-verify
+#            conda config --add channels conda-forge
+#            conda config --add channels underworldcode
+#            conda config --set anaconda_upload yes
+#            anaconda login --hostname github-actions-${{ matrix.os  }}-$RANDOM --username ${{ secrets.ANACONDA_USERNAME }} --password ${{ secrets.ANACONDA_PASSWORD }}
+#            conda-build --channel conda-forge --user underworldcode conda
+#            anaconda logout
 
