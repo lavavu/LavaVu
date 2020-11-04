@@ -18,8 +18,7 @@ build:
   script_env:
    - LV_OSMESA
    - LV_GLFW
-   - LV_LIB_DIRS
-   - LV_INC_DIRS
+   - MESA_DIR
 
 requirements:
   build:

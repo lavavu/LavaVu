@@ -12,6 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       LV_GLFW: 1
+      LV_OSMESA: 0
+      MESA_DIR: /usr/local
+
     strategy:
       fail-fast: false
       matrix:
@@ -39,9 +42,9 @@ jobs:
 #    name: Conda Build OSMesa (${{ matrix.os }})
 #    runs-on: ${{ matrix.os }}
 #    env:
+#      LV_GLFW: 0
 #      LV_OSMESA: 1
-#      LV_LIB_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/lib/x86_64-linux-gnu
-#      LV_INC_DIRS: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install/include
+#      MESA_DIR: /home/runner/work/LavaVu/LavaVu/mesa-19.1.7/build/install
 #    strategy:
 #      fail-fast: false
 #      matrix:

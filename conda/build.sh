@@ -2,8 +2,8 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo PYTHON $PYTHON
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 ls $PREFIX/lib
-export LV_LIB_DIRS=$PREFIX/lib:$LV_LIB_DIRS
-export LV_INC_DIRS=$PREFIX/include:$LV_INC_DIRS
+export LV_LIB_DIRS=$PREFIX/lib:$MESA_DIR/lib/x86_64-linux-gnu
+export LV_INC_DIRS=$PREFIX/include:$MESA_DIR/include
 #export LV_GLFW=1
 $PYTHON setup.py install -vv
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
