@@ -76,7 +76,7 @@ typedef void* (*getProcAddressFN)(const char* procName);
 #ifndef _WIN32
 //POSIX
 extern getProcAddressFN GetProcAddress;
-#include <sys/poll.h>
+#include <poll.h>
 #include <unistd.h>
 
 #define PAUSE(msecs) usleep(msecs * 1000);
