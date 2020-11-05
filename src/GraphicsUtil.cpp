@@ -44,6 +44,9 @@
 #include <string.h>
 #include <math.h>
 
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
+
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
 #endif
@@ -51,9 +54,6 @@
 #ifdef USE_FONTS
 #include  "FontSans.h"
 #include  "FontLine.h"
-
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "stb_image_resize.h"
 
 void FontManager::clear()
 {
@@ -388,6 +388,7 @@ int FontManager::printWidth(const char *string)
 }
 
 #else //USE_FONTS
+void FontManager::clear() {}
 void FontManager::init(std::string& path, RenderContext* context) {this->context = context;}
 Colour FontManager::setFont(Properties& properties, float scaling, bool print3d) {return Colour();}
 void FontManager::printString(const char* str) {}
