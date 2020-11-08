@@ -119,11 +119,14 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   session.init(binpath);
 
   //Add default console input attachment to viewer
+#ifndef __EMSCRIPTEN__
   if (!omegalib)
   {
     static StdInput stdi;
+    //TODO: input freezing from terminal again!
     viewer->addInput(&stdi);
   }
+#endif
 }
 
 void LavaVu::defaults()

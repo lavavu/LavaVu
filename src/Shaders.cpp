@@ -84,6 +84,15 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   if (fsrc.length() == 0) fsrc = std::string(fragmentShader);
   if (vsrc.length() == 0) vsrc = std::string(vertexShader);
   //Prepend GLSL version GL 3.3 ==> GLSL 3.3
+#ifdef __EMSCRIPTEN__ //or just GLES2 ?
+  //std::string fdefines = "#extension GL_OES_standard_derivatives : enable\nprecision highp float;\n#define WEBGL\n";
+  std::string fdefines = "#version 300 es\nprecision highp float;\nprecision highp sampler3D;\n"; //#define WEBGL\n";
+  std::string vdefines = "#version 300 es\nprecision highp float;\nprecision highp sampler3D;\n"; //#define WEBGL\n";
+  fsrc = fdefines + fsrc;
+  vsrc = vdefines + vsrc;
+  //std::cout << "FRAGMENT SHADER:\n==========================================\n" << fsrc << std::endl;
+  //std::cout << "VERTEX SHADER:\n==========================================\n" << vsrc << std::endl;
+#else
 #ifdef GLES2
   std::string ver = "#version 140\n";
 #else
@@ -92,6 +101,8 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   if (vsrc.length()) vsrc = ver + vsrc;
   if (fsrc.length()) fsrc = ver + fsrc;
   if (gsrc.length()) gsrc = ver + gsrc;
+#endif
+
   //Attempts to load and build shader programs
   if (compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
       (gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&

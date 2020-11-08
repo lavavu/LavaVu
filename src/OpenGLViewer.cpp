@@ -249,7 +249,7 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   //printf("(%d, %f) Bounds check %d x %d (%d) == %d x %d (%d)\n", downsample, factor, image->width, image->height, image->channels, w, h, channels);
   glBindTexture(GL_TEXTURE_2D, texture);
   glGenerateMipmap(GL_TEXTURE_2D);
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(__EMSCRIPTEN__)
   //Check size
   float factor = 1.0/downsampleFactor();
   int outw, outh;
@@ -257,17 +257,15 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
   assert(w==(unsigned int)outw && h==(unsigned int)outh);
   debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
-#endif
-
-  // Read the pixels from mipmap image
   assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
   assert(w/factor == width && h/factor == height);
   assert(channels == 3 || channels == 4);
-  GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
+#endif
 
-  //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
-
+  // Read the pixels from mipmap image
 #ifndef GLES2
+  GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
+  //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
 #else
   //Need to read the texture from the framebuffer at original size, then downsample ourselves
@@ -480,6 +478,21 @@ bool OpenGLViewer::events()
   return postdisplay || pollInput();
 }
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+
+//Called from the Emscripten animation loop
+void em_main_callback(void* userData)
+{
+  if (userData)
+  {
+    OpenGLViewer* v = (OpenGLViewer*)userData;
+    v->execute();
+  }
+}
+#endif
+
 void OpenGLViewer::loop(bool interactive)
 {
   GL_Check_Thread(render_thread);
@@ -487,6 +500,10 @@ void OpenGLViewer::loop(bool interactive)
   if (visible)
     show();
 
+#ifdef __EMSCRIPTEN__
+  // Receives a function to call and some user data to provide it.
+  emscripten_set_main_loop_arg(&em_main_callback, (void*)this, 0, true);
+#else
   while (!quitProgram)
   {
     if (interactive)
@@ -494,6 +511,7 @@ void OpenGLViewer::loop(bool interactive)
     else
       OpenGLViewer::execute();
   }
+#endif
 
   if (visible)
     hide();

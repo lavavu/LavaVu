@@ -56,99 +56,129 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
 
   //Save shift states
-  self->get_modifiers(mods);
-
-  if (action != GLFW_PRESS)
-  {
-    //GLFW modifier key handling is utterly stupid, thus this hack, and below manual setting of modifiers
-    //(shift key status flags when pressed are off, on when released, really?)
-    if (key >= GLFW_KEY_LEFT_SHIFT && key <= GLFW_KEY_RIGHT_SUPER)
-      self->keyState.shift = self->keyState.ctrl = self->keyState.alt = 0;
-    return;
-  }
+  //self->get_modifiers(mods);
+  //if (self->keyState.shift || self->keyState.ctrl || self->keyState.alt)
+  //  printf("MODIFIERS shift %d ctrl %d alt %d\n", self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
 
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
 
+  //Set modifiers
+  bool modset = false;
   switch (key)
   {
-  case GLFW_KEY_ESCAPE:
-    self->keyPress(KEY_ESC, (int)xpos, (int)ypos);
-    //glfwSetWindowShouldClose(window, GL_TRUE);
-    break;
-  case GLFW_KEY_ENTER:
-    self->keyPress(KEY_ENTER, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_TAB:
-    self->keyPress(KEY_TAB, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_DELETE:
-    self->keyPress(KEY_DELETE, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_BACKSPACE:
-    self->keyPress(KEY_BACKSPACE, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_F1:
-    self->keyPress(KEY_F1, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_F2:
-    self->keyPress(KEY_F2, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_LEFT:
-    self->keyPress(KEY_LEFT, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_RIGHT:
-    self->keyPress(KEY_RIGHT, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_DOWN:
-    self->keyPress(KEY_DOWN, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_UP:
-    self->keyPress(KEY_UP, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_PAGE_UP:
-    self->keyPress(KEY_PAGEUP, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_PAGE_DOWN:
-    self->keyPress(KEY_PAGEDOWN, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_HOME:
-    self->keyPress(KEY_HOME, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_END:
-    self->keyPress(KEY_END, (int)xpos, (int)ypos);
-    break;
-  case GLFW_KEY_LEFT_SHIFT:
-  case GLFW_KEY_RIGHT_SHIFT:
-    self->keyState.shift = 1;
-    break;
-  case GLFW_KEY_LEFT_CONTROL:
-  case GLFW_KEY_RIGHT_CONTROL:
-    self->keyState.ctrl = 1;
-    break;
-  case GLFW_KEY_LEFT_ALT:
-  case GLFW_KEY_RIGHT_ALT:
-    self->keyState.alt = 1;
-    break;
-  default:
+    case GLFW_KEY_LEFT_SHIFT:
+    case GLFW_KEY_RIGHT_SHIFT:
+      self->keyState.shift = (action == GLFW_PRESS ? 1 : 0);
+      modset = true;
+      break;
+    case GLFW_KEY_LEFT_CONTROL:
+    case GLFW_KEY_RIGHT_CONTROL:
+      self->keyState.ctrl = (action == GLFW_PRESS ? 1 : 0);
+      modset = true;
+      break;
+    case GLFW_KEY_LEFT_ALT:
+    case GLFW_KEY_RIGHT_ALT:
+      self->keyState.alt = (action == GLFW_PRESS ? 1 : 0);
+      modset = true;
+      break;
+    case GLFW_KEY_LEFT_SUPER:
+    case GLFW_KEY_RIGHT_SUPER:
+      self->keyState.meta = (action == GLFW_PRESS ? 1 : 0);
+      modset = true;
+      break;
+  }
+
+  if (modset)
+  {
+    //printf("MODKEY: %d %c action %d shift %d ctrl %d alt %d\n", key, (char)key, action, self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
     return;
   }
-  //printf("KEY: %d %c\n", key, (char)key);
+  else
+  {
+    //This works, but not for the actual mod key presses
+    self->get_modifiers(mods);
+  }
+
+  if (action == GLFW_PRESS)
+  {
+    switch (key)
+    {
+    case GLFW_KEY_ESCAPE:
+      self->keyPress(KEY_ESC, (int)xpos, (int)ypos);
+      //glfwSetWindowShouldClose(window, GL_TRUE);
+      break;
+    case GLFW_KEY_ENTER:
+      self->keyPress(KEY_ENTER, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_TAB:
+      self->keyPress(KEY_TAB, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_DELETE:
+      self->keyPress(KEY_DELETE, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_BACKSPACE:
+      self->keyPress(KEY_BACKSPACE, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_F1:
+      self->keyPress(KEY_F1, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_F2:
+      self->keyPress(KEY_F2, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_LEFT:
+      self->keyPress(KEY_LEFT, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_RIGHT:
+      self->keyPress(KEY_RIGHT, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_DOWN:
+      self->keyPress(KEY_DOWN, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_UP:
+      self->keyPress(KEY_UP, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_PAGE_UP:
+      self->keyPress(KEY_PAGEUP, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_PAGE_DOWN:
+      self->keyPress(KEY_PAGEDOWN, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_HOME:
+      self->keyPress(KEY_HOME, (int)xpos, (int)ypos);
+      break;
+    case GLFW_KEY_END:
+      self->keyPress(KEY_END, (int)xpos, (int)ypos);
+      break;
+    default:
+      //If ALT/CTRL used, char presses not activated so need to process here
+      if (self->keyState.ctrl || self->keyState.alt)
+      {
+        //printf("Attempt to process as char %d\n", key);
+        self->keyPress((char)key, (int)xpos, (int)ypos);
+      }
+      else
+      {
+        //printf("SKIPKEY: %d %c\n", key, (char)key);
+        return;
+      }
+    }
+  }
 
   self->redisplay = true;
+
+  //printf("KEY: %d %c\n", key, (char)key);
+  //printf("KEY: %d %c action %d shift %d ctrl %d alt %d\n", key, (char)key, action, self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
 }
 
-static void character_callback(GLFWwindow *window, unsigned int code, int mods)
+static void character_callback(GLFWwindow *window, unsigned int code)
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
 
-  //Save shift states
-  self->get_modifiers(mods);
-
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
 
-  //printf("CHAR: %u %c\n", code, (char)code);
+  //printf("CHAR: %u %c shift %d ctrl %d alt %d\n", code, (char)code, self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
   self->keyPress(code, (int)xpos, (int)ypos);
   self->redisplay = true;
 }
@@ -192,6 +222,10 @@ static void mousemove_callback(GLFWwindow* window, double xpos, double ypos)
 static void mousescroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
+#ifdef EMSCRIPTEN
+  //Flip dir in emscripten and scale down
+  yoffset *= -0.01;
+#endif
   float delta = yoffset / 2.0;
   if (delta != 0)
     self->redisplay = self->mouseScroll(delta);
@@ -258,7 +292,7 @@ void GLFWViewer::open(int w, int h)
   glfwSetMouseButtonCallback(window, mouseclick_callback);
   glfwSetScrollCallback(window, mousescroll_callback);
   glfwSetKeyCallback(window, key_callback);
-  glfwSetCharModsCallback(window, character_callback);
+  glfwSetCharCallback(window, character_callback);
 
   //Call OpenGL init
   OpenGLViewer::init();

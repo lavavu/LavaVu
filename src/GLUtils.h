@@ -21,7 +21,11 @@
     } \
   }
 
+#ifdef __EMSCRIPTEN__
+#define GL_Error_Check GL_Error_Check_(false)
+#else
 #define GL_Error_Check GL_Error_Check_(true)
+#endif
 #define GL_Error_Print GL_Error_Check_(false)
 
 #else

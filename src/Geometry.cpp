@@ -3140,7 +3140,9 @@ void Imposter::draw()
   GLint aPosition = prog->attribs["aVertexPosition"];
   glEnableVertexAttribArray(aPosition);
   glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y
-  try
+
+  auto it = prog->attribs.find("aVertexTexCoord");
+  if (it != prog->attribs.end())
   {
     //Only use texcoord if attrib exists
     GLint aTexCoord = prog->attribs.at("aVertexTexCoord");
@@ -3149,8 +3151,9 @@ void Imposter::draw()
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glDisableVertexAttribArray(aTexCoord);
   }
-  catch (std::out_of_range& e)
+  else
   {
+    // not found
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   }
 

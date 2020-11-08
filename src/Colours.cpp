@@ -44,17 +44,12 @@ Colour::Colour(json& jvalue, GLubyte red, GLubyte grn, GLubyte blu, GLubyte alph
 
 Colour::Colour(const std::string& str)
 {
-  try
-  {
-    //First attempt to load as JSON string
-    json jval = json::parse(str);
-    fromJSON(jval);
-  }
-  catch (std::exception& e)
-  {
-    //Not valid JSON, assume other string value
+  // Parse without exceptions - required for emscripten
+  json jval = json::parse(str, nullptr, false);
+  if (jval.is_discarded())
     fromString(str);
-  }
+  else
+    fromJSON(jval);
 }
 
 void Colour::fromJSON(json& jvalue)
