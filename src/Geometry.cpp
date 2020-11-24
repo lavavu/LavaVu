@@ -3127,7 +3127,9 @@ void Imposter::close()
 void Imposter::draw()
 {
   //State...
+#ifndef __EMSCRIPTEN__
   glDisable(GL_MULTISAMPLE);
+#endif
 
   Shader_Ptr prog = getShader(type);
 
@@ -3161,7 +3163,9 @@ void Imposter::draw()
   glDisableVertexAttribArray(aPosition);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+#ifndef __EMSCRIPTEN__
   glEnable(GL_MULTISAMPLE);
+#endif
   GL_Error_Check;
 }
 

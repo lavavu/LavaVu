@@ -422,7 +422,7 @@ void Triangles::draw()
           //Draw with index buffer
           //glDrawElements(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
           //printf("  DRAW %d from %d by INDEX (voffset %d)\n", counts[index], start, voffset);
-#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN__ //All GLES2/3 ?
           unsigned int offset = geom[index]->voffset * stride;
           glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)offset); // Vertex x,y,z
           glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(offset+3*sizeof(float))); // Normal x,y,z

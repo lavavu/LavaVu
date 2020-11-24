@@ -579,7 +579,9 @@ void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertic
 void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
   session.context.push();
+#ifndef __EMSCRIPTEN__
   glDisable(GL_MULTISAMPLE);
+#endif
   glDisable(GL_CULL_FACE);
 
   std::vector<ColourVert2d> vertices;
@@ -794,20 +796,26 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
       }
 
       session.context.push();
+#ifndef __EMSCRIPTEN__
       glEnable(GL_MULTISAMPLE);
+#endif
       float shiftf = (float)session.fonts.printWidth("T");
       if (vertical)
         session.fonts.print(starty + breadth + 8 + 0.25 * shiftf, xpos - (int) (0.75 * shiftf),  string);
       else
         session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)), starty - 6 - 1.25 * shiftf, string);
+#ifndef __EMSCRIPTEN__
       glDisable(GL_MULTISAMPLE);
+#endif
       session.context.pop();
     }
   }
 
   drawVertices(session, vertices, GL_TRIANGLES);
 
+#ifndef __EMSCRIPTEN__
   glEnable(GL_MULTISAMPLE);
+#endif
 
   session.context.pop();
 }

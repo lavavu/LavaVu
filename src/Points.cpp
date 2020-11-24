@@ -419,6 +419,7 @@ void Points::draw()
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   //Required for OpenGL < 3.2 or compatibility mode
+#ifndef __EMSCRIPTEN__
   if (!session.context.core)
   {
 #ifdef GL_POINT_SPRITE
@@ -430,6 +431,7 @@ void Points::draw()
   {
     glEnable(GL_PROGRAM_POINT_SIZE);
   }
+#endif
   GL_Error_Check;
 
 
@@ -559,6 +561,7 @@ void Points::draw()
   GL_Error_Check;
   //Restore state
   glBindTexture(GL_TEXTURE_2D, 0);
+#ifndef __EMSCRIPTEN__
   if (!session.context.core)
   {
 #ifdef GL_POINT_SPRITE
@@ -569,6 +572,7 @@ void Points::draw()
   {
     glDisable(GL_PROGRAM_POINT_SIZE);
   }
+#endif
   GL_Error_Check;
   glDepthFunc(GL_LESS);
   GL_Error_Check;

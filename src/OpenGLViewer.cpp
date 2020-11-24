@@ -251,14 +251,14 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   glGenerateMipmap(GL_TEXTURE_2D);
 #if defined(DEBUG) && !defined(__EMSCRIPTEN__)
   //Check size
-  float factor = 1.0/downsampleFactor();
   int outw, outh;
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
   assert(w==(unsigned int)outw && h==(unsigned int)outh);
   debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
   assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
-  assert(w/factor == width && h/factor == height);
+  assert(downsampleFactor()/w == width);
+  assert(downsampleFactor()/h == height);
   assert(channels == 3 || channels == 4);
 #endif
 
@@ -330,8 +330,10 @@ void OpenGLViewer::init()
   //Init OpenGL (called after context creation)
   glGetIntegerv(GL_SAMPLE_BUFFERS, &sb);
   glGetIntegerv(GL_SAMPLES, &ss);
+#ifndef __EMSCRIPTEN__
   glGetBooleanv(GL_STEREO, &stereoBuffer);
   glGetBooleanv(GL_DOUBLEBUFFER, &doubleBuffer);
+#endif
   app->session.context.antialiased = ss > 1;
 
   const char* gl_v = (const char*)glGetString(GL_VERSION);
@@ -339,7 +341,11 @@ void OpenGLViewer::init()
   glGetIntegerv(GL_MAJOR_VERSION, &app->session.context.major);
   glGetIntegerv(GL_MINOR_VERSION, &app->session.context.minor);
   GLint profile;
+#ifdef __EMSCRIPTEN__
+  profile = GL_CONTEXT_CORE_PROFILE_BIT;
+#else
   glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profile);
+#endif
   app->session.context.core = profile & GL_CONTEXT_CORE_PROFILE_BIT;
   app->session.context.gl_version = std::string(gl_v);
   debug_print("OpenGL %d.%d (%s)\n", app->session.context.major, app->session.context.minor, app->session.context.core ? "core" : "compatibility");
@@ -765,6 +771,9 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   bool alphapng = jpegquality == 0 && (transparent || app->session.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
+#ifdef __EMSCRIPTEN__
+  channels = 4; //WebGL buffer doesn't support glReadPixels with GL_RGB
+#endif
   std::string retImg;
 
   // Read the pixels

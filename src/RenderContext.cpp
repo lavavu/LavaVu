@@ -110,12 +110,17 @@ void RenderContext::viewport2d(int width, int height)
     MV = linalg::identity;
 
     // Disable line smoothing in 2d mode
+#ifndef __EMSCRIPTEN__
     glDisable(GL_LINE_SMOOTH);
+#endif
   }
   else
   {
     // Restore
     glEnable( GL_DEPTH_TEST );
+#ifndef __EMSCRIPTEN__
+    glEnable(GL_LINE_SMOOTH);
+#endif
     pop();
   }
 }
