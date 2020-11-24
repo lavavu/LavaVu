@@ -221,8 +221,8 @@ public:
 
   DrawingObject* contour(DrawingObject* target, DrawingObject* source, std::string properties, bool labels=false, bool clearsurf=false);
   DrawingObject* isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol=false);
-  void update(DrawingObject* target, bool compress=true);
-  void update(DrawingObject* target, lucGeometryType type, bool compress=true);
+  void update(DrawingObject* target);
+  void update(DrawingObject* target, lucGeometryType type);
 
   void close();
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=3);
