@@ -146,20 +146,25 @@ int Session::parse(Properties* target, const std::string& property)
   std::string valuel = value;
   std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
 
-  try
+  // Parse without exceptions - required for emscripten
+  if (IDX >= 0)
   {
-    if (IDX >= 0)
+    //Set to default first
+    if (!dest.count(key) || dest[key].is_null())
+      dest[key] = defaults[key];
+    if (dest[key].is_array() && (int)dest[key].size() > IDX)
     {
-      //Set to default first
-      if (!dest.count(key) || dest[key].is_null())
-        dest[key] = defaults[key];
-      if (dest[key].is_array() && (int)dest[key].size() > IDX)
-        dest[key][IDX] = json::parse(value);
+      json parsedval = json::parse(value, nullptr, false);
+      if (!parsedval.is_discarded())
+        dest[key][IDX] = parsedval;
     }
-    //Parse simple increments and decrements
-    else if (prev == '+' || prev == '-' || prev == '*')
+  }
+  //Parse simple increments and decrements
+  else if (prev == '+' || prev == '-' || prev == '*')
+  {
+    json parsedval = json::parse(value, nullptr, false);
+    if (!parsedval.is_discarded())
     {
-      json parsedval = json::parse(value);
       float val = dest[key];
       if (prev == '+')
         val = val + (float)parsedval;
@@ -174,29 +179,33 @@ int Session::parse(Properties* target, const std::string& property)
       else
         dest[key] = (int)val;
     }
-    else if (valuel == "true")
+  }
+  else if (valuel == "true")
+  {
+    dest[key] = true;
+  }
+  else if (valuel == "false")
+  {
+    dest[key] = false;
+  }
+  else if (valuel == "null")
+  {
+    dest.erase(key);
+  }
+  else
+  {
+    json parsedval = json::parse(value, nullptr, false);
+    if (parsedval.is_discarded())
     {
-      dest[key] = true;
-    }
-    else if (valuel == "false")
-    {
-      dest[key] = false;
-    }
-    else if (valuel == "null")
-    {
-      dest.erase(key);
+      //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
+      //Treat as a string value
+      dest[key] = value;
     }
     else
     {
-      dest[key] = json::parse(value);
+      dest[key] = parsedval;
       //std::cerr << value << " : '" << key << "' => " << dest[key] << std::endl;
     }
-  }
-  catch (std::exception& e)
-  {
-    //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
-    //Treat as a string value
-    dest[key] = value;
   }
 
   //if (!validate)

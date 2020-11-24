@@ -147,7 +147,8 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
       break;
     }
 
-    if (scroll) mouseScroll(scroll);
+    if (scroll)
+      mouseScroll(scroll);
 
     //Update cam move in history
     if (translated) history.push_back(aview->translateString());
@@ -396,6 +397,12 @@ bool LavaVu::parseChar(unsigned char key)
     default:
       return false;
     }
+  }
+  //CTRL commands
+  else if (viewer->keyState.ctrl)
+  {
+    //Skip these, usually built in / browser shortcuts
+    return false;
   }
 
   //Direct commands and verbose command entry
@@ -1112,15 +1119,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else if (parsed.has(d, "rotate", 1))
     {
-      try
-      {
-        json ax = json::parse(axis);
+      // Parse without exceptions - required for emscripten
+      json ax = json::parse(axis, nullptr, false);
+      if (!ax.is_discarded())
         aview->rotate(d, Vec3d(ax[0], ax[1], ax[2]));
-      }
-      catch (std::exception& e)
-      {
-        std::cout << "Error parsing rotation: " << e.what() << std::endl;
-      }
+      else
+        std::cout << "Error parsing rotation axis: " << axis << std::endl;
     }
   }
   else if (parsed.has(fval, "rotatex"))
@@ -3380,7 +3384,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "csv", "json", "save", "tiles"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "csv", "json", "cache", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "spin", "focus", "fov", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "fixbb", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
