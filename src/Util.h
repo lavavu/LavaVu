@@ -117,6 +117,8 @@ public:
   }
 
   bool empty() {return full.empty();}
+
+  static std::vector<std::string> paths;
 };
 
 std::string GetBinaryPath(const char* argv0, const char* progname);

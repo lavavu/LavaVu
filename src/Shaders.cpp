@@ -1,11 +1,5 @@
 #include "Shaders.h"
 
-#ifndef SHADER_PATH
-std::string Shader::path = "";
-#else
-std::string Shader::path = SHADER_PATH;
-#endif
-
 //Default shaders
 const char *vertexShader = R"(
 in vec4 aVertexPosition;
@@ -123,11 +117,14 @@ std::string Shader::read_file(const std::string& fname)
     return fname;
 
   //If shader found locally in working directory, use it instead
-  std::string filepath;
-  if (Shader::path.length() > 0 && !FileExists(fname))
-    filepath = Shader::path;
+  //If not, loop through list of paths until found
+  std::string filepath = fname;
+  for (auto path : FilePath::paths)
+  {
+    if (path.length() > 0 && !FileExists(filepath))
+    filepath = path + fname;
+  }
 
-  filepath += fname;
   debug_print("Shader loading: %s\n", filepath.c_str());
 
   std::ifstream ifs(filepath);

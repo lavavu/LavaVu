@@ -40,8 +40,6 @@ public:
   std::map<std::string, GLint> uniforms;
   std::map<std::string, GLenum> uniform_types;
   std::map<std::string, GLint> attribs;
-
-  static std::string path;
 };
 
 typedef std::shared_ptr<Shader> Shader_Ptr;

@@ -43,6 +43,8 @@ FILE* infostream = NULL;
 long membytes__ = 0;
 long mempeak__ = 0;
 
+std::vector<std::string> FilePath::paths;
+
 void abort_program(const char * s, ...)
 {
   char buffer[2048];
