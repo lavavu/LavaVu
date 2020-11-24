@@ -2908,12 +2908,9 @@ void LavaVu::drawSceneBlended(bool nosort)
     // This works well but with some blend errors that show if only rendering a few particle layers
     // Rendering colour only first pass at fully transparent, then second pass renders as usual
     glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ZERO, GL_ZERO);
-    if (session.global("pngalpha"))
-    {
-      //Clear background to transparent
-      glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0.0);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
+    //Clear background to transparent
+    glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawScene();
     // Clear the depth buffer so second pass is blended or nothing will be drawn
     glClear(GL_DEPTH_BUFFER_BIT);
