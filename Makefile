@@ -191,9 +191,9 @@ emscripten: CC = emcc
 emscripten: LIBS = -ldl -lpthread -lm -lGL -lglfw
 emscripten: LINKFLAGS = -s USE_WEBGL2=1 -s DISABLE_EXCEPTION_CATCHING=0 -s LEGACY_GL_EMULATION=0 -s USE_GLFW=3 -s ALLOW_MEMORY_GROWTH=1
 emscripten: LINKFLAGS += --preload-file lavavu/dict.json@dict.json --preload-file lavavu/shaders@/shaders  --preload-file lavavu/font.bin@font.bin
-emscripten: CPPFLAGS += -pthread
-emscripten: EXTCFLAGS += -pthread
-emscripten: LINKFLAGS += -pthread
+#emscripten: CPPFLAGS += -pthread
+#emscripten: EXTCFLAGS += -pthread
+#emscripten: LINKFLAGS += -pthread
 emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CXX) -o $(PROGRAM).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)

@@ -1795,7 +1795,7 @@ void Geometry::display(bool refresh)
     }
 
     //Prevent update while sorting
-    std::lock_guard<std::mutex> guard(sortmutex);
+    LOCK_GUARD(sortmutex);
     update();
     reload = false;
   }
@@ -3027,15 +3027,15 @@ void Glyphs::setup(View* vp, float* min, float* max)
 void Glyphs::sort()
 {
   {
-    std::lock_guard<std::mutex> guard(lines->sortmutex);
+    LOCK_GUARD(lines->sortmutex);
     lines->sort();
   }
   {
-    std::lock_guard<std::mutex> guard(tris->sortmutex);
+    LOCK_GUARD(tris->sortmutex);
     tris->sort();
   }
   {
-    std::lock_guard<std::mutex> guard(points->sortmutex);
+    LOCK_GUARD(points->sortmutex);
     points->sort();
   }
 }

@@ -283,7 +283,7 @@ void LinesSorted::sort()
 
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   t1 = clock();
-  std::lock_guard<std::mutex> guard(loadmutex);
+  LOCK_GUARD(loadmutex);
   unsigned int idxcount = 0;
   for(int i=linecount-1; i>=0; i--)
   {
@@ -321,7 +321,7 @@ void LinesSorted::render()
   if (glIsBuffer(indexvbo))
   {
     //Lock the update mutex, to wait for any updates to the indexlist to finish
-    std::lock_guard<std::mutex> guard(loadmutex);
+    LOCK_GUARD(loadmutex);
     //NOTE: linecount holds the filtered count of triangles to actually render as opposed to total in buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, linecount * 2 * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
     debug_print("  %d byte IBO uploaded %d indices (%d tris)\n", linecount*2 * sizeof(GLuint), linecount*2, linecount);

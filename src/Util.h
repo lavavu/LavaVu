@@ -52,6 +52,12 @@
   va_end(ap);                                                         \
 } 
 
+//Skip lock/guard when pthreads not supported
+#if !defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__)
+#define LOCK_GUARD(m) std::lock_guard<std::mutex> guard(m);
+#else
+#define LOCK_GUARD(m) ;
+#endif
 
 extern FILE* infostream;
 void abort_program(const char * s, ...);

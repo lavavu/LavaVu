@@ -533,7 +533,7 @@ void OpenGLViewer::display(bool redraw)
     //Critical section
     std::string cmd;
     {
-      std::lock_guard<std::mutex> guard(cmd_mutex);
+      LOCK_GUARD(cmd_mutex);
       cmd = commands.front();
       commands.pop_front();
     }
@@ -831,7 +831,7 @@ bool OpenGLViewer::pollInput()
   //Delete parsed commands from front of queue
   //while (commands.front().length() == 0)
   // commands.pop_front();
-  std::lock_guard<std::mutex> guard(cmd_mutex);
+  LOCK_GUARD(cmd_mutex);
 
   //Check for input at stdin...
   bool parsed = false;

@@ -1904,7 +1904,7 @@ void LavaVu::close()
   {
     //Wait until all sort threads done
     for (auto g : amodel->geometry)
-      std::lock_guard<std::mutex> guard(g->sortmutex);
+      LOCK_GUARD(g->sortmutex);
   }
 
   GL_Check_Thread(viewer->render_thread);
@@ -2087,12 +2087,15 @@ bool LavaVu::sort(bool sync)
 {
   //Run the renderer sort functions
   //by default in a thread
+#if defined(__EMSCRIPTEN__) || !defined(__EMSCRIPTEN_PTHREADS__)
+  sync = true;
+#endif
   if (sync)
   {
     //Synchronous immediate sort
     for (auto g : amodel->geometry)
     {
-      std::lock_guard<std::mutex> guard(g->sortmutex);
+      LOCK_GUARD(g->sortmutex);
       //Not required if reload flagged, will be done in update()
       if (!g->reload)
         g->sort();
@@ -2117,7 +2120,7 @@ bool LavaVu::sort(bool sync)
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         for (auto g : amodel->geometry)
         {
-          std::lock_guard<std::mutex> guard(g->sortmutex);
+          LOCK_GUARD(g->sortmutex);
           //Not required if reload flagged, will be done in update()
           if (!g->reload)
             g->sort();
@@ -2153,7 +2156,7 @@ void LavaVu::display(bool redraw)
   if (!viewer->isopen) return;
 
   //Lock the state mutex, prevent updates while drawing
-  std::lock_guard<std::mutex> guard(session.mutex);
+  LOCK_GUARD(session.mutex);
 
   clock_t t1 = clock();
 
@@ -4086,7 +4089,7 @@ void LavaVu::queueCommands(std::string cmds)
 {
   //Thread safe command processing
   //Push command onto queue to be processed in the viewer thread
-  std::lock_guard<std::mutex> guard(viewer->cmd_mutex);
+  LOCK_GUARD(viewer->cmd_mutex);
   viewer->commands.push_back(cmds);
   viewer->postdisplay = true;
 }

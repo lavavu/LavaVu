@@ -100,7 +100,7 @@ void Volumes::draw()
   //Allows further sorting to continue in background while rendering
   std::vector<Geom_Ptr> geom_sorted;
   {
-    std::lock_guard<std::mutex> guard(loadmutex);
+    LOCK_GUARD(loadmutex);
     geom_sorted = sorted;
   }
 
@@ -133,7 +133,7 @@ void Volumes::sort()
   if (slices.size() == 0 || geom.size() == 0) return;
 
   //Lock the update mutex
-  std::lock_guard<std::mutex> guard(loadmutex);
+  LOCK_GUARD(loadmutex);
 
   //Add key elements to sort list
   sorted.clear();

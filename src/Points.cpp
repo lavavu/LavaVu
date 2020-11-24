@@ -330,7 +330,7 @@ void Points::sort()
   //Re-map vertex indices in sorted order
   t1 = clock();
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
-  std::lock_guard<std::mutex> guard(loadmutex);
+  LOCK_GUARD(loadmutex);
   //Reverse order farthest to nearest
   //int distSample = session.global("pointdistsample");
   //uint32_t SEED;
@@ -380,7 +380,7 @@ void Points::render()
   if (glIsBuffer(indexvbo))
   {
     //Lock the update mutex, to wait for any updates to the sorter.indices to finish
-    std::lock_guard<std::mutex> guard(loadmutex);
+    LOCK_GUARD(loadmutex);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sorter.indices.size() * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
     debug_print("  %d byte IBO uploaded %d indices\n", sorter.indices.size() * sizeof(GLuint), sorter.indices.size());
   }

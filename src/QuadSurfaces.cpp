@@ -124,7 +124,7 @@ void QuadSurfaces::draw()
   //Lock the update mutex and copy the sorted vector
   //Allows further sorting to continue in background while rendering
   {
-    std::lock_guard<std::mutex> guard(loadmutex);
+    LOCK_GUARD(loadmutex);
     geom = sorted;
   }
   //Elements at same depth: draw both

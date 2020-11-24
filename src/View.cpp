@@ -242,7 +242,7 @@ void View::getMinMaxDistance(float* min, float* max, float range[2], bool eyePla
 {
   //Preserve the modelView at time of calculations
   {
-    std::lock_guard<std::mutex> guard(matrix_lock);
+    LOCK_GUARD(matrix_lock);
     modelView = session.context.MV;
   }
 

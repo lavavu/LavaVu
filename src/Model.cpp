@@ -1362,7 +1362,7 @@ int Model::setTimeStep(int stepidx)
       for (auto g : geometry)
       {
         //Wait until all sort threads done
-        std::lock_guard<std::mutex> guard(g->sortmutex);
+        LOCK_GUARD(g->sortmutex);
         //Release any graphics memory and clear
         g->close();
       }
@@ -2114,7 +2114,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   //Write new JSON format objects
   // - globals are all stored on / sourced from session.globals
   // - views[] list holds view properies (previously single instance in "options")
-  std::lock_guard<std::mutex> guard(session.mutex);
+  LOCK_GUARD(session.mutex);
+
   json exported;
   json properties = session.globals;
   json cmaps = json::array();
@@ -2218,7 +2219,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 
 int Model::jsonRead(std::string data)
 {
-  std::lock_guard<std::mutex> guard(session.mutex);
+  LOCK_GUARD(session.mutex);
   
   json imported = json::parse(data);
 

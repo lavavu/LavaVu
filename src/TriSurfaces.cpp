@@ -566,7 +566,7 @@ void TriSurfaces::sort()
 
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   t1 = clock();
-  std::lock_guard<std::mutex> guard(loadmutex);
+  LOCK_GUARD(loadmutex);
   unsigned int idxcount = 0;
   for(int i=tricount-1; i>=0; i--)
   {
@@ -604,7 +604,7 @@ void TriSurfaces::render()
   if (glIsBuffer(indexvbo))
   {
     //Lock the update mutex, to wait for any updates to the indexlist to finish
-    std::lock_guard<std::mutex> guard(loadmutex);
+    LOCK_GUARD(loadmutex);
     //NOTE: tricount holds the filtered count of triangles to actually render as opposed to total in buffer
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, tricount * 3 * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
     debug_print("  %d byte IBO uploaded %d indices (%d tris)\n", tricount*3 * sizeof(GLuint), tricount*3, tricount);
