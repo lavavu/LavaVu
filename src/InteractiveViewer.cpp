@@ -1894,15 +1894,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Export model database\n\n"
-              "**Usage:** export [filename] [objects] [uncompressed]\n\n"
+              "**Usage:** export [filename] [objects]\n\n"
               "filename (string) : the name of the file to export to, extension must be .gldb\n"
               "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
-              "uncompressed : add this to skip the zlib compression step in the export process\n"
               "If object ommitted all will be exported\n";
       return false;
     }
 
-    bool compress = (cmd.find("uncompressed") == std::string::npos);
     std::string dbfn = parsed["export"];
     if (dbfn.find(".gldb") == std::string::npos)
     {
@@ -1912,7 +1910,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         dbfn = "exported.gldb";
     }
     std::vector<DrawingObject*> list = lookupObjects(parsed, "export");
-    exportData(compress ? lucExportGLDBZ : lucExportGLDB, list, dbfn);
+    exportData(lucExportGLDB, list, dbfn);
     printMessage("Database export complete");
   }
   else if (parsed.exists("csv"))

@@ -1717,16 +1717,16 @@ void Model::mergeDatabases()
   }
 }
 
-void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compress)
+void Model::updateObject(DrawingObject* target, lucGeometryType type)
 {
   database.reopen(true); //Ensure opened writable
   database.issue("BEGIN EXCLUSIVE TRANSACTION");
   if (type == lucMaxType)
-    writeObjects(database, target, step(), compress);
+    writeObjects(database, target, step());
   else
   {
     Geometry* g = getRenderer(type);
-    if (g) writeGeometry(database, g, target, step(), compress);
+    if (g) writeGeometry(database, g, target, step());
   }
 
   //Update object
@@ -1735,7 +1735,7 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compr
   database.issue("COMMIT");
 }
 
-void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
+void Model::writeDatabase(const char* path, DrawingObject* obj)
 {
   //Write objects to a new database?
   Database outdb;
@@ -1790,7 +1790,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   //Write timesteps & objects...
 
   //Write any fixed data
-  writeObjects(outdb, obj, -1, compress);
+  writeObjects(outdb, obj, -1);
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
@@ -1803,7 +1803,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     //setTimeStep(i);
 
     //Write object data
-    writeObjects(outdb, obj, i, compress);
+    writeObjects(outdb, obj, i);
   }
 
   outdb.issue("COMMIT");
@@ -1844,7 +1844,7 @@ void Model::writeState(Database& outdb)
   }
 }
 
-void Model::writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress)
+void Model::writeObjects(Database& outdb, DrawingObject* obj, int step)
 {
   //Write object data
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1854,7 +1854,7 @@ void Model::writeObjects(Database& outdb, DrawingObject* obj, int step, bool com
       //Loop through all geometry classes (points/vectors etc)
       for (auto g : geometry)
       {
-        writeGeometry(outdb, g, objects[i], step, compress);
+        writeGeometry(outdb, g, objects[i], step);
       }
     }
   }
@@ -1866,7 +1866,7 @@ void Model::deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject*
   outdb.issue("DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
 }
 
-void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step, bool compressdata)
+void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step)
 {
   //Get data
   std::vector<Geom_Ptr> data = g->getAllObjectsAt(obj, step);
@@ -1886,8 +1886,8 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       Data_Ptr block = data[i]->dataContainer((lucGeometryDataType)data_type);
       if (!block || block->size() == 0) continue;
       std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
-      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block.get(), step, compressdata);
+                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
+      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block.get(), step);
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {
@@ -1895,32 +1895,34 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       DataContainer* block = (DataContainer*)data[i]->values[j].get();
       if (!block || block->size() == 0) continue;
       std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
       //This hack will work for up to 7 value data sets for now
       //Filters and colourby properties will need modification though
       unsigned int data_type = lucColourValueData+j;
       if (data_type == lucIndexData) data_type++;
-      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
+      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step);
     }
   }
 }
 
-void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata)
+void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step)
 {
+  int compression = session.global("compression");
   char SQL[SQL_QUERY_MAX];
   sqlite3_stmt* statement;
   unsigned char* buffer = (unsigned char*)block->ref(0);
   unsigned long src_len = block->bytes();
   // Compress the data if enabled and > 1kb
   unsigned long cmp_len = 0;
-  if (compressdata &&  src_len > 1000)
+  if (compression != Z_NO_COMPRESSION &&  src_len > 1000)
   {
     cmp_len = compressBound(src_len);
     buffer = (unsigned char*)malloc((size_t)cmp_len);
     if (buffer == NULL)
       abort_program("Compress database: out of memory!\n");
-    if (compress(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len) != Z_OK)
+    //if (compress(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len) != Z_OK)
+    if (compress2(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len, compression) != Z_OK)
       abort_program("Compress database buffer failed!\n");
     if (cmp_len >= src_len)
     {

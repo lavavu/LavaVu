@@ -26,6 +26,7 @@ public:
 
   //Model
   int now;
+  int zlib_compression = Z_BEST_SPEED;
 
   DrawingObject* borderobj;
   DrawingObject* axisobj;

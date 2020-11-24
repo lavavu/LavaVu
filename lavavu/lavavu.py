@@ -1322,7 +1322,7 @@ class Object(dict):
             #Assume values by label (or all values if blank)
             self.parent.app.clearValues(self.ref, typename)
 
-    def update(self, filter=None, compress=True):
+    def update(self, filter=None):
         """
         Write the objects's visualisation data back to the database
 
@@ -1331,16 +1331,14 @@ class Object(dict):
         filter : str
             Optional filter to type of geometry to be updated, if omitted all will be written
             (eg: labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
-        compress : boolean
-            Use zlib compression when writing the geometry data
         """
         #Update object data at current timestep
         if filter is None:
             #Re-writes all data to db for this object
-            self.parent.app.update(self.ref, compress)
+            self.parent.app.update(self.ref)
         else:
             #Re-writes data to db for this object and geom type
-            self.parent.app.update(self.ref, self.parent._getRendererType(filter), compress)
+            self.parent.app.update(self.ref, self.parent._getRendererType(filter))
 
     def getcolourmap(self, string=True):
         """
@@ -1363,7 +1361,7 @@ class Object(dict):
         cmid = self["colourmap"]
         return self.parent.getcolourmap(cmid, string)
 
-    def contours(self, isovalues=None, name=None, labels=True, convert=False, updatedb=False, compress=True, **kwargs):
+    def contours(self, isovalues=None, name=None, labels=True, convert=False, updatedb=False, **kwargs):
         """
         Generate a contours from a surface/grid data set using the marching squares algorithm
 
@@ -1382,8 +1380,6 @@ class Object(dict):
         updatedb : bool
             Setting this flag to True will write the newly created/modified data
             to the database when done
-        compress : boolean
-            Use zlib compression when writing the geometry data
         **kwargs :
             Initial set of properties passed to the created object
 
@@ -1410,11 +1406,11 @@ class Object(dict):
 
         #Re-write modified types to the database
         if updatedb:
-            self.parent.app.update(cobj.ref, LavaVuPython.lucGridType, compress)
-            self.parent.app.update(cobj.ref, LavaVuPython.lucLineType, compress)
+            self.parent.app.update(cobj.ref, LavaVuPython.lucGridType)
+            self.parent.app.update(cobj.ref, LavaVuPython.lucLineType)
         return cobj
 
-    def isosurface(self, isovalues=None, name=None, convert=False, updatedb=False, compress=True, **kwargs):
+    def isosurface(self, isovalues=None, name=None, convert=False, updatedb=False, **kwargs):
         """
         Generate an isosurface from a volume data set using the marching cubes algorithm
 
@@ -1431,8 +1427,6 @@ class Object(dict):
         updatedb : bool
             Setting this flag to True will write the newly created/modified data
             to the database when done
-        compress : boolean
-            Use zlib compression when writing the geometry data
         **kwargs :
             Initial set of properties passed to the created object
 
@@ -1459,8 +1453,8 @@ class Object(dict):
 
         #Re-write modified types to the database
         if updatedb:
-            self.parent.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
-            self.parent.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
+            self.parent.app.update(isobj.ref, LavaVuPython.lucVolumeType)
+            self.parent.app.update(isobj.ref, LavaVuPython.lucTriangleType)
         return isobj
 
     def swapyz(self):
@@ -3405,7 +3399,7 @@ class Viewer(dict):
             obj = self.file(infile, **kwargs)
         return obj
 
-    def export(self, filepath='exported.gldb', compress=True):
+    def export(self, filepath='exported.gldb', compress=None):
         """
         Export model and state to a database snapshot
 
@@ -3413,14 +3407,18 @@ class Viewer(dict):
         ----------
         filepath : str
             Specification of the files to load
-        compress : boolean
-            Set flag to false to disable zlib compression of database
+        compress : int
+            Set flag override default zlib compression of database (0=None, 1=fast, 6=standard, 9=best compression)
         """
         #Load file with this object selected (import)
         if filepath[0] != '"':
             filepath = '"' + filepath + '"'
-        if not compress:
-            self.app.commands("export " + filepath + " uncompressed")
+
+        if compress is not None and isinstance(compress, int):
+            saved = self["compression"]
+            self["compression"] = compress
+            self.app.commands("export " + filepath)
+            self["compression"] = saved
         else:
             self.app.commands("export " + filepath)
 
@@ -3620,7 +3618,7 @@ class Viewer(dict):
         self.app.viewer.open()
         self.app.viewer.init()
 
-    def update(self, filter=None, compress=True):
+    def update(self, filter=None):
         """
         Write visualisation data back to the database
 
@@ -3629,17 +3627,15 @@ class Viewer(dict):
         filter : str
             Optional filter to type of geometry to be updated, if omitted all will be written
             (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
-        compress : boolean
-            Use zlib compression when writing the geometry data
         """
         for obj in self._objects.list:
             #Update object data at current timestep
             if filter is None:
                 #Re-writes all data to db for object
-                self.app.update(obj.ref, compress)
+                self.app.update(obj.ref)
             else:
                 #Re-writes data to db for object and geom type
-                self.app.update(obj.ref, self._getRendererType(filter), compress)
+                self.app.update(obj.ref, self._getRendererType(filter))
 
         #Update figure
         self.savefigure()

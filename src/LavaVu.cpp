@@ -282,8 +282,8 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "| ------- | -----------\n";
       std::cout << "| -d#     | Export object id # to CSV vertices + values\n";
       std::cout << "| -j#     | Export object id # to JSON, if # omitted will output all compatible objects\n";
-      std::cout << "| -g#     | Export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n";
-      std::cout << "| -G#     | Export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n";
+      std::cout << "| -g#     | Export object id # to GLDB, if # omitted will output all compatible objects\n";
+      std::cout << "| -Z#     | Set zlib compression level for GLDB, -1=default, 0=None, 1=fast, 9=best\n";
       std::cout << "\n";
       std::cout << "|         | Window Settings\n";
       std::cout << "| ------- | ---------------\n";
@@ -300,7 +300,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bklnopqsu, BDEFHKLMOPUXYZ
+      //Unused switches: bklnopqsu, BDEFGHKLMOPUXY
       switch (x)
       {
       case 'a':
@@ -384,11 +384,14 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'g':
         if (args[i].length() > 2) ss >> dumpid;
-        dump = lucExportGLDBZ;
-        break;
-      case 'G':
-        if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportGLDB;
+        break;
+      case 'Z':
+        {
+          int compression = 1;
+          if (args[i].length() > 2) ss >> compression;
+          session.globals["compression"] = compression;
+        }
         break;
       case 'S':
         //Don't run default script
@@ -614,14 +617,14 @@ std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> l
     for (unsigned int c=0; c<list.size(); c++)
       jsonWriteFile(list[c], type == lucExportJSONP);
   }
-  else if (type == lucExportGLDB || type == lucExportGLDBZ)
+  else if (type == lucExportGLDB)
   {
     if (list.size() == 0)
-      amodel->writeDatabase(filename.c_str(), NULL, type == lucExportGLDBZ);
+      amodel->writeDatabase(filename.c_str());
     else
     {
       for (unsigned int c=0; c<list.size(); c++)
-        amodel->writeDatabase(filename.c_str(), list[c], type == lucExportGLDBZ);
+        amodel->writeDatabase(filename.c_str(), list[c]);
     }
     return filename;
   }
@@ -3932,17 +3935,17 @@ DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, 
   return target;
 }
 
-void LavaVu::update(DrawingObject* target, bool compress)
+void LavaVu::update(DrawingObject* target)
 {
   //Re-write the database geometry at current step for specified object - all types
-  update(target, lucMaxType, compress);
+  update(target, lucMaxType);
 }
 
-void LavaVu::update(DrawingObject* target, lucGeometryType type, bool compress)
+void LavaVu::update(DrawingObject* target, lucGeometryType type)
 {
   //Re-write the database geometry at current step for specified object - specified type only
   if (!amodel || !target) return;
-  amodel->updateObject(target, type, compress);
+  amodel->updateObject(target, type);
 }
 
 std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int outchannels)

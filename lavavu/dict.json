@@ -1881,6 +1881,17 @@
     ]
   },
 
+  "compression": {
+    "default": 1,
+    "target": "global",
+    "type": "integer",
+    "desc": "Set zlib compression level for GLDB, -1=default, 0=None, 1=fast, 9=best. LavaVu default is 1 (fast).",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "rulers": {
     "default": false,
     "target": "global",
