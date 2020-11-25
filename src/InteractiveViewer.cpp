@@ -822,7 +822,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Use this to load multiple volumes as timesteps into the same object
-    volume = new DrawingObject(session, "volume");
+    volume = new DrawingObject(session, amodel->colourMaps, "volume");
     printMessage("Created static volume object");
   }
   else if (parsed.exists("clearvolume"))
@@ -2776,7 +2776,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string name = parsed["add"];
-    aobject = addObject(new DrawingObject(session, name));
+    aobject = addObject(new DrawingObject(session, amodel->colourMaps, name));
     if (aobject)
     {
       std::string type = parsed.get("add", 1);

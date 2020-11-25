@@ -409,7 +409,6 @@ class DrawingObject(object):
         _LavaVuPython.DrawingObject_swiginit(self, _LavaVuPython.new_DrawingObject(*args))
     colourMap = property(_LavaVuPython.DrawingObject_colourMap_get, _LavaVuPython.DrawingObject_colourMap_set)
     opacityMap = property(_LavaVuPython.DrawingObject_opacityMap_get, _LavaVuPython.DrawingObject_opacityMap_set)
-    getColourMap = _swig_new_instance_method(_LavaVuPython.DrawingObject_getColourMap)
     name = _swig_new_instance_method(_LavaVuPython.DrawingObject_name)
     opacity = property(_LavaVuPython.DrawingObject_opacity_get, _LavaVuPython.DrawingObject_opacity_set)
     colour = property(_LavaVuPython.DrawingObject_colour_get, _LavaVuPython.DrawingObject_colour_set)
