@@ -37,6 +37,26 @@
 
 #include "GLFWViewer.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+EM_JS(int, get_browser_modifiers, (), {
+  if (window.m_alt || window.m_shift || window.m_ctrl) {
+    //console.log("GETTING COMMANDS: " + window.commands);
+    // 'str.length' would return the length of the string as UTF-16
+    // units, but Emscripten C strings operate as UTF-8.
+    var val = 0;
+    if (window.m_shift) val += 1;
+    if (window.m_ctrl) val += 2;
+    if (window.m_alt) val += 4;
+    return val;
+  } else {
+    return 0;
+  }
+});
+
+#endif
+
 int GLFWViewer::window_count = 0;
 
 static void error_callback(int error, const char *description)
@@ -44,7 +64,7 @@ static void error_callback(int error, const char *description)
   fputs(description, stderr);
 }
 
-void resize_callback(GLFWwindow* window, int width, int height)
+static void resize_callback(GLFWwindow* window, int width, int height)
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
   self->resize(width, height);
@@ -58,7 +78,7 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
   //Save shift states
   //self->get_modifiers(mods);
   //if (self->keyState.shift || self->keyState.ctrl || self->keyState.alt)
-  //  printf("MODIFIERS shift %d ctrl %d alt %d\n", self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
+  //  printf("ACTION %d MODIFIERS shift %d ctrl %d alt %d\n", action, self->keyState.shift, self->keyState.ctrl, self->keyState.alt);
 
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
@@ -222,9 +242,9 @@ static void mousemove_callback(GLFWwindow* window, double xpos, double ypos)
 static void mousescroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
-#ifdef EMSCRIPTEN
-  //Flip dir in emscripten and scale down
-  yoffset *= -0.01;
+#ifdef __EMSCRIPTEN__
+  //Flip dir in emscripten and discretise
+  yoffset = yoffset > 0 ? -1 : 1;
 #endif
   float delta = yoffset / 2.0;
   if (delta != 0)
@@ -362,8 +382,11 @@ void GLFWViewer::execute()
 
 void GLFWViewer::fullScreen()
 {
-  static int savewidth, saveheight;
   fullscreen = fullscreen ? 0 : 1;
+#ifdef __EMSCRIPTEN__
+  EM_ASM({ if ($0) Module.requestFullscreen(false,true); else document.exitFullscreen(); }, (int)fullscreen);
+#else
+  static int savewidth, saveheight;
   if (fullscreen)
   {
     savewidth = width;
@@ -376,6 +399,7 @@ void GLFWViewer::fullScreen()
     //self->resize(savewidth, saveheight);
   }
   debug_print("fullscreen %d sw %d sh %d\n", fullscreen, savewidth, saveheight);
+#endif
 }
 
 void GLFWViewer::animate(int msec)
@@ -385,6 +409,13 @@ void GLFWViewer::animate(int msec)
 
 void GLFWViewer::get_modifiers(int modifiers)
 {
+#ifdef __EMSCRIPTEN__
+  keyState.alt = (modifiers & GLFW_MOD_ALT);
+  if (keyState.alt) {
+    //Alt processing is screwy, get state from browser
+    modifiers = get_browser_modifiers();
+  }
+#endif
   //Save shift states
   keyState.shift = (modifiers & GLFW_MOD_SHIFT);
   keyState.ctrl = (modifiers & GLFW_MOD_CONTROL);
