@@ -2303,7 +2303,19 @@ void LavaVu::display(bool redraw)
   if ((viewer->visible && !viewer->imagemode) || message[0] == ':')
   {
     //Print current info message (displayed for one frame only)
-    if (status) displayMessage();
+    //Skip if no message or recording frames to video
+    //Also skip if status disabled, unless a keyboard entry message
+    if (strlen(message) && !encoder && (status || message[0] == ':'))
+    {
+      //Set viewport to entire window
+      aview->port(0, 0, viewer->width, viewer->height);
+      session.context.viewport2d(viewer->width, viewer->height);
+
+      //Print current message
+      text(message, 10, 10, 1.0);
+
+      session.context.viewport2d(0, 0);
+    }
 
     //Print help message (displayed for one frame only)
     if (help.length())
@@ -2834,23 +2846,6 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
   //Revert to normal colour
   session.fonts.colour = aview->textColour;
-}
-
-void LavaVu::displayMessage()
-{
-  if (!viewer->isopen) return;
-  //Skip if no message or recording frames to video
-  if (strlen(message) && !encoder)
-  {
-    //Set viewport to entire window
-    aview->port(0, 0, viewer->width, viewer->height);
-    session.context.viewport2d(viewer->width, viewer->height);
-
-    //Print current message
-    text(message, 10, 10, 1.0);
-
-    session.context.viewport2d(0, 0);
-  }
 }
 
 void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
