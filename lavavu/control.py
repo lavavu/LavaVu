@@ -131,8 +131,9 @@ htmlpath = ""
 
 def _isviewer(target):
     """Return true if target is a viewer"""
+    #Can't use isinstance without class in scope
     #return not hasattr(target, "parent")
-    return target.__class__.__name__ == 'Viewer'
+    return target.__class__.__name__ == 'Viewer' or any(['lavavu.Viewer' in str(b) for b in target.__class__.__bases__])
 
 def _isobject(target):
     """Return true if target is a lavavu object"""
