@@ -185,18 +185,28 @@ $(PROGRAM): $(LIBRARY) main.cpp | paths
 $(LIBRARY): $(ALLOBJS) | paths
 	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
 
+#source ~/emsdk/emsdk_env.sh
 emscripten: DEFINES = -DGLES2 -DHAVE_GLFW -DUSE_FONTS
 emscripten: CXX = em++
 emscripten: CC = emcc
 emscripten: LIBS = -ldl -lpthread -lm -lGL -lglfw
-emscripten: LINKFLAGS = -s USE_WEBGL2=1 -s DISABLE_EXCEPTION_CATCHING=0 -s LEGACY_GL_EMULATION=0 -s USE_GLFW=3 -s ALLOW_MEMORY_GROWTH=1
+emscripten: LINKFLAGS = -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s DISABLE_EXCEPTION_CATCHING=0 -s LEGACY_GL_EMULATION=0 -s USE_GLFW=3 -s ALLOW_MEMORY_GROWTH=1 -s FETCH=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=[FS]
+#emscripten:  -s MODULARIZE=1 -s 'EXPORT_NAME="createLavaVuModule"' #Would need this to load multiple instances on a page without IFrames
 emscripten: LINKFLAGS += --preload-file lavavu/dict.json@dict.json --preload-file lavavu/shaders@/shaders  --preload-file lavavu/font.bin@font.bin
-#emscripten: CPPFLAGS += -pthread
-#emscripten: EXTCFLAGS += -pthread
-#emscripten: LINKFLAGS += -pthread
+EM_FLAGS =
+#EM_FLAGS = -pthread
+ifeq ($(CONFIG),debug)
+	#Debugging - better detection of segfaults etc
+	EM_FLAGS = -fsanitize=address -s INITIAL_MEMORY=300MB
+#EM_FLAGS = -fsanitize=undefined
+#EM_FLAGS = -s WASM=0
+endif
+emscripten: CPPFLAGS += $(EM_FLAGS)
+emscripten: EXTCFLAGS += $(EM_FLAGS)
+emscripten: LINKFLAGS += $(EM_FLAGS)
 emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
-	$(CXX) -o $(PROGRAM).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
+	$(CXX) -o $(PREFIX)/html/$(PROGNAME).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
 
 $(OPATH)/miniz.o : src/miniz/miniz.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^
@@ -206,7 +216,7 @@ src/sqlite3/sqlite3.c :
 	git submodule update --init
 
 $(OPATH)/sqlite3.o : src/sqlite3/sqlite3.c
-	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
+	$(CC) $(EXTCFLAGS) -DSQLITE_ENABLE_DESERIALIZE -o $@ -c $^ 
 
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CXX) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
