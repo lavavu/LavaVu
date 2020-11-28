@@ -2,7 +2,6 @@
 
 Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1)
 {
-  borderobj = axisobj = rulerobj = NULL;
   havecontext = false;
   omegalib = false;
   segments = 0;    // Saves segment count for circle based objects
@@ -22,11 +21,6 @@ void Session::destroy()
 {
   if (fonts.context)
     fonts.clear();
-
-  if (borderobj) delete borderobj;
-  if (axisobj) delete axisobj;
-  if (rulerobj) delete rulerobj;
-  borderobj = axisobj = rulerobj = NULL;
 
   if (globalcam) delete globalcam;
   globalcam = NULL;

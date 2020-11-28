@@ -98,8 +98,6 @@ protected:
   std::string multiline;
   int historyline;
 
-  Geometry* border = NULL, * axis = NULL, * rulers = NULL;
-
   std::chrono::time_point<std::chrono::system_clock> frametime;
   int framecount;
   float fps;

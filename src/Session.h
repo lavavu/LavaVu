@@ -28,10 +28,6 @@ public:
   int now;
   int zlib_compression = Z_BEST_SPEED;
 
-  DrawingObject* borderobj;
-  DrawingObject* axisobj;
-  DrawingObject* rulerobj;
-
   //Mutex for thread safe updates
   std::mutex mutex;
 

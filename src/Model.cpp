@@ -392,6 +392,19 @@ Model::~Model()
   //Clear colourmaps
   for(unsigned int i=0; i<colourMaps.size(); i++)
     delete colourMaps[i];
+
+  if (borderobj) delete borderobj;
+  if (axisobj) delete axisobj;
+  if (rulerobj) delete rulerobj;
+  borderobj = axisobj = rulerobj = NULL;
+
+  if (axis) delete axis;
+  if (rulers) delete rulers;
+  if (border) delete border;
+
+  axis = NULL;
+  border = NULL;
+  rulers = NULL;
 }
 
 bool Model::loadFigure(int fig, bool preserveGlobals)

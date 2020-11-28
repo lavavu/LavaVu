@@ -100,9 +100,10 @@ public:
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
 
-  DrawingObject* borderobj;
-  DrawingObject* axisobj;
-  DrawingObject* rulerobj;
+  DrawingObject* borderobj = NULL;
+  DrawingObject* axisobj = NULL;
+  DrawingObject* rulerobj = NULL;
+  Geometry* border = NULL, * axis = NULL, * rulers = NULL;
 
   float min[3], max[3]; //Calculated model bounding box
 

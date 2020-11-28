@@ -151,9 +151,6 @@ void LavaVu::defaults()
   //Clear any queued commands
   viewer->commands.clear();
 
-  axis = new Triangles(session);
-  rulers = new Links(session);
-
   initfigure = 0;
   viewset = RESET_NO;
   view = -1;
@@ -1929,14 +1926,6 @@ void LavaVu::close()
   aview = NULL;
   amodel = NULL;
   aobject = NULL;
-
-  if (axis) delete axis;
-  if (rulers) delete rulers;
-  if (border) delete border;
-
-  axis = NULL;
-  border = NULL;
-  rulers = NULL;
 }
 
 //Called when model loaded/changed, updates all views settings
@@ -2397,15 +2386,18 @@ void LavaVu::drawAxis()
   //Use a fixed size to fill the viewport,
   //actual size determined by viewport dimensions
   float length = 0.175;
-  if (!session.axisobj)
+  Geometry* axis = amodel->axis;
+  if (!axis)
+    axis = amodel->axis = new Triangles(session);
+  if (!amodel->axisobj)
   {
     //Ensure loaded without set timestep
-    session.axisobj = new DrawingObject(session, amodel->colourMaps);
-    if (!aview->hasObject(session.axisobj)) aview->addObject(session.axisobj);
+    amodel->axisobj = new DrawingObject(session, amodel->colourMaps);
+    if (!aview->hasObject(amodel->axisobj)) aview->addObject(amodel->axisobj);
     axis->setup(aview);
     axis->clear(true);
     axis->type = lucVectorType;
-    session.axisobj->properties.data = {
+    amodel->axisobj->properties.data = {
       {"font",         "vector"},
       {"fontscale",    length*6.0},
       {"fixed",        true},
@@ -2414,7 +2406,7 @@ void LavaVu::drawAxis()
       {"opacity",      1.0},
       {"alpha",        1.0}
     };
-    axis->add(session.axisobj);
+    axis->add(amodel->axisobj);
 
     float headsize = 8.0;  //8 x radius (r = 0.01 * length)
     float radius = length*0.01;
@@ -2427,8 +2419,8 @@ void LavaVu::drawAxis()
       vector[c] = 1.0;
       pos[c] = length/2;
       colour.rgba[c] = 255;
-      Geom_Ptr tg = axis->read(session.axisobj, 0, lucVertexData, NULL);
-      axis->drawVector(session.axisobj, pos, vector, false, length, radius, radius, headsize, 16);
+      Geom_Ptr tg = axis->read(amodel->axisobj, 0, lucVertexData, NULL);
+      axis->drawVector(amodel->axisobj, pos, vector, false, length, radius, radius, headsize, 16);
       tg->_colours->read1(colour.value);
     }
     axis->update();
@@ -2439,7 +2431,7 @@ void LavaVu::drawAxis()
   //Labels
   glDisable(GL_DEPTH_TEST);
 
-  session.fonts.setFont(session.axisobj->properties);
+  session.fonts.setFont(amodel->axisobj->properties);
   session.fonts.colour = aview->textColour;
   float pos = length/2;
   float LH = length * 0.1;
@@ -2463,9 +2455,10 @@ void LavaVu::drawRulers()
 {
   if (!aview->properties["rulers"]) return;
   infostream = NULL;
-  DrawingObject* obj = session.rulerobj;
-  rulers->clear(true);
-  rulers->setup(aview);
+  Geometry* rulers = amodel->rulers;
+  if (!rulers)
+    rulers = amodel->rulers = new Links(session);
+  DrawingObject* obj = amodel->rulerobj;
   if (!obj)
   {
     obj = new DrawingObject(session, amodel->colourMaps, "");
@@ -2473,6 +2466,8 @@ void LavaVu::drawRulers()
                              {"tubes", true}, {"glyphs", 1}, {"lit", false},
                              {"wireframe", false}, {"flat", true}});
   }
+  rulers->clear(true);
+  rulers->setup(aview);
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
@@ -2545,6 +2540,7 @@ void LavaVu::drawRulers()
 void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, const char* fmt, int ticks, json& labels, int axis, int tickdir)
 {
   // Draw rulers with optional tick marks
+  Geometry* rulers = amodel->rulers;
   float vec[3];
   float length;
   vectorSubtract(vec, end, start);
@@ -2634,13 +2630,20 @@ void LavaVu::drawBorder()
     bordersize = 0.0;
   if (bordersize <= 0.0) return;
 
-  DrawingObject* obj = session.borderobj;
+  DrawingObject* obj = amodel->borderobj;
+  Geometry* border = amodel->border;
   if (border)
   {
     border->clear(true);
     border->setup(aview);
   }
-  if (!obj) obj = session.borderobj = new DrawingObject(session, amodel->colourMaps);
+  if (!obj) 
+  {
+    obj = amodel->borderobj = new DrawingObject(session, amodel->colourMaps);
+    //Must re-create renderer if object has been removed
+    //if (border) delete border;
+    //border = NULL;
+  }
   if (!aview->hasObject(obj)) aview->addObject(obj);
 
   infostream = NULL; //Disable debug output while drawing this
@@ -2651,10 +2654,11 @@ void LavaVu::drawBorder()
   if (!aview->is3d)
   {
     //Draw 2d bounding box in screen coord space
+    //TODO: support this for any object too
     if (!border || border->type == lucTriangleType || obj->properties["depthtest"] == true)
     {
       if (border) delete border;
-      border = new Lines(session);
+      border = amodel->border = new Lines(session);
       border->setup(aview);
       obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0},
                                {"fixed", true},
@@ -2710,7 +2714,7 @@ void LavaVu::drawBorder()
       if (!border || border->type == lucTriangleType || obj->properties["depthtest"] == false)
       {
         if (border) delete border;
-        border = new Links(session);
+        border = amodel->border = new Links(session);
         border->setup(aview);
       }
 
@@ -2726,10 +2730,10 @@ void LavaVu::drawBorder()
       if (!border || border->type == lucLineType)
       {
         if (border) delete border;
-        border = new Triangles(session);
+        border = amodel->border = new Triangles(session);
         border->setup(aview);
         obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0},
-                                 {"fixed", true},
+                                 {"fixed", true}, {"vertexnormals", false},
                                  {"depthtest", true}, {"wireframe", false}, {"cullface", true}});
       }
       border->primitive = GL_TRIANGLE_STRIP;
