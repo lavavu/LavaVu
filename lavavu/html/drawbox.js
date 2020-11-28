@@ -6,6 +6,7 @@
 function initBox(el, cmd_callback, fixedsize) {
   //console.log("INITBOX: " + el.id);
   var canvas = document.createElement("canvas");
+  canvas.classList.add("resized");
   if (!el) el = document.body.firstChild;
   canvas.id = "canvas_" + el.id;
   canvas.imgtarget = el
@@ -461,18 +462,6 @@ BoxViewer.prototype.checkPointMinMax = function(coord) {
   //console.log(JSON.stringify(this.view.min) + " -- " + JSON.stringify(this.view.max));
 }
 
-BoxViewer.prototype.sendState = function(reload) {
-  var exp = {"objects"    : this.exportObjects(),
-             "colourmaps" : this.exportColourMaps(),
-             "views"      : this.exportView(),
-             "properties" : this.vis.properties};
-
-  exp.exported = true;
-  exp.reload = reload;
-
-  this.command(JSON.stringify(exp));
-}
-
 function Merge(obj1, obj2) {
   for (var p in obj2) {
     try {
@@ -504,16 +493,26 @@ function Merge(obj1, obj2) {
   return obj1;
 }
 
-BoxViewer.prototype.toString = function(nocam, reload) {
-  var exp = {"objects"    : this.exportObjects(),
-             "colourmaps" : this.exportColourMaps(),
-             "views"      : this.exportView(nocam),
-             "properties" : this.vis.properties};
+BoxViewer.prototype.exportJson = function(nocam) {
+  return {"objects"    : this.exportObjects(),
+          "colourmaps" : this.vis.colourmaps,
+          "views"      : this.exportView(nocam),
+          "properties" : this.vis.properties};
+}
 
+BoxViewer.prototype.sendState = function(reload) {
+  var exp = this.exportJson();
+  exp.reload = reload;
+  this.command(JSON.stringify(exp));
+}
+
+BoxViewer.prototype.toString = function(nocam, reload, noformat) {
+  var exp = this.exportJson(nocam);
   exp.exported = true;
   exp.reload = reload ? true : false;
 
-  if (nocam) return JSON.stringify(exp);
+  if (noformat)
+    return JSON.stringify(exp);
   //Export with 2 space indentation
   return JSON.stringify(exp, undefined, 2);
 }
@@ -870,7 +869,9 @@ BoxViewer.prototype.draw = function() {
     this.translate = tr;
 }
 
-BoxViewer.prototype.syncRotation = function() {
+BoxViewer.prototype.syncRotation = function(rot) {
+  if (rot)
+    this.rotate = quat4.create(rot);
   this.rotated = true;
   this.draw();
   rstr = '' + this.getRotationString();

@@ -36,6 +36,11 @@
 //OpenGLViewer class
 #include "OpenGLViewer.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#endif
+
 std::thread::id no_thread;
 
 // FBO buffers
@@ -485,8 +490,20 @@ bool OpenGLViewer::events()
 }
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#include <emscripten/html5.h>
+EM_JS(const char*, get_commands, (), {
+  if (window.commands && window.commands.length) {
+    //console.log("GETTING COMMANDS: " + window.commands);
+    // 'str.length' would return the length of the string as UTF-16
+    // units, but Emscripten C strings operate as UTF-8.
+    var lengthBytes = lengthBytesUTF8(window.commands)+1;
+    var stringOnWasmHeap = _malloc(lengthBytes);
+    stringToUTF8(window.commands, stringOnWasmHeap, lengthBytes);
+    window.commands = "";
+    return stringOnWasmHeap;
+  } else {
+    return null;
+  }
+});
 
 //Called from the Emscripten animation loop
 void em_main_callback(void* userData)
@@ -495,6 +512,44 @@ void em_main_callback(void* userData)
   {
     OpenGLViewer* v = (OpenGLViewer*)userData;
     v->execute();
+
+    //Get any waiting commands
+    const char* str = get_commands();
+    if (str)
+    {
+      if (strlen(str))
+      {
+        //printf("UTF8 string retrieved: %s\n", str);
+        //v->commands.push_back(str);
+        if (v->app->parseCommands(str))
+          v->postdisplay = true;
+      }
+      // Each call to _malloc() must be paired with free(), or heap memory will leak!
+      free((void*)str);
+    }
+
+    //Idle sort - flag rotated after 150us
+    if (v->mouseState != 0 && v->idle > 150)
+      v->postdisplay = true;
+
+    //Check the reload flag in JS
+    if (EM_ASM_INT({return window.reload_flag;}))
+    {
+      v->app->fetch("getstate", true);
+      EM_ASM({window.reload_flag = false;});
+    }
+
+    //Check the resize flag in JS
+    if (EM_ASM_INT({return window.resized;}))
+    {
+      //Set size to match canvas
+      double w, h;
+      emscripten_get_element_css_size("canvas", &w, &h);
+      v->app->session.globals["resolution"] = json::array({w, h});
+      v->postdisplay = true;
+
+      EM_ASM({window.resized = false;});
+    }
   }
 }
 #endif
@@ -781,9 +836,17 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
+  {
     retImg = image->getURIString(jpegquality);
+  }
   else
+  {
     retImg = image->write(path, jpegquality);
+#ifdef __EMSCRIPTEN__
+    std::string type =  jpegquality == 0 ? "image/png" : "image/jpeg";
+    EM_ASM({ window.download($0, $1) }, retImg.c_str(), type.c_str());
+#endif
+  }
 
   if (image) delete image;
 

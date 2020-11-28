@@ -467,22 +467,32 @@ class Window(_Container):
         Set the style of the wrapper div, default is empty string so wrapper is enabled with no custom style
         Set to None to disable wrapper
     """
-    def __init__(self, viewer, resolution=None, align="left", wrapper=""):
+    def __init__(self, viewer, resolution=None, align="left", wrapper="", fullscreen=False):
         super(Window, self).__init__(viewer)
         self.align = align
         self.wrapper = wrapper
+        self.fullscreen = fullscreen
         if resolution is not None:
             viewer.output_resolution = resolution
 
     def html(self):
-        style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block; '
+        style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block;'
+        style_img = 'height: 100%; width: 100%; position: relative; margin: 0px; display: inline-block;'
         if self.align is not None:
-            style += 'float: ' + self.align + ';'
+            style += ' float: ' + self.align + ';'
         if self.wrapper is not None:
             style += ' margin-right: 10px;'
+        classes = ""
+        if self.fullscreen:
+            style += ' height: 100%; width: 100%;'
+        else:
+            classes = "resizer"
+            style_img +=" border: 1px solid #aaa;"
+
         html = ""
-        html += '<div style="' + style + '">\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
+        html += '<div class="' + classes + '" style="' + style + '">\n'
+        #html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style_img + '" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
         html += """
            <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
              <select onchange="_wi['---VIEWERID---'].box.mode = this.value;">
@@ -501,53 +511,6 @@ class Window(_Container):
         if self.wrapper is not None:
             html += '</div>\n'
         #html += '<div style="clear: both;">\n'
-        return html
-
-class FillWindow(_Container):
-    """
-    Creates an interaction window with an image of the viewer frame 
-    and webgl controller for rotation/translation
-
-    Unlike Window, which uses the size of the returned image to set the interaction canvas size,
-    FillWindow creates an interaction canvas that fills the parent element width completely.
-    Images from the renderer are requested to match that size without rescaling.
-
-    Parameters
-    ----------
-    aspect_ratio : tuple (int,int)
-        Aspect ratio to calculate the height, eg: (16,9) (default) or (4,3)
-    minwidth : int
-        Minimum width of the image
-    minheight : int
-        Minimum height of the image
-    """
-    def __init__(self, viewer, aspect_ratio=(16,9), minwidth=100, minheight=50):
-        super(FillWindow, self).__init__(viewer)
-        if aspect_ratio is not None and len(aspect_ratio) == 2:
-            viewer.output_resolution = (viewer.output_resolution[0], int(viewer.output_resolution[0] * aspect_ratio[1] / aspect_ratio[0]))
-        self.minwidth = minwidth
-        self.minheight = minheight
-
-    def html(self):
-        style = 'height: 100%; width: 100%; position: relative; display: inline-block; '
-        style += 'min-width: ' + str(self.minwidth) + 'px; '
-        style += 'min-height: ' + str(self.minheight) + 'px; '
-        html = ""
-        html += '<div>\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="' + style + 'margin: 0px; border: 0px; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
-        html += """
-           <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
-             <select onchange="_wi['---VIEWERID---'].box.mode = this.value;">
-               <option>Rotate</option>
-               <option>Translate</option>
-               <option>Zoom</option>
-             </select>
-             <input type="button" value="Reset" onclick="_wi['---VIEWERID---'].execute('reset');">
-           </div>"""
-        html += '</div>\n'
-
-        #Display any contained controls
-        html += super(FillWindow, self).html()
         return html
 
 class Panel(Window):

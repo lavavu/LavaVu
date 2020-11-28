@@ -1702,7 +1702,7 @@ Viewer.prototype.loadFile = function(source) {
 
   //Create GUI menu if enabled
   if (this.menu)
-    createMenu(this, changefn, true);
+    createMenu(this, changefn, 1);
 }
 
 Viewer.prototype.loadTextures = function() {

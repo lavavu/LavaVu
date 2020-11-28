@@ -85,6 +85,7 @@ protected:
   int model;
   int tracersteps;
   bool sorting = false;
+  int ondrag = 0;
   std::thread sort_thread;
   std::mutex sort_mutex;
   std::condition_variable sortcv;
@@ -127,6 +128,10 @@ public:
   void run(std::vector<std::string> args={});
   void clearAll(bool objects=false, bool colourmaps=false);
 
+  std::vector<unsigned char> serialize();
+  void deserialize(unsigned char* source, unsigned int len);
+  virtual void fetch(const std::string& url, bool nocache=false);
+  void gui_sync();
   std::string exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename="exported.gldb");
 
   void parseProperties(std::string& properties, DrawingObject* obj=NULL);
@@ -172,7 +177,6 @@ public:
   float parseCoord(const std::string& str);
   virtual bool parseCommands(std::string cmd);
   bool parseCommand(std::string cmd, bool gethelp=false);
-  virtual std::string requestData(std::string key);
   //***
 
   void resetViews(bool autozoom=false);

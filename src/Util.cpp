@@ -72,7 +72,9 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
 {
   std::string bpath = "";
   FilePath xpath;
-#ifdef _WIN32
+#if defined(__EMSCRIPTEN__)
+  bpath = ".";
+#elif defined(_WIN32)
   TCHAR dest[MAX_PATH];
   DWORD length = GetModuleFileName(NULL, dest, MAX_PATH);
   xpath.parse(std::string(dest));
@@ -94,7 +96,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
     while (std::getline(path, pathentry, ':'))
     {
       std::string pstr = pathentry + "/" + progname;
-	  if (access(pstr.c_str(), X_OK) == 0)
+      if (access(pstr.c_str(), X_OK) == 0)
       {
         //Need to make sure it's a regular file, not directory
         struct stat st_buf;

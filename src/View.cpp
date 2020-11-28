@@ -36,6 +36,13 @@
 #include "View.h"
 #include "Model.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+EM_JS(void, set_theme, (int light), {
+  window.set_light_theme(light);
+});
+#endif
+
 View::View(Session& session, float xf, float yf) : properties(session.globals, session.defaults), session(session)
 {
   // default view params
@@ -1176,5 +1183,11 @@ void View::setBackground()
   if (avg < 127) 
     textColour.value = 0xffffffff;
   session.defaults["colour"] = textColour.toJson();
+
+  //printf("setBackground %s\n", background.toString().c_str());
+#ifdef __EMSCRIPTEN__
+  //Switch menu theme
+  set_theme(avg > 127);
+#endif
 }
 

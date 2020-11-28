@@ -149,6 +149,9 @@ public:
 
   void run(std::vector<std::string> args={});
 
+  std::vector<unsigned char> serialize();
+  void deserialize(unsigned char* source, unsigned int len);
+
   void printall(const std::string& str);
   bool loadFile(const std::string& file);
   bool parseProperty(std::string data, DrawingObject* obj=NULL);

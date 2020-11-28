@@ -62,6 +62,11 @@
 #include <tiffio.h>
 #endif
 #include "tiny_obj_loader.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/fetch.h>
+#include <emscripten/html5.h>
+#endif
 
 //Viewer class implementation...
 LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp()
@@ -115,9 +120,9 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   this->binpath = binpath;
 
   if (FilePath::paths.size() == 0) FilePath::paths.push_back(binpath + "shaders/");
-  #ifdef SHADER_PATH
+#ifdef SHADER_PATH
   FilePath::paths.push_back(SHADER_PATH);
-  #endif
+#endif
 
   //Initialise the session
   session.init(binpath);
@@ -559,6 +564,24 @@ void LavaVu::run(std::vector<std::string> args)
       loadModelStep(0, startstep, true);
   }
 
+#ifdef __EMSCRIPTEN__
+  //Disable status messages
+  status = false;
+
+  //Get the database from remote
+  fetch("db", true);
+
+  //Init menu
+  std::ostringstream json;
+  json << session.properties;
+  std::ostringstream cmaps;
+  cmaps << '[';
+  for (unsigned int i=0; i<ColourMap::defaultMapNames.size()-1; ++i)
+    cmaps << '"' << ColourMap::defaultMapNames[i] << "\", ";
+  cmaps << '"' << ColourMap::defaultMapNames.back() << "\"]";
+  EM_ASM({ initBase(UTF8ToString($0), UTF8ToString($1)) }, json.str().c_str(), cmaps.str().c_str());
+#endif
+
   //If automation mode turned on, return at this point
   if (session.automate) return;
 
@@ -591,6 +614,148 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
   aobject = NULL;
 }
 
+std::vector<unsigned char> LavaVu::serialize()
+{
+  if (!amodel)
+    return std::vector<unsigned char>();
+  return amodel->serialize();
+}
+
+void LavaVu::deserialize(unsigned char* source, unsigned int len)
+{
+  Properties* props = NULL;
+  if (amodel && aview) props = &aview->properties;
+  //Clear models - will delete contained views, objects
+  //Should free all allocated memory
+  close();
+
+  //Create a default model
+  defaultModel();
+assert(aview);
+
+  //Load the database
+  amodel->deserialize(source, len);
+assert(aview);
+
+  //Re-set default view (views deleted in model load)
+  aview = amodel->defaultView(props);
+  view = 0;
+  model = -1;
+  loadModelStep(0, amodel->step());
+
+  //View reset is all we need here? If not, must be called on render thread
+  viewset = RESET_YES;
+  viewer->postdisplay = true;
+       gui_sync();
+}
+
+#ifdef __EMSCRIPTEN__
+EM_JS(void, set_canvas_visible, (), {
+  document.getElementById('canvas').style.visibility = 'visible';
+});
+
+void fetch_download_callback(emscripten_fetch_t *fetch)
+{
+  if (fetch->status == 200)
+  {
+    LavaVu* fetcher = (LavaVu*)fetch->userData;
+    printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+    if (fetch->numBytes == 0)
+      printf("Invalid data, zero bytes received\n");
+    else
+    {
+      std::string datastr = std::string(fetch->data);
+      if (datastr.size() > fetch->numBytes)
+        datastr = datastr.substr(0, fetch->numBytes);
+      //printf(" %lu == %llu [%c]\n", datastr.size(), fetch->numBytes, datastr.at(0));
+
+      if (datastr == "SQLite format 3")
+      {
+        fetcher->deserialize((unsigned char*)fetch->data, fetch->numBytes);
+      }
+      else if (datastr.size() == fetch->numBytes && datastr.at(0) == '{')
+      {
+        fetcher->parseCommands(datastr);
+      }
+      else
+      {
+        std::cout << datastr << std::endl;
+      }
+
+      set_canvas_visible();
+
+      assert(fetcher->viewer);
+      fetcher->viewer->postdisplay = true;
+      assert(fetcher->aview);
+      fetcher->aview->rotated = true;
+    }
+  }
+  else
+  {
+    printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+  }
+
+  EM_ASM({ if (Module["setStatus"]) Module["setStatus"](""); });
+
+  // Free data associated with the fetch.
+  emscripten_fetch_close(fetch);
+}
+
+void fetch_download_progress(emscripten_fetch_t *fetch)
+{
+  if (fetch->totalBytes)
+  {
+    printf("Downloading %s.. %.2f%% complete.\n", fetch->url, fetch->dataOffset * 100.0 / fetch->totalBytes);
+    EM_ASM({ if (Module["setStatus"]) Module["setStatus"]("Downloading data... (" + $0 + "/" + $1 + ")"); }, (int)fetch->dataOffset/1000, (int)fetch->totalBytes/1000);
+  }
+  else
+  {
+    printf("Downloading %s.. %lld bytes complete.\n", fetch->url, fetch->dataOffset + fetch->numBytes);
+    EM_ASM({ if (Module["setStatus"]) Module["setStatus"](""); });
+  }
+}
+
+#endif
+
+void LavaVu::gui_sync()
+{
+#ifdef __EMSCRIPTEN__
+  if (!viewer->isopen) return;
+  //Sync with gui menu
+  std::string json = amodel->jsonWrite();
+  EM_ASM_({ if (window.viewer) window.viewer.loadFile(UTF8ToString($0)) }, json.c_str());
+#endif
+}
+
+void LavaVu::fetch(const std::string& url, bool nocache)
+{
+#ifdef __EMSCRIPTEN__
+  //printf("FETCH REQ %s\n", url.c_str());
+  emscripten_fetch_attr_t attr;
+  emscripten_fetch_attr_init(&attr);
+  strcpy(attr.requestMethod, "GET");
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+  attr.onsuccess = fetch_download_callback;
+  attr.onerror = fetch_download_callback;
+  attr.onprogress = fetch_download_progress;
+  attr.userData = (void*)this;
+  //Add timestamp to url to prevent caching
+  if (nocache)
+  {
+    std::time_t t = std::time(nullptr);
+    std::tm tm = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y%m%d%H%M%S");
+    std::string url_ts = url + "?" + oss.str();
+    emscripten_fetch(&attr, url_ts.c_str());
+  }
+  else
+  {
+    emscripten_fetch(&attr, url.c_str());
+  }
+#endif
+}
+
 std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename)
 {
   //Not yet opened or resized?
@@ -616,6 +781,10 @@ std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> l
       for (unsigned int c=0; c<list.size(); c++)
         amodel->writeDatabase(filename.c_str(), list[c]);
     }
+#ifdef __EMSCRIPTEN__
+    //Download in browser
+    EM_ASM({ window.download($0, $1) }, filename.c_str(), "");
+#endif
     return filename;
   }
   else if (type == lucExportCSV)
@@ -1819,6 +1988,28 @@ void LavaVu::createDemoModel(unsigned int numpoints)
         tris->addTriangle(obj, &verts[i][0], &verts[i][9], &verts[i][6], 8);
       }
     }
+
+    /*
+    Geometry* quads = amodel->getRenderer(lucGridType);
+    DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps, "cubes", "opacity=0.5\n"));
+    Quaternion qrot;
+    Colour c;
+    c.r = 255;
+    Vec3d v0 = Vec3d(-2,-2,-2);
+    Vec3d v1 = Vec3d(-1,-1,-1);
+    Vec3d v2 = Vec3d(0,0,0);
+    Vec3d v3 = Vec3d(1,1,1);
+    Vec3d v4 = Vec3d(2,2,2);
+    quads->drawCuboid(obj, v0, v2, qrot, false, &c);
+        quads->add(obj);
+
+    c.g = 255;
+    quads->drawCuboid(obj, v1, v3, qrot, false, &c);
+        quads->add(obj);
+
+    c.r = 0;
+    quads->drawCuboid(obj, v2, v4, qrot, false, &c);
+    */
   }
 }
 
@@ -2078,9 +2269,6 @@ bool LavaVu::sort(bool sync)
 {
   //Run the renderer sort functions
   //by default in a thread
-#if defined(__EMSCRIPTEN__) || !defined(__EMSCRIPTEN_PTHREADS__)
-  sync = true;
-#endif
   if (sync)
   {
     //Synchronous immediate sort
@@ -2882,9 +3070,20 @@ void LavaVu::drawSceneBlended(bool nosort)
       aview->rotated = false;
       sort(true);
     }
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+    else if (viewer->mouseState == 0 || viewer->idle > 150)
+    {
+      viewer->idle = 0;
+      aview->rotated = false;
+      sort(true);
+    }
+#else
     //Async sort (interactive mode)
     else
+    {
       queueCommands("asyncsort");
+    }
+#endif
   }
 
   switch (viewer->blend_mode)
@@ -2967,6 +3166,15 @@ bool LavaVu::loadFile(const std::string& file)
   // - If none exists, a default will be created
   // - gldb data will be loaded into active model iff it is not a gldb model
   FilePath fn(file);
+
+#ifdef __EMSCRIPTEN__
+  //Attempt to fetch from remote instead (unless it actually exists in the emscripten FS)
+  if (fn.type.length() && !FileExists(fn.full))
+  {
+    fetch(file);
+    return true;
+  }
+#endif
 
   //Load a file based on extension
   debug_print("Loading: %s\n", fn.full.c_str());
@@ -3262,25 +3470,6 @@ void LavaVu::jsonReadFile(std::string fn)
   }
   else
     printMessage("Unable to open file: %s", fn.c_str());
-}
-
-//Data request from attached apps
-std::string LavaVu::requestData(std::string key)
-{
-  std::ostringstream result;
-  if (key == "objects")
-  {
-    amodel->jsonWrite(result);
-    debug_print("Sending object list (%d bytes)\n", result.str().length());
-  }
-  else if (key == "history")
-  {
-    for (unsigned int l=0; l<history.size(); l++)
-      result << history[l] << std::endl;
-    debug_print("Sending history (%d bytes)\n", result.str().length());
-  }
-  //std::cerr << result.str();
-  return result.str();
 }
 
 //Python interface functions

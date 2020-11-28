@@ -133,6 +133,7 @@ def build_sqlite3(sqlite3_path):
 
     #Add any include dirs
     compiler.add_include_dir(sqlite3_path)
+    compiler.define_macro('SQLITE_ENABLE_DESERIALIZE', '1')
 
     try:
         obj = compiler.compile([os.path.join(sqlite3_path, 'sqlite3.c')], 'build')
@@ -311,7 +312,7 @@ if __name__ == "__main__":
 
         srcs += [os.path.join('src', 'png', 'lodepng.cpp')]
         srcs += [os.path.join('src', 'miniz', 'miniz.c')]
-        defines += [('HAVE_GLFW', '1')]
+        defines += [('HAVE_GLFW', '1'), ('SQLITE_ENABLE_DESERIALIZE', '1')]
         #defines += [('HAVE_LIBPNG', 1)]
         #inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
         #lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
@@ -328,17 +329,14 @@ if __name__ == "__main__":
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
-        #Use external sqlite3 if available, otherwise build
-        if not (find_library('sqlite3') and check_libraries(['sqlite3'], ['sqlite3.h'], extra_inc_dirs=[sqlite3_path])):
-            #Don't compile when just running 'setup.py egg_info'
-            if len(sys.argv) < 2 or sys.argv[1] == 'egg_info':
-                sqlite3 = 'build/src/sqlite3/sqlite3.o'
-            else:
-                sqlite3 = build_sqlite3(sqlite3_path)
-            inc_dirs += [sqlite3_path]
-            extra_objects = sqlite3
+        #Build sqlite3
+        #Don't compile when just running 'setup.py egg_info'
+        if len(sys.argv) < 2 or sys.argv[1] == 'egg_info':
+            sqlite3 = 'build/src/sqlite3/sqlite3.o'
         else:
-            libs += ['sqlite3']
+            sqlite3 = build_sqlite3(sqlite3_path)
+        inc_dirs += [sqlite3_path]
+        extra_objects = sqlite3
 
         # Optional external libraries - check if installed
         if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):

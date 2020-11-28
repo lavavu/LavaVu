@@ -136,6 +136,7 @@ public:
   Model(Session& session);
   void init(bool clear=true);
   void load(const FilePath& fn);
+  void load();
   void clearRenderers();
   ~Model();
 
@@ -181,6 +182,7 @@ public:
   void mergeDatabases();
   void updateObject(DrawingObject* target, lucGeometryType type);
   void writeDatabase(const char* path, DrawingObject* obj=NULL);
+  void writeDatabase(Database& outdb, DrawingObject* obj=NULL);
   void writeState();
   void writeState(Database& outdb);
   void writeObjects(Database& outdb, DrawingObject* obj=NULL, int step=-1);
@@ -197,6 +199,9 @@ public:
   std::string jsonWrite(bool objdata=false);
   void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
   int jsonRead(std::string data);
+
+  std::vector<unsigned char> serialize();
+  void deserialize(unsigned char* source, unsigned int len, bool persist=false);
 };
 
 #endif //Model__

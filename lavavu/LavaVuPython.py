@@ -480,6 +480,8 @@ class LavaVu(object):
     destroy = _swig_new_instance_method(_LavaVuPython.LavaVu_destroy)
     resize = _swig_new_instance_method(_LavaVuPython.LavaVu_resize)
     run = _swig_new_instance_method(_LavaVuPython.LavaVu_run)
+    serialize = _swig_new_instance_method(_LavaVuPython.LavaVu_serialize)
+    deserialize = _swig_new_instance_method(_LavaVuPython.LavaVu_deserialize)
     printall = _swig_new_instance_method(_LavaVuPython.LavaVu_printall)
     loadFile = _swig_new_instance_method(_LavaVuPython.LavaVu_loadFile)
     parseProperty = _swig_new_instance_method(_LavaVuPython.LavaVu_parseProperty)

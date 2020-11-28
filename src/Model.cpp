@@ -329,11 +329,7 @@ void Model::load(const FilePath& fn)
   database = Database(fn);
   if (database.open())
   {
-    loadTimeSteps();
-    loadColourMaps();
-    loadObjects();
-    loadViewports();
-    loadWindows();
+    load();
   }
   else
   {
@@ -341,6 +337,18 @@ void Model::load(const FilePath& fn)
   }
 }
 
+void Model::load()
+{
+  //Add database path to shader search paths
+  if (std::find(FilePath::paths.begin(), FilePath::paths.end(), database.file.full) == FilePath::paths.end())
+    FilePath::paths.push_back(database.file.path);
+
+  loadTimeSteps();
+  loadColourMaps();
+  loadObjects();
+  loadViewports();
+  loadWindows();
+}
 
 View* Model::defaultView(Properties* properties)
 {
@@ -1051,8 +1059,8 @@ int Model::loadTimeSteps(bool scan)
   clearTimeSteps();
   int rows = 0;
 
-  //Scan for additional timestep files with corresponding entries in timestep table
-  if (!scan && database && !database.memory)
+  //Scan for additional timestep records/files with corresponding entries in timestep table
+  if (!scan && database)
   {
     sqlite3_stmt* statement = database.select("SELECT * from timestep");
     //(id, time, dim_factor, units)
@@ -1350,6 +1358,10 @@ int Model::setTimeStep(int stepidx)
 {
   int rows = -1;
   clock_t t1 = clock();
+  if (database)
+    session.globals["filename"] = database.file.full;
+  else
+    session.globals["filename"] = "";
 
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
@@ -1751,24 +1763,27 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type)
 void Model::writeDatabase(const char* path, DrawingObject* obj)
 {
   //Write objects to a new database?
-  Database outdb;
   if (path)
   {
     if (FileExists(path))
       remove(path);
-    outdb = Database(FilePath(path));
+    Database outdb = Database(FilePath(path));
     if (!outdb.open(true))
     {
       printf("Database write failed '%s': %s\n", path, sqlite3_errmsg(outdb.db));
       return;
     }
+    writeDatabase(outdb, obj);
   }
   else
   {
-    outdb = database;
     database.reopen(true);  //Open writable
+    writeDatabase(database, obj);
   }
+}
 
+void Model::writeDatabase(Database& outdb, DrawingObject* obj)
+{
   // Remove existing static data
   //outdb.issue("drop table IF EXISTS object");
   //outdb.issue("drop table IF EXISTS state");
@@ -2385,4 +2400,75 @@ int Model::jsonRead(std::string data)
   return 0;
 }
 
+std::vector<unsigned char> Model::serialize()
+{
+  Database outdb = Database(FilePath("file:tempdb1?mode=memory&cache=shared"));
+  if (!outdb.open(true))
+  {
+    printf("Memory database write failed : %s\n", sqlite3_errmsg(outdb.db));
+    return std::vector<unsigned char>();
+  }
+
+  //If loaded model already backed by a db, just back it up to the memory db
+  //(TODO: Will need to flag if changes/updates need to be written)
+  //if (database)
+  //{
+  //  std::cout << "Backing up database to mem...\n";
+  //  backup(database, outdb);
+  //  std::cout << "Done.\n";
+  //}
+  //else
+  writeDatabase(outdb);
+
+  sqlite3_int64 outsize; // Write size of the DB here, if not NULL
+  //Next only works if deserialize has been called previously on this database
+  unsigned char *buffer = sqlite3_serialize(outdb.db, "main", &outsize, SQLITE_SERIALIZE_NOCOPY); //NOCOPY requires an in-memory database
+  if (buffer == NULL)
+    buffer = sqlite3_serialize(outdb.db, "main", &outsize, 0); //Try with copy
+
+  std::vector<unsigned char> d(outsize);
+  d.assign(buffer, buffer+outsize);
+
+  sqlite3_free(buffer);
+
+  return d;
+}
+
+void Model::deserialize(unsigned char* source, unsigned int len, bool persist)
+{
+  //if (!database)
+  {
+    database = Database(FilePath("file:tempdb1?mode=memory&cache=shared"));
+    database.open(true);  //Open for writing
+  }
+
+  unsigned mflags = 0;
+  unsigned char* pData = source;
+  if (persist)
+  {
+    //Copying the data allows use to leave to sqlite3 to free and make resizable
+    //This allows keeping the database for further updates etc
+    pData = (unsigned char*)sqlite3_malloc(len);
+    memcpy(pData, source, len);
+    mflags = SQLITE_DESERIALIZE_FREEONCLOSE | SQLITE_DESERIALIZE_RESIZEABLE;
+  }
+  //printf("DESERIALIZE - %lld bytes\n", len);
+  int ret = sqlite3_deserialize(database.db, "main", pData, len, len, mflags);
+  if (ret != SQLITE_OK)
+  {
+    std::cerr << "sqlite3_deserialize error : " << ret << std::endl;
+    return;
+  }
+
+  //Load the new data
+  load();
+  reload();
+  setTimeStep(nearestTimeStep(0));
+
+  if (!persist)
+  {
+    //Clear the database once we have loaded it
+    database = Database();
+  }
+}
 

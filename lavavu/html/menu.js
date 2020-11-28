@@ -208,7 +208,7 @@ function createMenu(viewer, onchange, webglmode, global) {
 
   var el = null;
   //Insert within element rather than whole document
-  if (!global && viewer.canvas.parentElement != document.body && viewer.canvas.parentElement.parentElement != document.body) {
+  if (!global && viewer.canvas && viewer.canvas.parentElement != document.body && viewer.canvas.parentElement.parentElement != document.body) {
     var pel = viewer.canvas.parentElement;
     //A bit of a hack to detect converted HTML output and skip going up two parent elements
     if (pel.parentElement.className != 'section')
@@ -224,7 +224,7 @@ function createMenu(viewer, onchange, webglmode, global) {
     }
     //pel.style.overflow = 'visible'; //Parent element relative prevents menu escaping wrapper div
     //pel.parentElement.style.overflow = 'visible'; //Parent element relative prevents menu escaping wrapper div
-    var id = 'dat_gui_menu_' + viewer.canvas.id;
+    var id = 'dat_gui_menu_' + (viewer.canvas ? viewer.canvas.id : 'default');
     el = document.getElementById(id)
     if (el)
       el.parentNode.removeChild(el);
@@ -237,10 +237,10 @@ function createMenu(viewer, onchange, webglmode, global) {
   var gui;
   //Insert within element rather than whole document
   if (el) {
-    gui = new dat.GUI({ autoPlace: false });
+    gui = new dat.GUI({ autoPlace: false, hideable: false });
     el.appendChild(gui.domElement);
   } else {
-    gui = new dat.GUI();
+    gui = new dat.GUI({ hideable: false });
   }
 
   //Re-create menu on element mouse down if we need to reload
@@ -287,7 +287,7 @@ function createMenu(viewer, onchange, webglmode, global) {
 
   gui.add({"Reload" : function() {viewer.reload();}}, "Reload");
   //VR supported? (WebGL only)
-  if (webglmode && navigator.getVRDisplays) {
+  if (webglmode === 1 && navigator.getVRDisplays) {
     viewer.vrDisplay = null;
     viewer.inVR = false;
     gui.add({"VR Mode" : function() {start_VR(viewer);}}, 'VR Mode');
@@ -301,14 +301,25 @@ function createMenu(viewer, onchange, webglmode, global) {
 
   //Non-persistent settings
   gui.add(viewer, "mode", ['Rotate', 'Translate', 'Zoom']);
-  viewer.cmd = '';
-  gui.add(viewer, "cmd").onFinishChange(function(cmd) {if (cmd.length) {viewer.command(cmd); viewer.cmd = '';}}).name('Command');
+  if (webglmode === 0) {
+    viewer.cmd = '';
+    gui.add(viewer, "cmd").onFinishChange(function(cmd) {if (cmd.length) {viewer.command(cmd); viewer.cmd = '';}}).name('Command');
+  }
+
   //var s = gui.addFolder('Settings');
-  if (webglmode) {
+  if (webglmode === 1) {
+    //Old WebGL 1.0 mode
     gui.add(viewer.vis, "interactive").name("Interactive Render");
     gui.add(viewer.vis, "immediatesort").name("Immediate Sort");
     gui.add(viewer.vis, "sortenabled").name('Sort Enabled');
-  } else {
+  } else if (webglmode === 2) {
+    //Emscripten WebGL2 mode
+    gui.add({"Full Screen" : function() {Module.requestFullscreen(false,true);}}, 'Full Screen');
+    var params = {loadBrowserFile : function() { document.getElementById('fileinput').click(); } };
+    gui.add(params, 'loadBrowserFile').name('Load file');
+    gui.add({"Export GLDB" : function() {window.commands = 'export';}}, 'Export GLDB');
+  } else if (viewer.canvas) {
+    //Server render
     var url = viewer.canvas.imgtarget.baseurl;
     if (url)
       gui.add({"Popup Viewer" : function() {window.open(url, "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=1024,height=768");}}, 'Popup Viewer');
@@ -320,14 +331,17 @@ function createMenu(viewer, onchange, webglmode, global) {
   var v = gui.addFolder('Views');
   var ir2 = 1.0 / Math.sqrt(2.0);
   v.add({"Reset" : function() {viewer.reset(); }}, 'Reset');
-  v.add({"XY" : function() {viewer.rotate = quat4.create([0, 0, 0, 1]); viewer.syncRotation(); }}, 'XY');
-  v.add({"YX" : function() {viewer.rotate = quat4.create([0, 1, 0, 0]); viewer.syncRotation();}}, 'YX');
-  v.add({"XZ" : function() {viewer.rotate = quat4.create([ir2, 0, 0, -ir2]); viewer.syncRotation();}}, 'XZ');
-  v.add({"ZX" : function() {viewer.rotate = quat4.create([ir2, 0, 0, ir2]); viewer.syncRotation();}}, 'ZX');
-  v.add({"YZ" : function() {viewer.rotate = quat4.create([0, -ir2, 0, -ir2]); viewer.syncRotation();}}, 'YZ');
-  v.add({"ZY" : function() {viewer.rotate = quat4.create([0, -ir2, 0, ir2]); viewer.syncRotation();}}, 'ZY');
+  v.add({"XY" : function() {viewer.syncRotation([0, 0, 0, 1]); }}, 'XY');
+  v.add({"YX" : function() {viewer.syncRotation([0, 1, 0, 0]);}}, 'YX');
+  v.add({"XZ" : function() {viewer.syncRotation([ir2, 0, 0, -ir2]);}}, 'XZ');
+  v.add({"ZX" : function() {viewer.syncRotation([ir2, 0, 0, ir2]);}}, 'ZX');
+  v.add({"YZ" : function() {viewer.syncRotation([0, -ir2, 0, -ir2]);}}, 'YZ');
+  v.add({"ZY" : function() {viewer.syncRotation([0, -ir2, 0, ir2]);}}, 'ZY');
   //console.log(JSON.stringify(viewer.view));
-  menu_addctrls(v, viewer.view, viewer, onchange);
+  if (viewer.view)
+    menu_addctrls(v, viewer.view, viewer, onchange);
+  else
+    menu_addctrls(v, viewer.vis.views[0], viewer, onchange);
 
   var o = gui.addFolder('Objects');
   for (var id in viewer.vis.objects) {
@@ -342,7 +356,7 @@ function createMenu(viewer, onchange, webglmode, global) {
   }
   viewer.cgui = viewer.gui.addFolder('ColourMaps');
 
-  createColourMapMenu(viewer, onchange, webglmode);
+  createColourMapMenu(viewer, onchange, webglmode === 1);
 
   //var t1 = performance.now();
   //console.log("Call to menu() took " + (t1 - t0) + " milliseconds.")
@@ -407,7 +421,7 @@ function updateMenu(viewer, onchange) {
 function hideMenu(canvas, gui) {
   //No menu, but hide the mode controls
   if (!gui) {
-    if (canvas.imgtarget)
+    if (canvas && canvas.imgtarget)
       canvas.imgtarget.nextElementSibling.style.display = "none";
     return;
   }
@@ -415,13 +429,15 @@ function hideMenu(canvas, gui) {
   //Requires menu to be closed and hiding enabled
   if (!gui.closed) return;
 
-  //Only hide if overlapping the canvas
-  var rect0 = gui.closebtn.getBoundingClientRect();
-  var rect1 = canvas.getBoundingClientRect();
-  if (rect0.right < rect1.left || rect0.left > rect1.right ||
-      rect0.bottom < rect1.top || rect0.top > rect1.bottom) {
-    //No overlap, don't hide
-    return;
+  //Only hide if overlapping the canvas (unless no canvas passed)
+  if (canvas) {
+    var rect0 = gui.closebtn.getBoundingClientRect();
+    var rect1 = canvas.getBoundingClientRect();
+    if (rect0.right < rect1.left || rect0.left > rect1.right ||
+        rect0.bottom < rect1.top || rect0.top > rect1.bottom) {
+      //No overlap, don't hide
+      return;
+    }
   }
 
   //Reached this point? Menu needs hiding

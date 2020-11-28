@@ -105,7 +105,7 @@ async def index(request):
     global headers
     #Index request returns full screen interactive view
     lv = _get_viewer(request.app['viewer'])
-    w = lv.control.Window(align=None, wrapper=None)
+    w = lv.control.Window(align=None, wrapper=None, fullscreen=True)
     code = lv.control.show(True, filename="")
     return web.Response(text=code, headers=headers, content_type='text/html')
 
@@ -120,10 +120,10 @@ async def handle_get(request):
     #for q in request.query:
     #    print(q, request.query[q])
 
-    if request.path.find('image') > 0:
+    if request.path.startswith('/image'):
         response = img_response(lv, request.query)
 
-    elif request.path.find('command=') > 0:
+    elif request.path.startswith('/command=') or request.path.startswith('/icommand='):
         pos1 = request.path.find('=')
         pos2 = request.path.find('?')
         if pos2 < 0: pos2 = len(request.path)
@@ -133,13 +133,13 @@ async def handle_get(request):
         _execute(lv, cmds)
 
         #Serve image or just respond 200
-        if request.path.find('icommand=') > 0:
+        if request.path.startswith('/icommand='):
             response = img_response(lv, request.query)
 
-    elif request.path.find('getstate') > 0:
+    elif request.path.startswith('/getstate'):
         state = lv.app.getState()
         response = web.Response(text=state, headers=headers, content_type='application/json')
-    elif request.path.find('connect') > 0:
+    elif request.path.startswith('/connect'):
         if 'url' in request.query:
             #Save first valid connection URL on the viewer
             url = request.query['url']
@@ -147,14 +147,18 @@ async def handle_get(request):
                 lv._url = url
         uid = id(lv)
         response = web.Response(text=str(uid), headers=headers)
-    elif request.path.find('key=') > 0:
+    elif request.path.startswith('/key='):
         pos2 = request.path.find('&')
         cmds = unquote(request.path[1:pos2])
         lv.commands('key ' + cmds, True)
-    elif request.path.find('mouse=') > 0:
+    elif request.path.startswith('/mouse='):
         pos2 = request.path.find('&')
         cmds = unquote(request.path[1:pos2])
         lv.commands('mouse ' + cmds, True)
+    elif request.path.startswith('/db'):
+        #Send the database
+        db = bytes(lv.app.serialize())
+        response = web.Response(body=db, headers=headers, content_type='application/octet-stream')
     else:
         #Serve other urls as files if available
         #print("UNKNOWN - ", request.path)

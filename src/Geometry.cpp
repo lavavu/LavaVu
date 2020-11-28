@@ -1483,6 +1483,7 @@ void Geometry::setState(Geom_Ptr g)
                         zmaxset && view->is3d ? (float)props["zmax"] : HUGE_VALF);
       }
 
+      //TODO: if volume, reverse clipmap if disabled
       if (props["clipmap"])
       {
         Vec3d dims(session.dims);
@@ -1852,7 +1853,7 @@ void Geometry::labels()
       //Need to scale 3D labels by model size, this can be overridden by setting "fontsize"
       float font_scale_factor = view->model_size;
       //Reduce label font size further
-      //larger reductoin for 3D models (don't use view->is3d as this is switched off if rotated)
+      //larger reduction for 3D models (don't use view->is3d as this is switched off if rotated)
       if (view->dims[2] > FLT_EPSILON)
         font_scale_factor *= 0.25;
       else

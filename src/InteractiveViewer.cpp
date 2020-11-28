@@ -36,6 +36,10 @@
 #include "LavaVu.h"
 #include "ColourMap.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #define HELP_INTERACTION "\
 \n# User Interface commands\n\n\
 Hold the Left mouse button and drag to Rotate about the X & Y axes  \n\
@@ -121,6 +125,21 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     viewer->button = btn;
     viewer->last_x = x;
     viewer->last_y = y;
+
+#ifdef __EMSCRIPTEN__
+  //Ondrag mode switched in gui
+  if (viewer->button == LeftButton)
+  {
+    ondrag = EM_ASM_INT({
+      //console.log(window.viewer.mode);
+      if (window.viewer.mode == "Translate") return 1;
+      if (window.viewer.mode == "Zoom") return 2;
+      return 0;
+    });
+  }
+#endif
+
+
   }
   else
   {
@@ -160,6 +179,7 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   if (!down)
     viewer->idle = 0; //Reset idle timer
 
+  if (redraw) gui_sync();
   return redraw;
 }
 
@@ -176,6 +196,12 @@ bool LavaVu::mouseMove(int x, int y)
   //For mice with no right button, ctrl+left
   if (viewer->keyState.ctrl && viewer->button == LeftButton)
     viewer->button = RightButton;
+
+  //Drag mode switched
+  if (viewer->button == LeftButton && ondrag == 1)
+    viewer->button = RightButton;
+  if (viewer->button == LeftButton && ondrag == 2)
+    viewer->button = WheelUp;
 
   switch (viewer->button)
   {
@@ -204,6 +230,12 @@ bool LavaVu::mouseMove(int x, int y)
     // middle = rotate z (roll)
     aview->rotate(0.0f, 0.0f, dx / 5.0f);
     break;
+  case WheelUp:
+    // zoom (ondrag leftbutton)
+    adjust = aview->model_size / 1000.0;   //1/1000th of size
+    aview->translate(0, 0, dx * adjust);
+    break;
+
   default:
     return false;
   }
@@ -239,6 +271,9 @@ bool LavaVu::mouseScroll(float scroll)
     history.push_back(aview->zoom(scroll * 0.25/sqrt(viewer->idle+1)));
 
   viewer->idle = 0; //Reset idle timer
+
+  gui_sync();
+
   return true;
 }
 
@@ -763,8 +798,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed["file"];
+#ifndef __EMSCRIPTEN__
     //Attempt to load external file
     loadFile(what);
+#else
+    //Attempt to fetch from remote instead
+    fetch(what);
+#endif
   }
   else if (parsed.exists("script"))
   {
@@ -3371,6 +3411,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   last_cmd = cmd;
   //if (animate && redisplay) viewer->postdisplay = true;
+
+  //Sync menu
+  if (redisplay && viewer->isopen && aview && aview->initialised)
+    gui_sync();
+
   return redisplay;
 }
 

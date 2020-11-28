@@ -79,9 +79,8 @@ public:
     return false;
   }
 
-  virtual std::string requestData(std::string key)
+  virtual void fetch(const std::string& url, bool nocache)
   {
-    return std::string("");
   }
 
   ApplicationInterface() {}

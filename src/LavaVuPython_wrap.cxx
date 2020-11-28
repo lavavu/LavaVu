@@ -2698,9 +2698,10 @@ SWIGINTERN PyObject *SWIG_PyStaticMethod_New(PyObject *SWIGUNUSEDPARM(self), PyO
 #define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[35]
 #define SWIGTYPE_p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t swig_types[36]
 #define SWIGTYPE_p_swig__SwigPyIterator swig_types[37]
-#define SWIGTYPE_p_value_type swig_types[38]
-static swig_type_info *swig_types[40];
-static swig_module_info swig_module = {swig_types, 39, 0, 0, 0, 0};
+#define SWIGTYPE_p_unsigned_char swig_types[38]
+#define SWIGTYPE_p_value_type swig_types[39]
+static swig_type_info *swig_types[41];
+static swig_module_info swig_module = {swig_types, 40, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -21144,6 +21145,78 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_serialize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< unsigned char,std::allocator< unsigned char > > result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_serialize" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      result = (arg1)->serialize();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::vector< unsigned char,std::allocator< unsigned char > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_deserialize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  unsigned char *arg2 = (unsigned char *) 0 ;
+  unsigned int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  unsigned int val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "LavaVu_deserialize", 3, 3, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_deserialize" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_unsigned_char, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_deserialize" "', argument " "2"" of type '" "unsigned char *""'"); 
+  }
+  arg2 = reinterpret_cast< unsigned char * >(argp2);
+  ecode3 = SWIG_AsVal_unsigned_SS_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_deserialize" "', argument " "3"" of type '" "unsigned int""'");
+  } 
+  arg3 = static_cast< unsigned int >(val3);
+  {
+    try {
+      (arg1)->deserialize(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_printall(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -30450,6 +30523,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},
 	 { "LavaVu_resize", _wrap_LavaVu_resize, METH_VARARGS, NULL},
 	 { "LavaVu_run", _wrap_LavaVu_run, METH_VARARGS, NULL},
+	 { "LavaVu_serialize", _wrap_LavaVu_serialize, METH_O, NULL},
+	 { "LavaVu_deserialize", _wrap_LavaVu_deserialize, METH_VARARGS, NULL},
 	 { "LavaVu_printall", _wrap_LavaVu_printall, METH_VARARGS, NULL},
 	 { "LavaVu_loadFile", _wrap_LavaVu_loadFile, METH_VARARGS, NULL},
 	 { "LavaVu_parseProperty", _wrap_LavaVu_parseProperty, METH_VARARGS, NULL},
@@ -30840,6 +30915,8 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},
 	 { "LavaVu_resize", _wrap_LavaVu_resize, METH_VARARGS, NULL},
 	 { "LavaVu_run", _wrap_LavaVu_run, METH_VARARGS, NULL},
+	 { "LavaVu_serialize", _wrap_LavaVu_serialize, METH_O, NULL},
+	 { "LavaVu_deserialize", _wrap_LavaVu_deserialize, METH_VARARGS, NULL},
 	 { "LavaVu_printall", _wrap_LavaVu_printall, METH_VARARGS, NULL},
 	 { "LavaVu_loadFile", _wrap_LavaVu_loadFile, METH_VARARGS, NULL},
 	 { "LavaVu_parseProperty", _wrap_LavaVu_parseProperty, METH_VARARGS, NULL},
@@ -30962,6 +31039,7 @@ static swig_type_info _swigt__p_std__vectorT_std__string_std__allocatorT_std__st
 static swig_type_info _swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t = {"_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t", "std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *|std::vector< std::vector< float,std::allocator< float > > > *|std::vector< std::vector< float > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t = {"_p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t", "std::vector< unsigned char > *|std::vector< unsigned char,std::allocator< unsigned char > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_swig__SwigPyIterator = {"_p_swig__SwigPyIterator", "swig::SwigPyIterator *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_unsigned_char = {"_p_unsigned_char", "unsigned char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_value_type = {"_p_value_type", "value_type *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
@@ -31003,6 +31081,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t,
   &_swigt__p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t,
   &_swigt__p_swig__SwigPyIterator,
+  &_swigt__p_unsigned_char,
   &_swigt__p_value_type,
 };
 
@@ -31044,6 +31123,7 @@ static swig_cast_info _swigc__p_std__vectorT_std__string_std__allocatorT_std__st
 static swig_cast_info _swigc__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t[] = {  {&_swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t[] = {  {&_swigt__p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig__SwigPyIterator[] = {  {&_swigt__p_swig__SwigPyIterator, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_unsigned_char[] = {  {&_swigt__p_unsigned_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
@@ -31085,6 +31165,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t,
   _swigc__p_std__vectorT_unsigned_char_std__allocatorT_unsigned_char_t_t,
   _swigc__p_swig__SwigPyIterator,
+  _swigc__p_unsigned_char,
   _swigc__p_value_type,
 };
 

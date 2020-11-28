@@ -1,0 +1,92 @@
+body {
+  font-family: arial;
+  margin: 0;
+  padding: none;
+}
+
+.emscripten { padding-right: 0; margin-left: 0; margin-right: 0; display: block; }
+div.emscripten { text-align: center; }      
+/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+canvas.emscripten { border: 0px none; background: black; visibility: hidden; }
+
+/* full size canvas */
+#canvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: block;
+  outline: none !important; /* fixes chrome focus outline */
+}
+
+#emscripten_logo {
+  display: inline-block;
+  margin: 0;
+}
+
+.spinner {
+  height: 30px;
+  width: 30px;
+  margin: 0;
+  margin-top: 20px;
+  margin-left: 20px;
+  display: inline-block;
+  vertical-align: top;
+
+  animation: rotation 0.8s linear infinite;
+
+  border-left: 5px solid rgb(235, 235, 235);
+  border-right: 5px solid rgb(235, 235, 235);
+  border-bottom: 5px solid rgb(235, 235, 235);
+  border-top: 5px solid rgb(120, 120, 120);
+  
+  border-radius: 100%;
+  background-color: rgb(189, 215, 46);
+}
+
+@keyframes rotation {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
+}
+
+#status {
+  display: inline-block;
+  vertical-align: top;
+  margin-top: 30px;
+  margin-left: 20px;
+  font-weight: bold;
+  color: rgb(120, 120, 120);
+}
+
+#progress {
+  height: 20px;
+  width: 300px;
+}
+
+#controls {
+  display: inline-block;
+  float: right;
+  vertical-align: top;
+  margin-top: 30px;
+  margin-right: 20px;
+}
+
+#output {
+  width: 800px;
+  height: 400px;
+  margin: 0px auto;
+  padding: 0px;
+  display: none; /*block;*/
+  background-color: rgba(0, 0, 0, 0.0);
+  color: gray;
+  font-family: 'Lucida Console', Monaco, monospace;
+  border: 0px none;
+  outline: none;
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  z-index: 50;
+}

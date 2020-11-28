@@ -1880,7 +1880,17 @@
       true
     ]
   },
-
+  "filename": {
+    "default": "",
+    "target": "global",
+    "type": "string",
+    "desc": "Active database filename",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "compression": {
     "default": 1,
     "target": "global",
@@ -1889,7 +1899,9 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      true
+      true,
+      null,
+      [-1,0,1,2,3,4,5,6,7,8,9]
     ]
   },
   "rulers": {
@@ -1977,7 +1989,12 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      true
+      true,
+      [
+        0.0,
+        5.0,
+        0.5
+      ]
     ]
   },
   "fillborder": {

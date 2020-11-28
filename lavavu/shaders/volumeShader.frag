@@ -58,7 +58,6 @@ uniform bool uLighting;
 
 vec3 bbMin;
 vec3 bbMax;
-float irange = uRange.y - uRange.x;
 
 #ifdef ENABLE_TRICUBIC
 float interpolate_tricubic_fast(vec3 coord);
@@ -135,7 +134,8 @@ float tex3D(vec3 pos)
 
   //Normalise the density over provided range
   //(used for float textures only, all other formats are already [0,1])
-  density = (density - uRange.x) * irange;
+  density = (density - uRange.x) / (uRange.y - uRange.x);
+  //density = (density - uRange.x) * irange;
   return density;
 }
 
@@ -240,6 +240,7 @@ void main()
     //Number of samples to take along this ray before we pass out back of volume...
     float travel = distance(rayStop, rayStart) / stepSize;
     int samples = int(ceil(travel));
+    float irange = uRange.y - uRange.x;
     if (irange <= 0.0) irange = 1.0;
     irange = 1.0 / irange;
   
