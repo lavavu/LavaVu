@@ -563,14 +563,7 @@ void LavaVu::run(std::vector<std::string> args)
   if (session.automate) return;
 
   //Start event loop
-  if (viewer->visible)
-    viewer->loop();
-  else
-  {
-    //Read input script from stdin on first timestep
-    viewer->pollInput();
-    viewer->display();
-  }
+  viewer->loop();
 }
 
 void LavaVu::clearAll(bool objects, bool colourmaps)
