@@ -3078,6 +3078,7 @@ void LavaVu::defaultModel()
 
   //Set a default view
   aview = amodel->defaultView(props);
+  view = 0;
 
   //Setup default colourmaps
   //amodel->initColourMaps();
@@ -3088,11 +3089,14 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
   GL_Check_Thread(viewer->render_thread);
   if (models.size() == 0) defaultModel();
-  if (model_idx == model && at_timestep >= 0 && at_timestep == session.now) return false; //No change
   if (model_idx < 0 || model_idx >= (int)models.size()) return false;
 
   //Save active model as selected
   amodel = models[model_idx];
+
+  //No change? Skip loading
+  if (model_idx == model && at_timestep >= 0 && at_timestep == session.now) return false;
+
   model = model_idx;
 
   //Have a database model loaded already?
