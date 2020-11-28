@@ -2033,6 +2033,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     //Apply auto rotate once all commands processed
     if (aview->initialised && (session.min[0] == session.max[0] || session.min[1] == session.max[1]))
       parseCommand("autorotate");
+
+    aview->setBackground(); //Update background colour
   }
   else
   {
@@ -2041,7 +2043,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       g->setup(aview);
   }
 
-  aview->setBackground(); //Update background colour
 }
 
 void LavaVu::viewApply(int idx)
