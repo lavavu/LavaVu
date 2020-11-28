@@ -2956,11 +2956,16 @@ void LavaVu::drawScene()
   glDisable(GL_CULL_FACE);
   GL_Error_Check;
 
+  //Draw a filled border box first
+  if (!session.omegalib && aview->properties["fillborder"])
+    drawBorder();
+
   //Call the renderers
   for (auto g : amodel->geometry)
     g->display();
 
-  if (!session.omegalib)
+  //Line border and rulers drawn after
+  if (!session.omegalib && !aview->properties["fillborder"])
     drawBorder();
   drawRulers();
 }
