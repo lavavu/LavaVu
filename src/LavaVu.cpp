@@ -2110,8 +2110,7 @@ void LavaVu::close()
   amodel = NULL;
   aobject = NULL;
 
-  session.timesteps.clear();
-  session.now = -1;
+  session.reset();
 
 #ifdef __EMSCRIPTEN__
   //Destroy the gui menu to force reload
@@ -2340,6 +2339,13 @@ bool LavaVu::sort(bool sync)
 void LavaVu::display(bool redraw)
 {
   if (!viewer->isopen) return;
+
+  //Require a model from here on, set a default
+  if (!amodel)
+  {
+    defaultModel();
+    loadModelStep(0, -1);
+  }
 
   //Lock the state mutex, prevent updates while drawing
   LOCK_GUARD(session.mutex);
@@ -3345,7 +3351,10 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 
   //Flag a view update
   viewset = autozoom ? RESET_ZOOM : RESET_YES;
-
+#ifdef __EMSCRIPTEN__
+  //We lose the global "resolution" property when new model loaded, so reset
+  EM_ASM({window.resized = true;});
+#endif
   return true;
 }
 

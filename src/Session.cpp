@@ -55,6 +55,7 @@ std::string Session::counterFilename()
 void Session::reset()
 {
   globals = json::object();
+  timesteps.clear();
 
   automate = false;
 
