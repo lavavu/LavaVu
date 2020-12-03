@@ -569,7 +569,8 @@ void LavaVu::run(std::vector<std::string> args)
   status = false;
 
   //Get the database from remote
-  fetch("db", true);
+  if (amodel->objects.size() == 0)
+    fetch("db", true);
 
   //Init menu
   std::ostringstream json;

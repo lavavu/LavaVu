@@ -122,6 +122,10 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   {
     translated = false;
     //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
+#ifdef __EMSCRIPTEN__
+    //Skip false events when using touchscreen
+    if (!x && !y) return false;
+#endif
     viewer->button = btn;
     viewer->last_x = x;
     viewer->last_y = y;
@@ -185,6 +189,10 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
 
 bool LavaVu::mouseMove(int x, int y)
 {
+#ifdef __EMSCRIPTEN__
+  //Skip false events when using touchscreen
+  if (!x && !y) return false;
+#endif
   float adjust;
   int dx = x - viewer->last_x;
   int dy = y - viewer->last_y;
@@ -2755,7 +2763,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewer->keyState.ctrl = modifiers.find('C')+1;
     viewer->keyState.alt = modifiers.find('A')+1;
 
-    //printf("%s button %d x %d y %d spin %d modkeys %s\n", action.c_str(), button, x, y, spin, modifiers.c_str());
+    //printf("-- %s button %d x %d y %d spin %d modkeys %s\n", action.c_str(), button, x, y, spin, modifiers.c_str());
 
     //viewer->button = (MouseButton)button; //if (viewer->keyState.ctrl && viewer->button == LeftButton)
     // XOR state of three mouse buttons to the mouseState variable

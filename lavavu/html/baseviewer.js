@@ -3,10 +3,6 @@
 //Init standalong gui menu handler
 var hideBoxTimer;
 function initBase(dict, defaultcmaps) {
-  //console.log(dict);
-  //console.log(defaultcmaps);
-
-  //
   var c = document.getElementById("canvas");
   c.style.display = 'block';
 
@@ -15,21 +11,28 @@ function initBase(dict, defaultcmaps) {
   window.viewer = viewer;
 
   //Command callback function
-  viewer.command = function(cmds) {window.commands = cmds;}
+  viewer.command = function(cmds) {window.commands.push(cmds);}
 
   //Data dict and colourmap names from passed strings
   window.dictionary = viewer.dict = JSON.parse(dict);
   window.defaultcolourmaps = viewer.defaultcolourmaps = JSON.parse(defaultcmaps);
 
-  document.addEventListener('mousemove', e => {
-    //GUI elements to show on mouseover
-    if (window.viewer.gui)
-      window.viewer.gui.domElement.style.display = "block";
-    if (hideBoxTimer) clearTimeout(hideBoxTimer);
-    hideBoxTimer = setTimeout(function () { hideMenu(null, window.viewer.gui);}, 1000 );
-  });
+  document.addEventListener('mousemove', mouseover);
+
+  //Touch events
+  c.addEventListener("touchstart", touchHandler, true);
+  c.addEventListener("touchmove", touchHandler, true);
+  c.addEventListener("touchend", touchHandler, true);
 
   return viewer;
+}
+
+function mouseover() {
+  //GUI elements to show on mouseover
+  if (window.viewer.gui)
+    window.viewer.gui.domElement.style.display = "block";
+  if (hideBoxTimer) clearTimeout(hideBoxTimer);
+  hideBoxTimer = setTimeout(function () { hideMenu(null, window.viewer.gui);}, 1000 );
 }
 
 //This object holds the viewer details and calls the renderers
@@ -204,6 +207,101 @@ BaseViewer.prototype.getTranslationString = function() {
 
 BaseViewer.prototype.reset = function() {
   this.command('reset');
+}
+
+//Basic touch event handling
+function touchHandler(event)
+{
+  var mouse = event.target.mouse;
+  if (!mouse)
+    event.target.mouse = mouse = {"identifier" : -1};
+
+  if (window.viewer.gui)
+    mouseover();
+
+  switch(event.type)
+  {
+    case "touchstart":
+      if (!mouse.touchmax || mouse.touchmax < event.touches.length) {
+        mouse.touchmax = event.touches.length;
+        //console.log("touchmax: " + mouse.touchmax);
+        if (event.touches.length == 2)
+          mouse.scaling = 0;
+      }
+      break;
+    case "touchmove":
+      //console.log("touchmax: " + mouse.touchmax + " == " + event.touches.length);
+      if (event.touches.length == mouse.touchmax) {
+        var down = false;
+        var touch;
+        //Get the touch to track, always use the same id
+        if (mouse.identifier == -1) {
+          mouse.identifier = event.touches[0].identifier;
+          touch = event.touches[0];
+          down = true;
+        } else {
+          //Find logged touch
+          for (var t=0; t<event.touches.length; t++) {
+            //console.log(t + " / " + event.touches.length + " : " + event.touches[t].identifier + ' === ' + mouse.identifier)
+            if (event.touches[t].identifier === mouse.identifier) {
+              touch = event.touches[t];
+              break;
+            }
+          }
+        }
+
+        var x = touch.pageX;
+        var y = touch.pageY;
+
+        //Delayed mouse-down event post (need to wait until all of multiple touches registered)
+        if (down)
+          window.viewer.command('mouse mouse=down,button=' + (event.touches.length > 1 ? 2 : 0) + ',x=' + x + ',y=' + y);
+
+        if (event.touches.length == 3) {
+          //Translate on drag with 3 fingers(equivalent to drag with right mouse)
+          window.viewer.command('mouse mouse=move,button=2,x=' + x + ',y=' + y);
+
+        } else if (event.touches.length == 2) {
+          var pinch = 0;
+          if (mouse.scaling != null && event.touches.length == 2) {
+            var dist = Math.sqrt(
+              (event.touches[0].pageX-event.touches[1].pageX) * (event.touches[0].pageX-event.touches[1].pageX) +
+              (event.touches[0].pageY-event.touches[1].pageY) * (event.touches[0].pageY-event.touches[1].pageY));
+
+            if (mouse.scaling > 0)
+              pinch = (dist - mouse.scaling);
+            else
+              mouse.scaling = dist;
+            //console.log("DIST " + dist + " SCALING " + mouse.scaling + " PINCH " + pinch);
+          }
+
+          //Pinch to scale? If not sufficient scaling, interpret as translate drag
+          if (Math.abs(pinch) > 50)
+            window.viewer.command('zoom ' + (pinch * 0.0005));
+          else
+            //Also translate on drag with 2 fingers(equivalent to drag with right mouse)
+            window.viewer.command('mouse mouse=move,button=2,x=' + x + ',y=' + y);
+
+        } else if (event.touches.length == 1) {
+          //Rotate
+          window.viewer.command('mouse mouse=move,button=0,x=' + x + ',y=' + y);
+        }
+      }
+      break;
+    case "touchend":
+      if (event.touches.length == mouse.touchmax) {
+        mouse.scaling = null;
+        window.viewer.command('mouse mouse=up,button=' + (event.touches.length > 1 ? 2 : 0));
+      }
+      mouse.identifier = -1;
+      mouse.touchmax = 0;
+      break;
+    default:
+      return;
+  }
+
+  event.preventDefault();
+  return false;
 }
 
 

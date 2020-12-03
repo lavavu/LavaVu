@@ -67,6 +67,7 @@ basehtml = """
 <head>
 <title>LavaVu Interface</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 html, body, table, form {

@@ -492,13 +492,16 @@ bool OpenGLViewer::events()
 #ifdef __EMSCRIPTEN__
 EM_JS(const char*, get_commands, (), {
   if (window.commands && window.commands.length) {
+    //var cmd = window.commands.shift(); //Remove first element
+    //Merge multiple commands so they are all processed
+    var cmd = window.commands.join(';'); //Concatenate
+    window.commands = [];
     //console.log("GETTING COMMANDS: " + window.commands);
     // 'str.length' would return the length of the string as UTF-16
     // units, but Emscripten C strings operate as UTF-8.
-    var lengthBytes = lengthBytesUTF8(window.commands)+1;
+    var lengthBytes = lengthBytesUTF8(cmd)+1;
     var stringOnWasmHeap = _malloc(lengthBytes);
-    stringToUTF8(window.commands, stringOnWasmHeap, lengthBytes);
-    window.commands = "";
+    stringToUTF8(cmd, stringOnWasmHeap, lengthBytes);
     return stringOnWasmHeap;
   } else {
     return null;

@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>LavaVu Emscripten</title>
 
     <script type="text/javascript" src="dat.gui.min.js"></script>
@@ -12,7 +14,6 @@
     <link rel="stylesheet" type="text/css" href="control.css">
     <link rel="stylesheet" type="text/css" href="styles.css">
     <link rel="stylesheet" type="text/css" href="gui.css">
-    <!--link rel="stylesheet" type="text/css" href="dat-gui-light-theme.css"-->
   </head>
   <body>
 
@@ -96,7 +97,7 @@
           var data = new Uint8Array(fr.result);
 
           Module['FS_createDataFile']('/', file.name, data, true, true, true);
-          window.commands = "file " + file.name;
+          window.commands.push("file " + file.name);
 
           fileInput.value = '';
         };

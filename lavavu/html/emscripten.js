@@ -5,12 +5,12 @@ var canvasElement = document.getElementById('canvas');
 
 canvasElement.addEventListener("webglcontextlost", function(e) { canvasElement.style.display = 'none'; Module.setStatus('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
 
-//LavaVu args
-//var args = ["-v"]
-var args = []
+//LavaVu args - can be parsed in url params
+window.args = window.location.search.substr(1).split('&');
+//window.args.push("-v")
 
 var Module = {
-  arguments: args,
+  arguments: window.args,
   preRun: [],
   postRun: [],
   print: (function() {
@@ -106,5 +106,5 @@ function download(filenamePtr, mimePtr) {
 window.download = download
 window.reload_flag = false;
 window.resized = true;
-window.commands = "";
+window.commands = [];
 

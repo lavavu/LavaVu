@@ -237,10 +237,10 @@ function createMenu(viewer, onchange, webglmode, global) {
   var gui;
   //Insert within element rather than whole document
   if (el) {
-    gui = new dat.GUI({ autoPlace: false, hideable: false });
+    gui = new dat.GUI({ autoPlace: false, width: 275, hideable: false });
     el.appendChild(gui.domElement);
   } else {
-    gui = new dat.GUI({ hideable: false });
+    gui = new dat.GUI({ hideable: false, width: 275 });
   }
 
   //Re-create menu on element mouse down if we need to reload
@@ -317,7 +317,7 @@ function createMenu(viewer, onchange, webglmode, global) {
     gui.add({"Full Screen" : function() {Module.requestFullscreen(false,true);}}, 'Full Screen');
     var params = {loadBrowserFile : function() { document.getElementById('fileinput').click(); } };
     gui.add(params, 'loadBrowserFile').name('Load file');
-    gui.add({"Export GLDB" : function() {window.commands = 'export';}}, 'Export GLDB');
+    gui.add({"Export GLDB" : function() {window.commands.push('export');}}, 'Export GLDB');
   } else if (viewer.canvas) {
     //Server render
     var url = viewer.canvas.imgtarget.baseurl;
