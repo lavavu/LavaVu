@@ -632,22 +632,20 @@ void LavaVu::deserialize(unsigned char* source, unsigned int len)
 
   //Create a default model
   defaultModel();
-assert(aview);
 
   //Load the database
   amodel->deserialize(source, len);
-assert(aview);
 
   //Re-set default view (views deleted in model load)
   aview = amodel->defaultView(props);
   view = 0;
   model = -1;
-  loadModelStep(0, amodel->step());
+  loadModelStep(0, -1);
 
   //View reset is all we need here? If not, must be called on render thread
   viewset = RESET_YES;
   viewer->postdisplay = true;
-       gui_sync();
+  gui_sync();
 }
 
 #ifdef __EMSCRIPTEN__
@@ -2111,6 +2109,14 @@ void LavaVu::close()
   aview = NULL;
   amodel = NULL;
   aobject = NULL;
+
+  session.timesteps.clear();
+  session.now = -1;
+
+#ifdef __EMSCRIPTEN__
+  //Destroy the gui menu to force reload
+  EM_ASM({ if (window.viewer && window.viewer.gui) {window.viewer.gui.destroy(); window.viewer.gui = null; window.viewer.vis = {}; } });
+#endif
 }
 
 //Called when model loaded/changed, updates all views settings

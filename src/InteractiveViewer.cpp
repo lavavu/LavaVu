@@ -806,13 +806,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed["file"];
-#ifndef __EMSCRIPTEN__
     //Attempt to load external file
     loadFile(what);
-#else
-    //Attempt to fetch from remote instead
-    fetch(what);
-#endif
   }
   else if (parsed.exists("script"))
   {
