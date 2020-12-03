@@ -3188,8 +3188,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       //Play loop
-      if (viewer->timer_animate == 0)
-        viewer->animateTimer(30); //Start idle redisplay timer for frequent frame updates
+      viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
       repeat = -1; //Infinite
       viewer->timeloop = true;
     }
