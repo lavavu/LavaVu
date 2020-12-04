@@ -1806,7 +1806,7 @@ void Model::writeDatabase(Database& outdb, DrawingObject* obj)
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (!obj || objects[i] == obj)
+    if ((!obj && objects[i]->properties.data["visible"]) || objects[i] == obj)
     {
       if (!outdb.issue("insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str()))
         return;
@@ -1877,7 +1877,7 @@ void Model::writeObjects(Database& outdb, DrawingObject* obj, int step)
   //Write object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (!obj || obj == objects[i])
+    if ((!obj && objects[i]->properties.data["visible"]) || objects[i] == obj)
     {
       //Loop through all geometry classes (points/vectors etc)
       for (auto g : geometry)

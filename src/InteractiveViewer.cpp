@@ -1942,9 +1942,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Export model database\n\n"
               "**Usage:** export [filename] [objects]\n\n"
-              "filename (string) : the name of the file to export to, extension must be .gldb\n"
+              "filename (string) : the name of the file to export to, extension defaults to .gldb\n"
               "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
-              "If object ommitted all will be exported\n";
+              "If object ommitted all will be exported, hidden objects will be skipped.\n";
       return false;
     }
 
