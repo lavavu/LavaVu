@@ -2261,6 +2261,12 @@ int Model::jsonRead(std::string data)
     if (session.globals.count(del) && imported["properties"].count(del))
       imported["properties"].erase(del);
 
+  //Just ignore these on import, for export only (eg: legacy props)
+  //std::string dellist[] = {"resolution"};
+  std::string dellist[] = {"min", "max"};
+  for (auto del : dellist)
+    imported["properties"].erase(del);
+
   //Load globals, merge with existing values
   Properties::mergeJSON(session.globals, imported["properties"]);
 
