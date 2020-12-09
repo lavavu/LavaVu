@@ -3,7 +3,8 @@ var progressElement = document.getElementById('progress');
 var spinnerElement = document.getElementById('spinner');
 var canvasElement = document.getElementById('canvas');
 
-canvasElement.addEventListener("webglcontextlost", function(e) { canvasElement.style.display = 'none'; Module.setStatus('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+canvasElement.addEventListener("webglcontextlost", function(e) { document.location.reload(); }, false);
+
 
 //LavaVu args - can be parsed in url params
 window.args = window.location.search.substr(1).split('&');
