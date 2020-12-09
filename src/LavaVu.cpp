@@ -152,6 +152,8 @@ void LavaVu::defaults()
 
   //Reset state
   session.reset();
+  //Clear globals
+  session.globals = json::object();
 
   //Clear any queued commands
   viewer->commands.clear();
@@ -3353,7 +3355,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   viewset = autozoom ? RESET_ZOOM : RESET_YES;
 #ifdef __EMSCRIPTEN__
   //We lose the global "resolution" property when new model loaded, so reset
-  EM_ASM({window.resized = true;});
+  //EM_ASM({window.resized = true;});
 #endif
   return true;
 }
