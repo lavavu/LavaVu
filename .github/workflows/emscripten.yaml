@@ -31,12 +31,13 @@ jobs:
       - name: Build/install
         run: make emscripten
 
-      #This gets current release instead of creating
-      - name: Get release
+      #This gets specific release instead of creating, for testing
+      - name: Get Release
         id: get_release
-        uses: bruceadams/get-release@v1.2.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        uses: pdamianik/release-tag-to-upload-url-action@v1.0.1
+        with:
+          tag: 1.6.7
+          token: ${{ github.token }}
 
       #- name: Create Release
       #  id: create_release
@@ -55,7 +56,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.get_release.outputs.uploadUrl }} # This pulls from the GET RELEASE step above, referencing it's ID to get its outputs object 
+          #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./lavavu/html/LavaVu.wasm
           asset_name: LavaVu.wasm
           asset_content_type: application/wasm
@@ -66,7 +68,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.get_release.outputs.uploadUrl }} # This pulls from the GET RELEASE step above, referencing it's ID to get its outputs object 
+          #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./lavavu/html/LavaVu.js
           asset_name: LavaVu.js
           asset_content_type: application/javascript
@@ -77,7 +80,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.get_release.outputs.uploadUrl }} # This pulls from the GET RELEASE step above, referencing it's ID to get its outputs object 
+          #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./lavavu/html/LavaVu.data
           asset_name: LavaVu.data
           asset_content_type: application/text
