@@ -57,7 +57,8 @@ jobs:
       #    prerelease: false
 
      - name: Zip
-        run: zip --junk-paths LavaVu-web ./lavavu/html/webview.html ./lavavu/html/LavaVu.wasm ./lavavu/html/LavaVu.data ./lavavu/html/LavaVu.LavaVu-amalgamated.js ./lavavu/html/LavaVu-amalgamated.css
+        run: |
+          zip --junk-paths LavaVu-web ./lavavu/html/webview.html ./lavavu/html/LavaVu.wasm ./lavavu/html/LavaVu.data ./lavavu/html/LavaVu-amalgamated.js ./lavavu/html/LavaVu-amalgamated.css
 
       - name: Upload Emscripten
         WASM
