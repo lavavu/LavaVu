@@ -104,3 +104,14 @@ jobs:
           asset_name: LavaVu-amalgamated.css
           asset_content_type: text/css
 
+      - name: Push files to lavavu.github.io
+        uses: dmnemec/copy_file_to_another_repo_action@v1.0.4
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          source_file: 'lavavu/html/LavaVu*'
+          destination_repo: 'lavavu/lavavu.github.io'
+          user_email: 'owen.kaluza@monash.edu'
+          user_name: 'okaluza'
+          commit_message: 'Update LavaVu emscripten release files'
+
