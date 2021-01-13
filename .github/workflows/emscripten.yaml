@@ -105,14 +105,23 @@ jobs:
           asset_content_type: text/css
 
       - name: Push files to lavavu.github.io
-        uses: dmnemec/copy_file_to_another_repo_action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
-        with:
-          source_file: 'lavavu/html/LavaVu*'
-          destination_repo: 'lavavu/lavavu.github.io'
-          destination_branch: 'main'
-          user_name: ${{ github.event.pusher.name }}
-          user_email: ${{ github.event.pusher.email }}
+        run: |
+
+          git clone https://okaluza:$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
+
+          git config user.name "okaluza"
+          git config user.email "owen.kaluza@monash.edu"
+
+          cd lavavu.github.io
+          git checkout main
+          cp ../lavavu/html/LavaVu.wasm .
+          cp ../lavavu/html/LavaVu.data .
+          cp ../lavavu/html/LavaVu-amalgamated.js .
+          cp ../lavavu/html/LavaVu-amalgamated.css .
+          git stage LavaVu*
+          git commit -m "Update LavaVu emscripten release"
+          git push
 
