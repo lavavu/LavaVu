@@ -112,6 +112,6 @@ jobs:
           source_file: 'lavavu/html/LavaVu*'
           destination_repo: 'lavavu/lavavu.github.io'
           destination_branch: 'main'
-          user_name: ${{ env.GIT_AUTHOR_NAME }}
-          user_email: ${{ env.GIT_AUTHOR_EMAIL }}
+          user_name: ${{ github.event.pusher.name }}
+          user_email: ${{ github.event.pusher.email }}
 
