@@ -111,6 +111,7 @@ jobs:
         with:
           source_file: 'lavavu/html/LavaVu*'
           destination_repo: 'lavavu/lavavu.github.io'
+          destination_branch: 'main'
           user_email: 'owen.kaluza@monash.edu'
           user_name: 'okaluza'
           commit_message: 'Update LavaVu emscripten release files'
