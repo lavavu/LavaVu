@@ -75,9 +75,8 @@ jobs:
       - name: Push files to lavavu.github.io
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
         run: |
-          git clone https://okaluza:$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
+          git clone https://okaluza:$GITHUB_TOKEN@github.com/lavavu/lavavu.github.io
           cd lavavu.github.io
           git config user.name "okaluza"
           git config user.email "owen.kaluza@monash.edu"
