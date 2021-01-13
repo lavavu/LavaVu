@@ -65,12 +65,13 @@ var Module = {
     }
     statusElement.innerHTML = text;
   },
-  locateFile: function(path, prefix) {
-    // Source from github latest release by default
+  /*locateFile: function(path, prefix) {
+    // Source from github latest release by default - this doesn't work unfortunately due to CORS
     if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://github.com/lavavu/LavaVu/releases/latest/download/" + path;
+    //if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) alert("https://github.com/lavavu/LavaVu/releases/latest/download/" + path);
     // otherwise, use the default, the prefix (JS file's dir) + the path
     return prefix + path;
-  }
+  },*/
   totalDependencies: 0,
   monitorRunDependencies: function(left) {
     this.totalDependencies = Math.max(this.totalDependencies, left);
