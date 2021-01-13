@@ -77,13 +77,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
         run: |
-
           git clone https://okaluza:$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
-
+          cd lavavu.github.io
           git config user.name "okaluza"
           git config user.email "owen.kaluza@monash.edu"
-
-          cd lavavu.github.io
           git checkout main
           cp ../lavavu/html/webview.html .
           cp ../lavavu/html/LavaVu.wasm .
