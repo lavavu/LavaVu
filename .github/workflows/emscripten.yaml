@@ -108,7 +108,7 @@ jobs:
         uses: dmnemec/copy_file_to_another_repo_action@v1.0.4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+          API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
         with:
           source_file: 'lavavu/html/LavaVu*'
           destination_repo: 'lavavu/lavavu.github.io'
