@@ -1,6 +1,12 @@
 # - Creates a release on matching tag push (disabled for now)
 # - builds new emscripten wasm
 # - uploads as release assets
+#
+# https://github.com/lavavu/LavaVu/releases/latest/download/LavaVu.wasm
+# https://github.com/lavavu/LavaVu/releases/latest/download/LavaVu-amalgamated.js
+# https://github.com/lavavu/LavaVu/releases/latest/download/LavaVu.data
+# https://github.com/lavavu/LavaVu/releases/latest/download/LavaVu-amalgamated.css
+
 name: Release-Emscripten-Build
 
 # Build on every branch push, tag push, and pull request change where tag matches a version release
@@ -70,8 +76,8 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.uploadUrl }} # This pulls from the GET RELEASE step above, referencing it's ID to get its outputs object 
           #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./lavavu/html/LavaVu.js
-          asset_name: LavaVu.js
+          asset_path: ./lavavu/html/LavaVu-amalgamated.js
+          asset_name: LavaVu-amalgamated.js
           asset_content_type: application/javascript
 
       - name: Upload Data
@@ -84,5 +90,17 @@ jobs:
           #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
           asset_path: ./lavavu/html/LavaVu.data
           asset_name: LavaVu.data
-          asset_content_type: application/text
+          asset_content_type: application/octet-stream
+
+      - name: Upload CSS
+        id: upload-release-asset-4
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.uploadUrl }} # This pulls from the GET RELEASE step above, referencing it's ID to get its outputs object 
+          #upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./lavavu/html/LavaVu-amalgamated.css
+          asset_name: LavaVu-amalgamated.css
+          asset_content_type: text/css
 

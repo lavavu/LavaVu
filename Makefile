@@ -207,6 +207,7 @@ emscripten: LINKFLAGS += $(EM_FLAGS)
 emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CXX) -o $(PREFIX)/html/$(PROGNAME).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
+	cd lavavu; python amalgamate.py
 
 $(OPATH)/miniz.o : src/miniz/miniz.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^

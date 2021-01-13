@@ -65,6 +65,12 @@ var Module = {
     }
     statusElement.innerHTML = text;
   },
+  locateFile: function(path, prefix) {
+    // Source from github latest release by default
+    if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://github.com/lavavu/LavaVu/releases/latest/download/" + path;
+    // otherwise, use the default, the prefix (JS file's dir) + the path
+    return prefix + path;
+  }
   totalDependencies: 0,
   monitorRunDependencies: function(left) {
     this.totalDependencies = Math.max(this.totalDependencies, left);
@@ -109,3 +115,70 @@ window.reload_flag = false;
 window.resized = true;
 window.commands = [];
 
+//Flag window resize
+window.onresize = function() {
+  window.resized = true;
+  clear_mods();
+};
+
+//Hack for firefox to fix mod key state bugs in emscripten glfw
+window.set_mods = function(e) {
+  window.m_alt = e.getModifierState('Alt');
+  window.m_shift = e.getModifierState('Shift');
+  window.m_ctrl = e.getModifierState('Control');
+  //console.log(e.key + " ALT: " + window.m_alt + " SHIFT: " + window.m_shift + " CTRL: " + window.m_ctrl);
+}
+window.clear_mods = function() {
+  window.m_alt = false;
+  window.m_shift = false;
+  window.m_ctrl = false;
+  //console.log(" ALT: " + window.m_alt + " SHIFT: " + window.m_shift + " CTRL: " + window.m_ctrl);
+}
+window.onkeydown = function(e){
+  set_mods(e);
+}
+window.onkeyup = function(e){
+  set_mods(e);
+}
+
+//Switch the theme, called when background changed
+var light_theme = "dat-gui-light-theme.css";
+
+window.set_light_theme = function(enabled) {
+  for (var i = 0; i < document.styleSheets.length; i++) {
+    var href = document.styleSheets[i].href;
+    if (href && href.includes(light_theme)) {
+      document.styleSheets[i].disabled = !enabled;
+      return;
+    }
+  }
+
+  //If we reach here, light theme is not loaded, add it
+  if (enabled) {
+    var head = document.getElementsByTagName("head")[0];
+    var fileref = document.createElement("link")
+    fileref.setAttribute("rel", "stylesheet")
+    fileref.setAttribute("type", "text/css")
+    fileref.setAttribute("href", light_theme)
+    head.appendChild(fileref);
+  }
+}
+
+// https://stackoverflow.com/questions/47313403/passing-client-files-to-webassembly-from-the-front-end
+function useFileInput(fileInput) {
+  if (fileInput.files.length == 0)
+    return;
+  //TODO: support multiple?
+  var file = fileInput.files[0];
+
+  var fr = new FileReader();
+  fr.onload = function () {
+    var data = new Uint8Array(fr.result);
+
+    Module['FS_createDataFile']('/', file.name, data, true, true, true);
+    window.commands.push("clear all; file " + file.name);
+
+    fileInput.value = '';
+  };
+  fr.readAsArrayBuffer(file);
+}
