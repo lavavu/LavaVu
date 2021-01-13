@@ -107,7 +107,8 @@ jobs:
       - name: Push files to lavavu.github.io
         uses: dmnemec/copy_file_to_another_repo_action@v1.0.4
         env:
-          API_TOKEN_GITHUB: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
           source_file: 'lavavu/html/LavaVu*'
           destination_repo: 'lavavu/lavavu.github.io'
