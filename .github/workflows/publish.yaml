@@ -37,6 +37,13 @@ jobs:
         run: |
           zip --junk-paths LavaVu-web ./lavavu/html/webview.html ./lavavu/html/LavaVu.wasm ./lavavu/html/LavaVu.data ./lavavu/html/LavaVu-amalgamated.js ./lavavu/html/LavaVu-amalgamated.css
 
+      # https://github.community/t/how-to-get-just-the-tag-name/16241/6
+      - name: Get the version
+        id: get_version
+        run: |
+          echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+          echo ::set-output name=VERSIONSTR::v${GITHUB_REF/refs\/tags\//}
+
       - name: Create release
         id: upload-release-asset
         uses: svenstaro/upload-release-action@v2
@@ -46,8 +53,8 @@ jobs:
           asset_name: LavaVu-web-$tag.zip
           tag: ${{ github.ref }} #Use current tag/ref
           overwrite: true
-          body: "Release LavaVu v$tag"
-          release_name: v$tag
+          body: "Release LavaVu ${{ steps.get_version.outputs.VERSIONSTR }}"
+          release_name: ${{ steps.get_version.outputs.VERSIONSTR }}
 
       - name: Push files to lavavu.github.io
         env:
