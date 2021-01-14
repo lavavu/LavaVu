@@ -70,6 +70,8 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
         run: |
+          echo $LAVAVU
+          echo $API_TOKEN_GITHUB
           git clone https://okaluza:$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
           cd lavavu.github.io
           git config user.name "okaluza"
