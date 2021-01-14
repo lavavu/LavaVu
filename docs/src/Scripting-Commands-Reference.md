@@ -9,7 +9,7 @@
 [file](#file), [script](#script), [figure](#figure), [savefigure](#savefigure), [view](#view), [scan](#scan)
  - **[Output](#output-commands)**  
 
-[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
+[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [export](#export), [csv](#csv), [json](#json), [cache](#cache), [save](#save), [tiles](#tiles)
  - **[View](#view-commands)**  
 
 [rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [fov](#fov), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [fixbb](#fixbb), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
@@ -154,11 +154,12 @@
 
  > Clear data from current model/timestep  
  >   
- > **Usage:** clear [type/"objects"]  
+ > **Usage:** clear [type/"objects"/"all"]  
  >   
  > type (string) : clear only data of this type, eg: "indices", applies to selected object.  
  > objects : optionally clear all object entries  
  >           (if omitted, only the object's geometry data is cleared)  
+ > all : clear everything, including models  
 
 
 ---
@@ -291,12 +292,11 @@
 
  > Export model database  
  >   
- > **Usage:** export [filename] [objects] [uncompressed]  
+ > **Usage:** export [filename] [objects]  
  >   
- > filename (string) : the name of the file to export to, extension must be .gldb  
+ > filename (string) : the name of the file to export to, extension defaults to .gldb  
  > objects (integer/string) : the indices or names of the objects to export (see: "list objects")  
- > uncompressed : add this to skip the zlib compression step in the export process  
- > If object ommitted all will be exported  
+ > If object ommitted all will be exported, hidden objects will be skipped.  
 
 
 ### csv
@@ -317,6 +317,14 @@
  >   
  > objects (integer/string) : the indices or names of the objects to export (see: "list objects")  
  > If object ommitted all will be exported  
+
+
+### cache
+
+ > Load all timesteps into cache  
+ >   
+ > **Usage:** cache  
+ >   
 
 
 ### save

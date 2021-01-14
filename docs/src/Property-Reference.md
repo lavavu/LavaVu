@@ -229,6 +229,8 @@
 |*min*             | real[3]    | [0,0,0]        | Global model minimum bounds [x,y,z]|
 |*max*             | real[3]    | [0,0,0]        | Global model maximum bounds [x,y,z]|
 |*title*           | string     | ""             | Title to display at top centre of view|
+|*filename*        | string     | ""             | Active database filename|
+|*compression*     | integer    | 1              | Set zlib compression level for GLDB, -1=default, 0=None, 1=fast, 9=best. LavaVu default is 1 (fast).|
 |*rulers*          | boolean    | false          | Draw rulers around object axes|
 |*ruleraxes*       | string     | "xyz"          | Which figure axes to draw rulers beside (xyzXYZ) lowercase = min, capital = max |
 |*rulerticks*      | integer    | 5              | Number of tick marks to display on rulers|

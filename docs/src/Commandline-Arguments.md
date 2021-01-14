@@ -39,8 +39,8 @@
 | ------- | -----------
 | -d#     | Export object id # to CSV vertices + values
 | -j#     | Export object id # to JSON, if # omitted will output all compatible objects
-| -g#     | Export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects
-| -G#     | Export object id # to GLDB (uncompressed), if # omitted will output all compatible objects
+| -g#     | Export object id # to GLDB, if # omitted will output all compatible objects
+| -Z#     | Set zlib compression level for GLDB, -1=default, 0=None, 1=fast, 9=best
 
 |         | Window Settings
 | ------- | ---------------
