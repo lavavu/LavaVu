@@ -50,7 +50,6 @@ jobs:
 
       - name: Zip
         run: |
-          echo github.ref ${{github.ref}}
           zip --junk-paths LavaVu-web ./lavavu/html/webview.html ./lavavu/html/LavaVu.wasm ./lavavu/html/LavaVu.data ./lavavu/html/LavaVu-amalgamated.js ./lavavu/html/LavaVu-amalgamated.css
 
       - name: Upload Emscripten
@@ -70,12 +69,10 @@ jobs:
         env:
           API_TOKEN_GITHUB: ${{ secrets.LAVAVU }}
         run: |
-          echo $LAVAVU
-          echo $API_TOKEN_GITHUB
-          git clone https://okaluza:$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
+          git config --global user.name "okaluza"
+          git config --global user.email "owen.kaluza@monash.edu"
+          git clone --depth 1 --single-branch --branch main https://$API_TOKEN_GITHUB@github.com/lavavu/lavavu.github.io
           cd lavavu.github.io
-          git config user.name "okaluza"
-          git config user.email "owen.kaluza@monash.edu"
           git checkout main
           cp ../lavavu/html/webview.html .
           cp ../lavavu/html/LavaVu.wasm .
