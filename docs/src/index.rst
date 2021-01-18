@@ -43,7 +43,7 @@ AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 .. image:: https://github.com/lavavu/LavaVu/workflows/Test/badge.svg
     :target: https://github.com/lavavu/LavaVu/actions?query=workflow:Test
 
-.. image:: https://github.com/lavavu/LavaVu/workflows/Deploy/badge.svg
+.. image:: https://github.com/lavavu/LavaVu/workflows/Deploy/badge.svg?branch=1.7.3
     :target: https://github.com/lavavu/LavaVu/actions?query=workflow:Deploy
 
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2585377.svg

@@ -252,6 +252,7 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	#Update binder links
 	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' README.md
 	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/Installation.rst
+	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/index.rst
 	sphinx-build docs/src docs/
 
 clean:
