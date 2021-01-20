@@ -1,11 +1,11 @@
 name: Deploy
 
 on:
-  push
+  #push
   # Runs when a (published) GitHub Release is created
-#  release:
-#    types:
-#      - published
+  release:
+    types:
+      - published
 
 jobs:
   build_wheels:
