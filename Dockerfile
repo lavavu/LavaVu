@@ -3,7 +3,7 @@
 # No longer need to build our own mesa
 # Test with:
 # https://mybinder.org/v2/gh/lavavu/LavaVu/master?filepath=notebooks
-FROM ubuntu:20.04
+FROM ubuntu:latest
 
 LABEL maintainer="owen.kaluza@monash.edu"
 LABEL repo="https://github.com/lavavu/LavaVu"
@@ -11,24 +11,11 @@ LABEL repo="https://github.com/lavavu/LavaVu"
 # Install build dependencies
 RUN apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
-        build-essential \
         python3 \
-        python3-pip \
-        python3-setuptools \
-        libpython3.8-dev \
-        libpng-dev \
-        libtiff-dev \
-        mesa-utils \
-        libglu1-mesa-dev \
-        libosmesa6-dev \
-        libavcodec-dev \
-        libavformat-dev \
-        libavutil-dev \
-        libswscale-dev \
-        zlib1g-dev
+        python3-pip
 
 # Install python packages
-RUN pip3 install --no-cache --upgrade pip \
+RUN pip3 install --no-cache \
         packaging \
         appdirs \
         numpy \
@@ -41,36 +28,36 @@ RUN pip3 install --no-cache --upgrade pip \
         h5py \
         rise \
         jupyter-server-proxy \
-        jupyterlab
+        jupyterlab \
+        lavavu-osmesa
 
 # Create user with a home directory
-ENV USER=jovyan UID=1000 HOME=/home/${USER}
+ENV USER=jovyan UID=1000
+ENV HOME=/home/${USER}
 RUN adduser --disabled-password \
     --gecos "Default user" \
     --uid ${UID} \
     ${USER}
 
-# Make sure the contents of our repo are in ${HOME}
-WORKDIR ${HOME}
-COPY . ${HOME}
-RUN chown -R ${UID} ${HOME}
+COPY ./notebooks ${HOME}
+RUN chown -R jovyan:jovyan ${HOME}
 
-# Build LavaVu
+# Copy notebooks to ${HOME}
+USER ${USER}
+WORKDIR ${HOME}
+
 # delete some unnecessary files,
 # trust included notebooks,
 # add a notebook profile.
 # setup RISE for notebook slideshows
-USER ${USER}
 RUN cd ~ && \
-    LV_OSMESA=1 python3 setup.py install --user && \
-    rm -fr tmp && \
-    find notebooks -name \*.ipynb  -print0 | xargs -0 jupyter trust && \
+    find . -name \*.ipynb  -print0 | xargs -0 jupyter trust && \
     mkdir .jupyter && \
-    echo "c.NotebookApp.ip = '0.0.0.0'" >> .jupyter/jupyter_notebook_config.py && \
-    echo "c.NotebookApp.token = ''" >> .jupyter/jupyter_notebook_config.py && \
+    echo "c.ServerApp.ip = '0.0.0.0'" >> .jupyter/jupyter_notebook_config.py && \
+    echo "c.ServerApp.token = ''" >> .jupyter/jupyter_notebook_config.py && \
     jupyter nbextension install rise --user --py && \
     jupyter nbextension enable rise --user --py
 
 # launch notebook
-CMD ["jupyter", "notebook", "--ip='0.0.0.0'", "--NotebookApp.token='' ", "--no-browser"]
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--NotebookApp.token=''", "--no-browser"]
 
