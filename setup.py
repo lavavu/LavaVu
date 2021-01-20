@@ -19,7 +19,7 @@ import shutil
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
-version = "1.7.4"
+version = "1.7.5"
 
 """
 To release a new verison:
@@ -76,6 +76,7 @@ if sys.argv[-1] == 'release':
     #Commit and push docs
     wd = os.getcwd()
     os.chdir("docs")
+    os.system("git pull")
     os.system("git add -u")
     os.system('git commit -m "Docs rebuilt for release"')
     os.system("git push")
