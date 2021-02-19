@@ -217,8 +217,8 @@ emscripten: LINKFLAGS += $(EM_FLAGS)
 emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CXX) -o $(PREFIX)/html/$(PROGNAME).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
-	cd lavavu/html; sed -i 's/LAVAVU_VERSION/$(LV_VERSION)/g' webview-template.html > webview.html
-	cd lavavu/html; sed -i 's/LAVAVU_VERSION/$(LV_VERSION)/g' emscripten-template.js > emscripten.js
+	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' webview-template.html > webview.html
+	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' emscripten-template.js > emscripten.js
 	cd lavavu; python amalgamate.py
 
 $(OPATH)/miniz.o : src/miniz/miniz.c
