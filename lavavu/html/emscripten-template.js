@@ -67,7 +67,7 @@ var Module = {
   },
   locateFile: function(path, prefix) {
     // Source from github by default
-    if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://cdn.jsdelivr.net/gh/lavavu/lavavu.github.io/" + path;
+    if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://cdn.jsdelivr.net/gh/lavavu/lavavu.github.io@LAVAVU_VERSION/" + path;
     // otherwise, use the default, the prefix (JS file's dir) + the path
     return prefix + path;
   },

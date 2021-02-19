@@ -185,7 +185,17 @@ $(PROGRAM): $(LIBRARY) main.cpp | paths
 $(LIBRARY): $(ALLOBJS) | paths
 	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
 
-#source ~/emsdk/emsdk_env.sh
+#Emscripten build steps...
+#curl -L https://github.com/emscripten-core/emsdk/archive/2.0.14.tar.gz --output emscripten.tar.gz
+#tar -zxf emscripten.tar.gz
+#rm emscripten.tar.gz
+#cd emsdk-2.0.14/
+#./emsdk install latest
+#./emsdk activate latest
+#source emsdk_env.sh
+#cd ../LavaVu
+#make emscripten -j5
+#source ~/emsdk-2.0.14/emsdk_env.sh
 emscripten: DEFINES = -DGLES2 -DHAVE_GLFW -DUSE_FONTS
 emscripten: CXX = em++
 emscripten: CC = emcc
@@ -207,6 +217,8 @@ emscripten: LINKFLAGS += $(EM_FLAGS)
 emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CXX) -o $(PREFIX)/html/$(PROGNAME).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
+	cd lavavu/html; sed -i 's/LAVAVU_VERSION/$(LV_VERSION)/g' webview-template.html > webview.html
+	cd lavavu/html; sed -i 's/LAVAVU_VERSION/$(LV_VERSION)/g' emscripten-template.js > emscripten.js
 	cd lavavu; python amalgamate.py
 
 $(OPATH)/miniz.o : src/miniz/miniz.c
