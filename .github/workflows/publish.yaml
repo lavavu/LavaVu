@@ -76,5 +76,6 @@ jobs:
           cp ../lavavu/html/LavaVu-amalgamated.css .
           git stage *
           git commit -m "Update LavaVu emscripten release"
-          git push
+          git tag ${{ steps.get_version.outputs.VERSION }}
+          git push origin --tags
 
