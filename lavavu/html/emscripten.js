@@ -66,8 +66,8 @@ var Module = {
     statusElement.innerHTML = text;
   },
   locateFile: function(path, prefix) {
-    // Source from github pages by default, disabled for now
-    //if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://lavavu.github.io/" + path;
+    // Source from github by default
+    if (path.endsWith("LavaVu.wasm") || path.endsWith("LavaVu.data")) return "https://cdn.jsdelivr.net/gh/lavavu/lavavu.github.io/" + path;
     // otherwise, use the default, the prefix (JS file's dir) + the path
     return prefix + path;
   },
