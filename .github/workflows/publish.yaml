@@ -6,6 +6,7 @@ name: Publish
 
 # Build on every branch push, tag push, and pull request change where tag matches a version release
 on:
+  workflow_dispatch:
   push:
     tags:
      - '[0-9]+.[0-9]+.[0-9]+'
