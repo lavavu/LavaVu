@@ -19,7 +19,7 @@ import shutil
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
-version = "1.7.10"
+version = "1.7.11"
 
 """
 To release a new verison:
