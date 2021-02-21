@@ -1,7 +1,8 @@
 name: Docker Image CI and publish
 
-release:
-  types: [published]
+on:
+  release:
+    types: [published]
 
 jobs:
 
