@@ -1,31 +1,22 @@
-name: Docker Image CI and publish notebook container
-# Build on every branch push, tag push, and pull request change where tag matches a version release
-on:
-  workflow_dispatch:
-  push:
-    tags:
-     - '[0-9]+.[0-9]+.[0-9]+'
+name: Docker Image CI and publish
+
+release:
+  types: [published]
+
 jobs:
-  build:
+
+  push_to_registry:
+    name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.LAVAVU_PACKAGES }}
+          registry: ghcr.io
+          repository: lavavu/lavavu
+          tag_with_ref: true
 
-    - name: checkout files in repo
-      uses: actions/checkout@master
-
-    # https://github.community/t/how-to-get-just-the-tag-name/16241/6
-    - name: Get the version
-      id: get_version
-      run: |
-        echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-
-    - name: update jupyter dependencies with repo2docker
-      uses: machine-learning-apps/repo2docker-action@master
-      with:
-        DOCKER_USERNAME: ${{ github.actor }}
-        DOCKER_PASSWORD: ${{ secrets.LAVAVU_PACKAGES }}
-        DOCKER_REGISTRY: "ghcr.io"
-        IMAGE_NAME: "lavavu/lavavu" # this overrides the image name
-        ADDITIONAL_TAG: ${{ steps.get_version.outputs.VERSION }}
-        #BINDER_CACHE: true
-        PUBLIC_REGISTRY_CHECK: true
