@@ -478,7 +478,12 @@ class Window(_Container):
             viewer.output_resolution = resolution
 
     def html(self):
-        style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block;'
+        #print(self.viewer["resolution"], self.viewer.output_resolution)
+        #w = self.viewer["resolution"][0]
+        #h = self.viewer["resolution"][1]
+        w = self.viewer.output_resolution[0]
+        h = self.viewer.output_resolution[1]
+        style = f'height: {h}px; width: {w}px; min-height: 50px; min-width: 50px; position: relative; display: inline-block;'
         style_img = 'height: 100%; width: 100%; position: relative; margin: 0px; display: inline-block;'
         if self.align is not None:
             style += ' float: ' + self.align + ';'
@@ -489,7 +494,7 @@ class Window(_Container):
             style += ' height: 100%; width: 100%;'
         else:
             classes = "resizer"
-            style_img +=" border: 1px solid #aaa;"
+            style +=" border: 1px solid #aaa;"
 
         html = ""
         html += '<div class="' + classes + '" style="' + style + '">\n'
