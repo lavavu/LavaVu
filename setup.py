@@ -68,6 +68,8 @@ if sys.argv[-1] == 'check':
     write_version()
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
+    os.system("LV_RELEASE=1 make lavavu/html/emscripten.js lavavu/html/webview.html")
+    os.system("cd lavavu; python amalgamate.py; cd ..")
     import webbrowser
     webbrowser.open("docs/index.html")
     sys.exit()

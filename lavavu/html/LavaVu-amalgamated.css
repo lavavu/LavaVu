@@ -1,0 +1,282 @@
+body {
+  font-family: arial;
+  margin: 0;
+  padding: none;
+}
+
+.emscripten { padding-right: 0; margin-left: 0; margin-right: 0; display: block; }
+div.emscripten { text-align: center; }      
+/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+canvas.emscripten { border: 0px none; background: black; visibility: hidden; }
+
+/* full size canvas */
+#canvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: block;
+  outline: none !important; /* fixes chrome focus outline */
+}
+
+#emscripten_logo {
+  display: inline-block;
+  margin: 0;
+}
+
+.spinner {
+  height: 30px;
+  width: 30px;
+  margin: 0;
+  margin-top: 20px;
+  margin-left: 20px;
+  display: inline-block;
+  vertical-align: top;
+
+  animation: rotation 0.8s linear infinite;
+
+  border-left: 5px solid rgb(235, 235, 235);
+  border-right: 5px solid rgb(235, 235, 235);
+  border-bottom: 5px solid rgb(235, 235, 235);
+  border-top: 5px solid rgb(120, 120, 120);
+  
+  border-radius: 100%;
+  background-color: rgb(189, 215, 46);
+}
+
+@keyframes rotation {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
+}
+
+#status {
+  display: inline-block;
+  vertical-align: top;
+  margin-top: 30px;
+  margin-left: 20px;
+  font-weight: bold;
+  color: rgb(120, 120, 120);
+}
+
+#progress {
+  height: 20px;
+  width: 300px;
+}
+
+#controls {
+  display: inline-block;
+  float: right;
+  vertical-align: top;
+  margin-top: 30px;
+  margin-right: 20px;
+}
+
+#output {
+  width: 800px;
+  height: 400px;
+  margin: 0px auto;
+  padding: 0px;
+  display: none; /*block;*/
+  background-color: rgba(0, 0, 0, 0.0);
+  color: gray;
+  font-family: 'Lucida Console', Monaco, monospace;
+  border: 0px none;
+  outline: none;
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  z-index: 50;
+}
+
+/* Notebook control stylesheet */
+.lvctrl input { display: inline; }
+.lvctrl input[type=range] { width: 200px; border: 0px;}
+.lvctrl input[type=button] { width: 100px; border: 1px solid #999; border-radius: 3px; background: transparent; margin-right: 3px; height: 20px;}
+.lvctrl input[type=number] { width: 105px; height: 26px; border-radius: 0; border: 1px dotted #999;}
+.lvctrl pre { display: inline; }
+.lvctrl p  { color: gray; margin: 0px}
+.lvctrl label { margin: 0px}
+
+.lvtab    { border: 1px solid #999; padding: 5px; }
+.lvtabbar { width:100%; overflow:hidden; margin-top: 5px; }
+.lvtabbar .lvtabbar-item { padding:4px 8px; float:left; width:auto; border:none; outline:none; display:block; }
+.lvtabbar .dropdown-hover,.lvtabbar .dropdown-click { position:static; float:left; }
+.lvtabbar .lvbutton { white-space:normal; }
+
+.lvbutton:hover { color:#000!important; background-color:#ccc!important; border: 1px solid #999; border-bottom: 0; }
+.lvbutton { border: 1px solid #999; border-bottom: 0; border-radius: 5px 5px 0px 0px; margin-right: 3px; display:inline-block; outline:0; padding:4px 8px; vertical-align:middle; overflow:hidden; text-decoration:none; color:inherit; background-color:inherit; text-align:center; cursor:pointer; white-space:nowrap; }
+
+.lvseltab,.hover-lvseltab:hover { color:#fff!important; background-color:#555!important; }
+
+/* Range styling: http://danielstern.ca/range.css/?ref=css-tricks#/ */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 3px; /* Larger track in chrome as can only click exactly on it */
+  cursor: pointer;
+  background: #d7d7d7;
+  border-radius: 0px;
+  border: 0px solid #7f7f7f;
+}
+input[type=range]::-webkit-slider-thumb {
+  border: 0.5px solid #7f7f7f;
+  height: 12px;
+  width: 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -5px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #949494;
+  margin-top: -3px;
+}
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  background: #d7d7d7;
+  border-radius: 0px;
+  border: 0px solid #7f7f7f;
+}
+input[type=range]::-moz-range-thumb {
+  border: 0.5px solid #7f7f7f;
+  height: 12px;
+  width: 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 100%;
+  height: 2px;
+  cursor: pointer;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: #cacaca;
+  border: 0px solid #7f7f7f;
+  border-radius: 0px;
+}
+input[type=range]::-ms-fill-upper {
+  background: #d7d7d7;
+  border: 0px solid #7f7f7f;
+  border-radius: 0px;
+}
+input[type=range]::-ms-thumb {
+  border: 0.5px solid #7f7f7f;
+  height: 12px;
+  width: 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  height: 2px;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #d7d7d7;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #949494;
+}
+
+.resizer { display:flex; margin:0; padding:0; resize:both; overflow:hidden }
+.resizer > .resized { flex-grow:1; margin:0; padding:0; border:0 }
+
+
+
+/* General webgl control stylesheet */
+
+/*
+.lvctrl {
+  font-family: sans-serif;
+  font-size: 9pt !important;
+  line-height: 20px !important;
+}
+*/
+.message {font-family: monospace; font-size: 9pt;}
+
+/* Popup div */
+.popup {
+  position:fixed;
+  width:200px; height:100px;
+  top: 50%; left:50%;
+  margin:-50px 0 0 -100px; /* [-(height/2)px 0 0 -(width/2)px] */
+  display:none; z-index: 30; border: none; 
+  padding: 5px; overflow: hidden;
+  background: #ffe;
+  border-radius: 5px 5px 5px 5px;
+  box-shadow: 3px 3px 2px #333;
+}
+.popclose {float: right; cursor: pointer; color: #333; margin: 0px 3px; font-weight: bold}
+
+/*
+ * These somehow break scrollbars in jupyter notebook, should be scoped if still needed
+.lvctrl input, select {
+  margin: 1px 0px;
+  font-size: 9pt;
+}
+
+.lvctrl input[type="text"] {width: 200px; }
+.lvctrl input[type="range"] {width: 148px; }
+*/
+
+/* Colour select */
+.colourbg {margin:0px; width: 100px; height: 20px; border: 1px dotted #999; }
+.colour {display: inline-block; width: 100%; height: 100%; margin: 0px; padding: 0px; border: none;}
+
+.checkerboard {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4jWP4TwAcOHAAL2YYNWBYGEBIASEwasCwMAAALvidroqDalkAAAAASUVORK5CYII=");}
+
+.palette { margin: 3px 0px; border:1px solid #999;}
+
+/* Hacky select element styling, fixes selects in dat.gui, but also apply to other inline select elements */
+select:not([multiple]) {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-position: right 50%;
+    background-repeat: no-repeat;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAMCAYAAABSgIzaAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDZFNDEwNjlGNzFEMTFFMkJEQ0VDRTM1N0RCMzMyMkIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NDZFNDEwNkFGNzFEMTFFMkJEQ0VDRTM1N0RCMzMyMkIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0NkU0MTA2N0Y3MUQxMUUyQkRDRUNFMzU3REIzMzIyQiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0NkU0MTA2OEY3MUQxMUUyQkRDRUNFMzU3REIzMzIyQiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PuGsgwQAAAA5SURBVHjaYvz//z8DOYCJgUxAf42MQIzTk0D/M+KzkRGPoQSdykiKJrBGpOhgJFYTWNEIiEeAAAMAzNENEOH+do8AAAAASUVORK5CYII=);
+    padding-right: 1.0em;
+    border: 1px solid #888;
+    border-radius: 0
+}
+
+
+
+
+
+.dg li input {
+    line-height: 17px;
+}
+
+.dg input, .dg select {
+  margin: 1px 0px !important;
+  line-height: 20px; 
+  font-size: 9pt;
+}
+
+.dg select {
+  float: right;
+}
+
+.dg {cursor: default !important;}
+
+/* Classic notebook - allows menu to escape cell */
+div .output_subarea.output_html.rendered_html.pgui { overflow: visible;}
+
+/* Jupyterlab notebook - allows menu to escape cell */
+.p-Widget.jp-OutputArea.jp-Cell-outputArea.pgui { overflow: visible;}
+.p-Widget.jp-OutputArea-output.pgui { overflow: visible;}
+.p-Widget.p-Panel.jp-OutputArea-child.pgui { overflow: visible; }
+

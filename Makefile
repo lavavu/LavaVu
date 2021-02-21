@@ -214,15 +214,21 @@ endif
 emscripten: CPPFLAGS += $(EM_FLAGS)
 emscripten: EXTCFLAGS += $(EM_FLAGS)
 emscripten: LINKFLAGS += $(EM_FLAGS)
-emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o | paths
+emscripten: $(ALLOBJS) $(OPATH)/sqlite3.o $(OPATH)/miniz.o lavavu/html/emscripten.js lavavu/html/webview.html | paths
 	$(CXX) $(CPPFLAGS) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CXX) -o $(PREFIX)/html/$(PROGNAME).html $(OPATH)/main.o $(LIBS) $(ALLOBJS) $(OPATH)/miniz.o $(LINKFLAGS)
 	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' webview-template.html > webview.html
 	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' emscripten-template.js > emscripten.js
 	cd lavavu; python amalgamate.py
 
-$(OPATH)/miniz.o : src/miniz/miniz.c
-	$(CC) $(EXTCFLAGS) -o $@ -c $^
+lavavu/html/emscripten.js: lavavu/html/emscripten-template.js FORCE
+	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' emscripten-template.js > emscripten.js
+
+lavavu/html/webview.html: lavavu/html/webview-template.html FORCE
+	cd lavavu/html; sed 's/LAVAVU_VERSION/$(LV_VERSION)/g' webview-template.html > webview.html
+
+.PHONY: FORCE
+FORCE:
 
 src/sqlite3/sqlite3.c :
 	#Ensure the submodule is checked out
