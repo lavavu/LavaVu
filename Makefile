@@ -268,9 +268,9 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	$(PROGRAM) -? > docs/src/Commandline-Arguments.md
 	#pip install -r docs/src/requirements.txt
 	#Update binder links
-	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' README.md
-	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/Installation.rst
-	sed -i 's/LavaVu\/[0-9\.]*?filepath=/LavaVu\/$(LV_VERSION)?filepath=/g' docs/src/index.rst
+	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' README.md
+	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' docs/src/Installation.rst
+	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' docs/src/index.rst
 	sphinx-build docs/src docs/
 
 clean:
