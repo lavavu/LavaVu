@@ -234,6 +234,9 @@ src/sqlite3/sqlite3.c :
 	#Ensure the submodule is checked out
 	git submodule update --init
 
+$(OPATH)/miniz.o : src/miniz/miniz.c
+	$(CC) $(EXTCFLAGS) -o $@ -c $^
+
 $(OPATH)/sqlite3.o : src/sqlite3/sqlite3.c
 	$(CC) $(EXTCFLAGS) -DSQLITE_ENABLE_DESERIALIZE -o $@ -c $^ 
 
