@@ -274,6 +274,7 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' README.md
 	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' docs/src/Installation.rst
 	sed -i 's/gh\/lavavu\/LavaVu\/[0-9\.]*/gh\/lavavu\/LavaVu\/$(LV_VERSION)/g' docs/src/index.rst
+	sed -i 's/lavavu:[0-9\.]*/lavavu:$(LV_VERSION)/g' binder/Dockerfile
 	sphinx-build docs/src docs/
 
 clean:

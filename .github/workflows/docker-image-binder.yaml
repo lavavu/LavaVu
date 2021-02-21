@@ -13,6 +13,12 @@ jobs:
     - name: checkout files in repo
       uses: actions/checkout@master
 
+    # https://github.community/t/how-to-get-just-the-tag-name/16241/6
+    - name: Get the version
+      id: get_version
+      run: |
+        echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
     - name: update jupyter dependencies with repo2docker
       uses: machine-learning-apps/repo2docker-action@master
       with:
@@ -20,5 +26,6 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.LAVAVU_PACKAGES }}
         DOCKER_REGISTRY: "ghcr.io"
         IMAGE_NAME: "lavavu/lavavu" # this overrides the image name
-        BINDER_CACHE: true
+        ADDITIONAL_TAG: ${{ steps.get_version.outputs.VERSION }}
+        #BINDER_CACHE: true
         PUBLIC_REGISTRY_CHECK: true
