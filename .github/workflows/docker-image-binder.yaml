@@ -1,9 +1,8 @@
 name: Docker Image CI and publish
 
-on: [push]
-#on:
-#  release:
-#    types: [published]
+on:
+  release:
+    types: [published]
 
 jobs:
 
@@ -20,6 +19,5 @@ jobs:
           password: ${{ secrets.LAVAVU_PACKAGES }}
           registry: ghcr.io
           repository: lavavu/lavavu
-          #tag_with_ref: true
-          tags: 1.7.11
+          tag_with_ref: true
 
