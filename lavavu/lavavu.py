@@ -3776,14 +3776,17 @@ class Viewer(dict):
             webbrowser.open("/webview.html", new=1, autoraise=True)
         else:
             from IPython.display import display,HTML,IFrame
-            url = "/proxy/" + str(self.port) + "/webview.html"
+            url = self.connect()
+            if url[-1] != '/':
+                url += '/'
+            url += "webview.html"
             html = """
             <style>
               .resizer {{ display:flex; margin:0; padding:0; resize:both; overflow:hidden }}
               .resizer > .resized {{ flex-grow:1; margin:0; padding:0; border:0 }}
             </style>
-            <div class="resizer" style="width: {0}px; height: {1}px">
-              <iframe class="resized" src="{2}" style="width: 100%; height: 100%; border: 1px solid #888"></iframe>
+            <div class="resizer" style="width: {0}px; height: {1}px; border: 1px solid #888;">
+              <iframe class="resized" src="{2}" style="width: 100%; height: 100%; border: none;"></iframe>
             </div>""".format(resolution[0], resolution[1], url)
             display(HTML(html))
 
