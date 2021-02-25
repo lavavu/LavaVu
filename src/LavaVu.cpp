@@ -1618,7 +1618,8 @@ bool readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, D
   }
   else if (verbose)
     std::cerr << "Applying diffuse texture: " << texpath << std::endl;
-  if (material.diffuse_texname.length() > 0)
+
+  if (texpath.length() > 0)
   {
     if (fn.path.length() > 0)
       texpath = fn.path + "/" + texpath;
@@ -1660,9 +1661,9 @@ void LavaVu::readOBJ(const FilePath& fn)
   {
     std::cerr << "# of shapes    : " << shapes.size() << std::endl;
     std::cerr << "# of materials : " << materials.size() << std::endl;
-    std::cerr << "# of vertices : " << attrib.vertices.size() << std::endl;
-    std::cerr << "# of normals : " << attrib.normals.size() << std::endl;
-    std::cerr << "# of texcoords : " << attrib.texcoords.size() << std::endl;
+    std::cerr << "# of vertices : " << attrib.vertices.size()/3 << std::endl;
+    std::cerr << "# of normals : " << attrib.normals.size()/3 << std::endl;
+    std::cerr << "# of texcoords : " << attrib.texcoords.size()/2 << std::endl;
   }
 
   //Add single drawing object per file, if one is already active append to it
@@ -1805,6 +1806,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 #endif
 
     //for (size_t f = 0; f < shapes[i].mesh.num_face_vertices.size(); f+=3)
+    //printf("\n%d current material %d == %d\n", 0, current_material_id, shapes[i].mesh.material_ids[0]);
     for (size_t f=0; f < shapes[i].mesh.indices.size(); f+=3)
     {
       //Get the material, if it has changed, load the new data and add an element
@@ -1822,8 +1824,8 @@ void LavaVu::readOBJ(const FilePath& fn)
         {
           //printf("%d current material %d == %d\n", f, current_material_id, material_id);
           //TODO: only add new container if a new texture is loaded?
-          if (current_material_id > 0)
-            geom->add(tobj); //Start new container
+          //if (current_material_id > 0)
+          geom->add(tobj); //Start new container
           opaque = readOBJ_material(fn, materials[material_id], tobj, geom, verbose);
           voffset = 0;
           current_material_id = material_id;
