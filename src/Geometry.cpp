@@ -2611,7 +2611,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     normal.normalise();
 
     // Subsequent vertices describe outer edges of cone base
-    for (v=0; v<=segment_count; v++)
+    for (v=segment_count; v >= 0; v--)
     {
       unsigned int vertex_index = g->count();
 
@@ -2635,11 +2635,11 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       g->_normals->read(1, avgnorm.ref());
 
       //Triangle fan indices
-      if (v > 0)
+      if (v < segment_count)
       {
         g->_indices->read1(vertex_index);    //Pinnacle vertex
-        g->_indices->read1(vertex_index+1);  //Current vertex
         g->_indices->read1(vertex_index-1);  //Previous vertex
+        g->_indices->read1(vertex_index+1);  //Current vertex
       }
     }
 
