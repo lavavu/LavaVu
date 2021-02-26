@@ -1534,7 +1534,8 @@ void Geometry::convertColours(int step, DrawingObject* obj)
   debug_print("Colouring %d elements...\n", elements);
   for (unsigned int index = 0; index < records.size(); index++)
   {
-    if (step >= 0 && records[index]->step != step)
+    //Skip unless fixed or matching timestep
+    if (step >= 0 && records[index]->step != step && records[index]->step != -1)
       continue;
     if (obj && records[index]->draw != obj)
       continue;
