@@ -13,6 +13,23 @@ import numpy
 import os
 import sys
 
+def try_import(module_name, second_try=False):
+    """
+    Attempts to import a module, then runs pip install if not found and attempts again
+    """
+    import importlib
+    try:
+        m = importlib.import_module(module_name)
+        globals()[module_name] = m
+        return m
+    except (ImportError) as e:
+        if not second_try:
+            import subprocess
+            subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
+            return try_import(module_name, True)
+        else:
+            raise(e)
+
 def min_max_range(verts):
     """
     Get bounding box from a list of vertices
@@ -29,8 +46,10 @@ def default_sample_grid(vrange, res=8):
     resolution of smallest dimension will be minres elements
     """
     #If provided a full resolution, use that, otherwise will be interpreted as min res
-    if len(list(res)) == 3:
-        return list(res)
+    if isinstance(res, (list,tuple)):
+        if len(list(res)) == 3:
+            return list(res)
+        res = res[0]
     #Use bounding box range min
     minr = numpy.min(vrange)
     #res parameter is minimum resolution
@@ -254,13 +273,16 @@ def _get_objects(source):
     else:
         return source
 
-def export_OBJ(filepath, source, verbose=False):
+def export_OBJ(filepath, source, verbose=False, vertexcolours=True):
     """
     Export given object(s) to an OBJ file
     Supports only triangle mesh object data
 
     If source is lavavu.Viewer() exports all objects
     If source is lavavu.Object() exports single object
+
+    Set vertexcolours to support writing R,G,B values with vertices
+    (not part of OBJ standard but supported in some software)
     """
     mtlfilename = os.path.splitext(filepath)[0] + '.mtl'
     objects = _get_objects(source)
@@ -270,7 +292,7 @@ def export_OBJ(filepath, source, verbose=False):
         for obj in objects:
             if obj["visible"]:
                 f.write("g %s\n" % obj.name)
-                offset = _write_OBJ(f, m, filepath, obj, offset, verbose)
+                offset = _write_OBJ(f, m, filepath, obj, offset, verbose, vertexcolours)
 
 def _write_MTL(m, name, texture=None, diffuse=[1.0, 1.0, 1.0], ambient=None, specular=None, opacity=1.0, illum=None):
     #http://paulbourke.net/dataformats/mtl/
@@ -298,13 +320,14 @@ def _write_MTL(m, name, texture=None, diffuse=[1.0, 1.0, 1.0], ambient=None, spe
     mtl_line = "usemtl %s\n" % name
     return mtl_line
 
-def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False):
+def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False, vertexcolours=True):
     mtl_line = ""
     cmaptexcoords = []
     colourdict = None
     import re
     name = re.sub(r"\s+", "", obj["name"])
     colourcount = sum([len(c) for c in obj.data.colours])
+    #print(f"{colourcount=}")
     if m and obj["texture"]:
         fn = obj["texture"]
         if fn == 'colourmap':
@@ -315,47 +338,81 @@ def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False):
             print("Writing texture mtl ", fn)
         mtl_line = _write_MTL(m, name, texture=fn, opacity=obj["opacity"])
 
-    elif m and colourcount > 0:
-        #"""
-        #18bit RGB = 262144 colours
-        #Top-left = (0,0,0)
-        #Bottom-right = (255,255,255)
-        #(8x8 tiles of 64x64)
-        #G - slow, Z index = G
-        #R - midd, Y axis = R
-        #B - fast, X axis = B
-        #X = B//4
-        #Y = R//4
-        #Z = G//4
-        #zx = Z % 8
-        #zy = Z // 8
-        #x = zx * 64 + X
-        #y = zy * 64 + Y
-        #u = x / 512
-        #v = y / 512
-        #https://upload.wikimedia.org/wikipedia/commons/3/34/RGB_18bits_palette.png
-        palimg = u"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"
-        import base64
-        decoded = base64.b64decode(palimg).decode('utf-8')
-        with open("palette_rgb.png", "wb") as f:
-            f.write(decoded.encode('ascii'))
-        mtl_line = _write_MTL(m, "palette_rgb", texture="palette_rgb.png", opacity=obj["opacity"])
-        colourdict = {}
-        """
-        #SLOW!
-        print("Creating palette")
-        colourdict = {}
-        for data in obj:
-            for c in data.colours:
+    elif m and colourcount > 0 and not vertexcolours:
+        #Define material for each (slow for high colour/vertex count - could sort faces by material before writing?)
+        if colourcount < 10000:
+            colourdict = {}
+            #SLOW!
+
+            #Get unique https://stackoverflow.com/a/33197029/866759
+            allcolours = numpy.concatenate(obj.data.colours)
+            unique = numpy.unique(allcolours)
+
+            for c in unique:
                 rgb = colour2rgb(c)
                 cs = colour2hex(rgb)
-                colourdict[cs] = rgb
-        print("Writing mtl lib (colour list)")
-        for c in colourdict:
-            rgb = colourdict[c]
-            mtl_line = _write_MTL(m, c[1:], diffuse=[rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0], opacity=obj["opacity"])
-        """
+                colourdict[c] = (cs,rgb)
+            if verbose:
+                print("Writing mtl lib (colour list), unique colours:",len(unique))
+            for c in colourdict:
+                cs, rgb = colourdict[c]
+                mtl_line = _write_MTL(m, cs, diffuse=[rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0], opacity=obj["opacity"])
+        else:
+            #Support this full RGB palette?
+            #TODO: generate texcoord data using formula below
+            #18bit RGB = 262144 colours
+            #Top-left = (0,0,0)
+            #Bottom-right = (255,255,255)
+            #(8x8 tiles of 64x64)
+            #G - slow, Z index = G
+            #R - midd, Y axis = R
+            #B - fast, X axis = B
+            #X = B//4
+            #Y = R//4
+            #Z = G//4
+            #zx = Z % 8
+            #zy = Z // 8
+            #x = zx * 64 + X
+            #y = zy * 64 + Y
+            #u = x / 512
+            #v = y / 512
 
+            #https://upload.wikimedia.org/wikipedia/commons/3/34/RGB_18bits_palette.png
+            palimg = "iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAAABGdBTUEAANjr9RwUqgAAACBjSFJNAACH"\
+                     "CgAAjAoAAPYWAACEzwAAczsAAOxVAAA6lwAAHU1girkoAAAGc0lEQVR42u3dQYoDMQxFwTZY93Duf8mQ"\
+                     "A8hg9yIIVTHbgU9vHsrG8/mZL/7iv/8+n2G//fbbb//V/vkA0JAAAAgAAAIAgAAAIAAACAAAAgCAAAAg"\
+                     "AAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgDARQDCRwBwAQAgAAAIAAACAIAAACAAAAgAAAIAgAAA"\
+                     "IAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAQB4Aj8IDuAAAEAAABAAAAQBAAAAQAAAEAAABAEAA"\
+                     "ABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAGATAI/CA/QMwBrVC2a//fbbb//dfj8BAfS8AAQA"\
+                     "QAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAADOAxA+AoALAAAB"\
+                     "AEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAA8gB4FB7ABQCA"\
+                     "AAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAJsAeBQeoGcA"\
+                     "1qheMPvt77s/fH/7X+33ExBAzwtAAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAAB"\
+                     "AEAAABAAAAQAAAEA4DwA4SMAuAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAA"\
+                     "AQBAAAAQAAAEAAABACAPgEfhAVwAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIA"\
+                     "gAAAIAAACAAAAgCAAACwCYBH4QF6BuAzqhfMfvvtt9/+u/1+AgLoeQEIAIAAACAAAAgAAAIAgAAAIAAA"\
+                     "CAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAAnAcgfAQAFwAAAgCAAAAgAAAIAAACAIAAACAA"\
+                     "AAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAOQB8Cg8gAsAAAEAQAAAEAAABAAAAQBAAAAQ"\
+                     "AAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAA2AfAoPEDPAKxRvWD222+//fbf7fcTEEDP"\
+                     "C0AAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQDgPADhIwC4"\
+                     "AAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAIA+AR+EB"\
+                     "XAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAALAJgEfh"\
+                     "AXoGYI3qBauten+n/fbbX3i/n4AAel4AAgAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAg"\
+                     "AAAIAAACAIAAACAAAAgAAOcBCB8BwAUAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAA"\
+                     "IAAACAAAAgCAAAAgAAAIAAB5ADwKD+ACAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAA"\
+                     "ABAAAAQAAAEAQAAAEAAABACATQA8Cg/QMwCfUb1g9ttvv/323+33ExBAzwtAAAAEAAABAEAAABAAAAQA"\
+                     "AAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEA4DwA4SMAuAAAEAAABAAAAQBAAAAQAAAE"\
+                     "AAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABACAPgEfhAVwAAAgAAAIAgAAAIAAACAAA"\
+                     "AgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAACwCYBH4QF6BmCN6gWz33777f+PKP/9"\
+                     "/QQE0PMCEAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAADgP"\
+                     "QPgIAC4AAAQAAAEAQAAAEAAABAAAAQBAAAAQAAAEAAABAEAAABAAAAQAAAEAQAAAEAAABAAAAQBAAADI"\
+                     "A+BReAAXAAACAIAAACAAAAgAAAIAgAAAIAAACAAAAgCAAAAgAAAIAAACAIAAACAAAAgAAAIAgAAAIAAA"\
+                     "bALgUXiAlr7Y4BnEOVAUKwAAAABJRU5ErkJggg=="
+            texfn = os.path.splitext(filepath)[0] + '.png'
+            import base64
+            with open(texfn, "wb") as fp:
+                fp.write(base64.b64decode(palimg))
+            mtl_line = _write_MTL(m, "palette_rgb", texture=texfn, opacity=obj["opacity"])
     elif m and "colour" in obj:
         #print("Writing mtl lib (default colour)")
         c = obj.parent.parse_colour(obj["colour"])
@@ -395,15 +452,16 @@ def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False):
                 texcoords = numpy.vstack((texcoords,zeros)).reshape([2, -1]).transpose()
 
         #Colours?
-        cs0 = ""
+        cv0 = ""
         vperc = 1
         if colourdict and len(data.colours):
             vperc = int(verts.shape[0] / len(data.colours))
 
         if verbose: print("- Writing vertices:",verts.shape)
-        for v in verts:
-            if colourdict:
-                c = data.colours[ci]
+        for vi,v in enumerate(verts):
+            #Vertex colour with vertex? (only if flag passed)
+            if vertexcolours and len(data.colours):
+                c = data.colours[vi // vperc]
                 rgb = colour2rgb(c)
                 f.write("v %.6f %.6f %.6f %.6f %.6f %.6f\n" % (v[0], v[1], v[2], rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0))
             else:
@@ -437,21 +495,13 @@ def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False):
             i0 = i[0]+offset
             i1 = i[1]+offset
             i2 = i[2]+offset
+            #Use mtl colours?
             if colourdict:
-                """
                 ci = int(i[0] / vperc)
-                #print(i0,vperc,ci)
-                #print(data.colours)
-                #c = data.colours[ci]
-                c = data.colours[ci]
-                rgb = colour2rgb(c)
-                cs = colour2hex(rgb)
-                cs1 = cs[1:]
-                #if i[0]%100==0: print(ci,c,rgb,cs,mtl_line2)
-                if cs0 != cs1 and cs in colourdict:
-                    f.write("usemtl " + cs1 + "\n")
-                    cs0 = cs1
-                """
+                cv1 = data.colours[ci]
+                if cv0 != cv1 and cv1 in colourdict:
+                    f.write("usemtl " + colourdict[cv1][0] + "\n")
+                    cv0 = cv1
 
             if len(normals) and len(texcoords):
                 f.write("f %d/%d/%d %d/%d/%d %d/%d/%d\n" % (i0, i0, i0, i1, i1, i1, i2, i2, i2))
@@ -672,4 +722,125 @@ def plot_PLY(lv, filename):
         return lv.triangles(vertices=V, indices=triangles, colours=C, normals=N, texcoords=T)
     else:
         return lv.points(vertices=V, colours=C, normals=N, texcoords=T)
+
+def export_any(filepath, source):
+    """
+    Export given object(s) to a file format supproted by trimesh, eg: GLTF or GLB file
+    See: https://trimsh.org/trimesh.exchange.html
+    Requires "trimesh" module
+    Supports triangle mesh object data
+
+    If source is lavavu.Viewer() exports all objects
+    If source is lavavu.Object() exports single object
+
+    Parameters
+    ----------
+    filepath : str
+        Output file to write
+    source : lavavu.Viewer or lavavu.Object
+        Where to get object data to export
+    """
+    #TODO: support points, lines
+    try_import('trimesh')
+
+    objects = _get_objects(source)
+    scene = trimesh.Scene()
+    for obj in objects:
+        for i,e in enumerate(obj.data):
+            #print(e)
+            meshdict = {}
+            meshdict["vertices"] = e.vertices.reshape(-1,3)
+            meshdict["vertex_normals"] = e.normals.reshape(-1,3)
+            meshdict["faces"] = e.indices.reshape(-1,3)
+            if not len(meshdict["faces"]):
+                print("Empty",e)
+                continue
+            colours = e.colours
+            #print("ColourCount",len(colours))
+            if len(colours) == len(meshdict["vertices"]):
+                #View int32 into uint8 bytes
+                meshdict["vertex_colors"] = colours.view('uint8').reshape((-1,4))
+
+            mesh = trimesh.load_mesh(meshdict)
+            scene.add_geometry(mesh, geom_name=obj["name"] + '#' + str(i))
+
+            if len(colours) <= 1:
+                #If we don't set a default material colour, trimesh import will set default colour for every vertex
+                #print(obj["colour"])
+                colour = obj.parent.parse_colour(obj["colour"])
+                #print(colour)
+                colour = numpy.array(colour*255, dtype=numpy.uint8)
+                #print(colour)
+                if len(colours) > 0:
+                    colour = colours.view('uint8').reshape((-1,4))[0]
+                    #print(colour)
+                    if obj["opacity"] < 1.0:
+                        colour[3] *= obj["opacity"]
+                #print("Single colour: export as material", colour)
+                mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial())
+                mesh.visual.material.baseColorFactor = colour
+
+    scene.export(file_obj=filepath)
+
+    """
+    #Try GLTF ascii?
+    gltf = trimesh.exchange.gltf.export_gltf(scene)
+    import json
+    print("Mesh loaded, exporting GLTF")
+    gltf = trimesh.exchange.gltf.export_gltf(mesh) #, merge_buffers=True)
+    #print(gltf.keys())
+    #print(gltf['model.gltf'])
+    for fn in gltf:
+        mode = 'w'
+        #if ".bin" in fn: mode = 'wb'
+        with open(fn, 'wb') as f:
+            print("writing gltf component:" + fn)
+            f.write(gltf[fn])
+    """
+
+def read_any(filepath, lv):
+    """
+    Load using trimesh, supports GLTF etc
+
+    See: https://trimsh.org/trimesh.exchange.html
+    Requires "trimesh" module
+    """
+    #TODO: support points, lines
+    try_import('trimesh')
+    scene = trimesh.load(filepath)
+    tris = None
+    for name in scene.geometry.keys():
+        geometry = scene.geometry[name]
+        idx = 0
+        if '#' in name:
+            name,idx = name.split('#')
+            idx = int(idx)
+
+        if idx == 0:
+            tris = lv.triangles(name)
+        else:
+            tris.append()
+
+        tris.vertices(geometry.vertices)
+        tris.normals(geometry.vertex_normals)
+        tris.indices(geometry.faces)
+
+        #adjacency_matrix = geometry.edges_sparse
+        #print(geometry)
+        #print(geometry.visual)
+
+        #Load vertex colours if available
+        if hasattr(geometry.visual, "vertex_colors"):
+            #print("HAVE VERTEX COLOURS",len(geometry.visual.vertex_colors))
+            tris.colours(geometry.visual.vertex_colors)
+        #Load single colour material
+        elif hasattr(geometry.visual, "material"):
+            #print("HAVE MATERIAL")
+            #print(geometry.visual.material)
+            #print(geometry.visual.material.baseColorFactor)
+            if idx == 0:
+                #Can set as prop, but only works for single el
+                tris["colour"] = geometry.visual.material.baseColorFactor
+            else:
+                tris.colours(geometry.visual.material.baseColorFactor)
 

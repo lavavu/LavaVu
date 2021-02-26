@@ -1525,6 +1525,22 @@ class Object(dict):
         self.select()
         self.parent.commands(cmds, queue)
 
+    def export_mesh(self, filepath, rgba=True):
+        """
+        Use trimesh to export mesh object to a supported format, eg: GLTF (.glb)
+
+        See: https://trimsh.org/trimesh.exchange.html
+        Requires "trimesh" module
+        Supports triangle mesh object data
+
+        Parameters
+        ----------
+        filepath : str
+            Output file to write
+        rgba : bool
+            If set, convert colourmap/value data to rgba before export
+        """
+        self.parent.export_mesh(filepath, rgba, [self])
 
 #Wrapper dict+list of objects
 class _Objects(dict):
@@ -2753,7 +2769,6 @@ class Viewer(dict):
         #Apply to Object class for object related commands
         auto_methods(Object, self._cmds['Object'])
 
-
         #Add module functions to Viewer object
         mod = sys.modules[__name__]
         import inspect
@@ -3359,10 +3374,20 @@ class Viewer(dict):
             Vis object to load the file data into,
             if not provided a default will be created
         """
-
         #Load a new object from file
         ll = len(self.objects.list) #Save list length before load
-        self.app.loadFile(filename)
+        if not self.app.loadFile(filename):
+            #Support trimesh formats
+            from pathlib import Path
+            path = Path(filename)
+            ext = path.suffix.lower()[1:]
+            import convert
+            try:
+                trimesh = convert.try_import("trimesh")
+                if ext in trimesh.exchange.load.available_formats():
+                    convert.read_any(filename, self)
+            except (ImportError) as e:
+                pass
 
         #Get first object added if none provided
         if obj is None and ll < len(self.objects):
@@ -4477,6 +4502,31 @@ class Viewer(dict):
         array = numpy.array([0.0, 0.0, 0.0, 0.0], dtype=numpy.float32)
         self.app.colourArrayFloat(str(colour), array)
         return array
+
+    def export_mesh(self, filepath, rgba=True, objects=None):
+        """
+        Use trimesh to export mesh objects to a supported format, eg: GLTF (.glb)
+
+        See: https://trimsh.org/trimesh.exchange.html
+        Requires "trimesh" module
+        Supports triangle mesh object data
+
+        Parameters
+        ----------
+        filepath : str
+            Output file to write
+        objects : list
+            Objects to export, defaults to all
+        rgba : bool
+            If set, convert colourmap/value data to rgba before export
+        """
+        import convert
+        if objects == None: objects = self.objects.list
+        if rgba:
+            for obj in objects:
+                obj.bakecolour()
+            self.render()
+        convert.export_any(filepath, objects)
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
