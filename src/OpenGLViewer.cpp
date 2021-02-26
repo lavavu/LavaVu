@@ -260,10 +260,10 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
   assert(w==(unsigned int)outw && h==(unsigned int)outh);
-  debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
+  debug_print("Get image %d : %d %d ==> %d %d (buffer %d,%d)\n", downsample-1, w, h, outw, outh, width, height);
   assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
-  assert(downsampleFactor()/w == width);
-  assert(downsampleFactor()/h == height);
+  assert(width/downsampleFactor() == w);
+  assert(height/downsampleFactor() == h);
   assert(channels == 3 || channels == 4);
 #endif
 
