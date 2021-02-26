@@ -1541,7 +1541,11 @@ void Geometry::convertColours(int step, DrawingObject* obj)
       continue;
     ColourMap* cmap = records[index]->draw->colourMap;
     FloatValues* vals = records[index]->colourData();
-    if (records[index]->render->colours.size() == 0 && cmap && vals)
+    //Clear any existing RGBA data
+    if (records[index]->render->colours.size() > 0)
+      records[index]->render->colours.clear();
+
+    if (cmap && vals)
     {
       //Calibrate colour maps on range for this object
       ColourLookup& getColour = records[index]->colourCalibrate();
