@@ -1540,7 +1540,7 @@ class Object(dict):
         rgba : bool
             If set, convert colourmap/value data to rgba before export
         """
-        self.parent.export_mesh(filepath, rgba, [self])
+        self.parent.export_mesh(filepath, [self], rgba)
 
 #Wrapper dict+list of objects
 class _Objects(dict):
@@ -4503,7 +4503,7 @@ class Viewer(dict):
         self.app.colourArrayFloat(str(colour), array)
         return array
 
-    def export_mesh(self, filepath, rgba=True, objects=None):
+    def export_mesh(self, filepath, objects=None, rgba=True):
         """
         Use trimesh to export mesh objects to a supported format, eg: GLTF (.glb)
 
