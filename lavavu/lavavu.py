@@ -1285,6 +1285,21 @@ class Object(dict):
         self.parent.files(*args, obj=self, **kwargs)
         self.parent.app.aobject = None
 
+    def export(self, filepath=None, compress=None):
+        """
+        Export model and state to a database snapshot
+
+        Parameters
+        ----------
+        filepath : str
+            Filename to export, defaults to [object name].gldb
+        compress : int
+            Set flag override default zlib compression of database (0=None, 1=fast, 6=standard, 9=best compression)
+        """
+        if filepath is None:
+            filepath = '"' + self.name + '.gldb"'
+        self.parent.export(filepath, compress)
+
     def colourbar(self, **kwargs):
         """
         Create a new colourbar using this object's colourmap
@@ -3424,14 +3439,16 @@ class Viewer(dict):
             obj = self.file(infile, **kwargs)
         return obj
 
-    def export(self, filepath='exported.gldb', compress=None):
+    def export(self, filepath='exported.gldb', objects=None, compress=None):
         """
         Export model and state to a database snapshot
 
         Parameters
         ----------
         filepath : str
-            Specification of the files to load
+            Filename to export, defaults to exported.gldb
+        objects : list[str]
+            List of object names to export
         compress : int
             Set flag override default zlib compression of database (0=None, 1=fast, 6=standard, 9=best compression)
         """
@@ -3439,13 +3456,18 @@ class Viewer(dict):
         if filepath[0] != '"':
             filepath = '"' + filepath + '"'
 
+        #Create quoted list of object names
+        objlist = ""
+        if objects is not None:
+            objlist += '"' + '" "'.join(objects) + '"'
+
         if compress is not None and isinstance(compress, int):
             saved = self["compression"]
             self["compression"] = compress
-            self.app.commands("export " + filepath)
+            self.app.commands("export " + filepath + " " + objlist)
             self["compression"] = saved
         else:
-            self.app.commands("export " + filepath)
+            self.app.commands("export " + filepath + " " + objlist)
 
     def colourbar(self, obj=None, **kwargs):
         """

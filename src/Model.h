@@ -181,7 +181,7 @@ public:
   int readGeometryRecords(sqlite3_stmt* statement, bool cache=true);
   void mergeDatabases();
   void updateObject(DrawingObject* target, lucGeometryType type);
-  void writeDatabase(const char* path, DrawingObject* obj=NULL);
+  void writeDatabase(const char* path, DrawingObject* obj=NULL, bool overwrite=true);
   void writeDatabase(Database& outdb, DrawingObject* obj=NULL);
   void writeState();
   void writeState(Database& outdb);

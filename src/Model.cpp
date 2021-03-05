@@ -1760,12 +1760,12 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type)
   database.issue("COMMIT");
 }
 
-void Model::writeDatabase(const char* path, DrawingObject* obj)
+void Model::writeDatabase(const char* path, DrawingObject* obj, bool overwrite)
 {
   //Write objects to a new database?
   if (path)
   {
-    if (FileExists(path))
+    if (overwrite && FileExists(path))
       remove(path);
     Database outdb = Database(FilePath(path));
     if (!outdb.open(true))
@@ -1792,7 +1792,7 @@ void Model::writeDatabase(Database& outdb, DrawingObject* obj)
   outdb.issue("CREATE TABLE IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
 
   //Index for more efficient geometry queries (and avoids writing temp index files)
-  outdb.issue("CREATE INDEX idx_timestep_object ON geometry (timestep,object_id)");
+  outdb.issue("CREATE INDEX IF NOT EXISTS idx_timestep_object ON geometry (timestep,object_id)");
 
   outdb.issue("CREATE TABLE IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
 
@@ -1891,7 +1891,8 @@ void Model::writeObjects(Database& outdb, DrawingObject* obj, int step)
 void Model::deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step)
 {
   //Clear existing data of this type before writing, allows object update to db
-  outdb.issue("DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
+  if (obj->dbid > 0)
+    outdb.issue("DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
 }
 
 void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step)

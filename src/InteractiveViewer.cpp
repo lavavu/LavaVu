@@ -619,8 +619,14 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
   int id = parsed.Int(key, -1, idx);
   if (id > 0 && id <= (int)amodel->objects.size()) return amodel->objects[id-1];
 
-  //Otherwise lookup by name (using getall to allow spaces)
-  std::string what = parsed.getall(key, idx);
+  //Otherwise lookup by name
+  std::string what;
+  if (idx==0)
+    //(using getall to allow spaces without quotes on first iteration only)
+    what = parsed.getall(key);
+  else
+    //Using get() requires quotes for spaces but handles multiple strings on line
+    what = parsed.get(key, idx);
   return amodel->findObject(what);
 }
 
@@ -1944,7 +1950,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "**Usage:** export [filename] [objects]\n\n"
               "filename (string) : the name of the file to export to, extension defaults to .gldb\n"
               "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
-              "If object ommitted all will be exported, hidden objects will be skipped.\n";
+              "If object ommitted all will be exported, hidden objects will be skipped.\n"
+              "If object(s) provided, filename must also be provided.\n";
       return false;
     }
 
@@ -1956,7 +1963,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
         dbfn = "exported.gldb";
     }
-    std::vector<DrawingObject*> list = lookupObjects(parsed, "export");
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "export", 1);
     exportData(lucExportGLDB, list, dbfn);
     printMessage("Database export complete");
   }

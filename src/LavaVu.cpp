@@ -780,7 +780,7 @@ std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> l
     else
     {
       for (unsigned int c=0; c<list.size(); c++)
-        amodel->writeDatabase(filename.c_str(), list[c]);
+        amodel->writeDatabase(filename.c_str(), list[c], c==0);
     }
 #ifdef __EMSCRIPTEN__
     //Download in browser
