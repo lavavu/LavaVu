@@ -1729,7 +1729,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 
 void Model::mergeDatabases()
 {
-  if (!database) return;
+  if (!database || !database.attached) return;
   database.reopen(true);  //Open writable
   for (unsigned int i=0; i<=timesteps.size(); i++)
   {
@@ -1740,6 +1740,55 @@ void Model::mergeDatabases()
       database.issue("INSERT INTO geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ FROM %sgeometry", database.prefix);
     }
   }
+}
+
+void Model::mergeRecords(Model* other)
+{
+  //Merge data from another model into the active one
+
+  //Ensure geometry created and all steps loaded
+  other->cacheLoad();
+
+  //Objects
+  for (auto o : other->objects)
+  {
+    o->dbid = 0;
+    objects.push_back(o);
+  }
+
+  //Colourmaps
+  for (auto c : other->colourMaps)
+  {
+    colourMaps.push_back(c);
+  }
+
+  //Geometry records
+  for (auto g : other->geometry)
+  {
+    for (auto r : g->records)
+    {
+      Geometry* gg = lookupObjectRenderer(r->draw, r->type);
+      if (gg)
+        gg->records.push_back(r);
+    }
+  }
+
+  //Time steps
+  for (auto t : other->timesteps)
+  {
+    timesteps.push_back(t);
+  }
+  //std::sort(timesteps.begin(), timesteps.end());
+  //Remove duplicates
+  timesteps.erase(std::unique(timesteps.begin(), timesteps.end()), timesteps.end());
+
+  //Clear data from other model as we own it now
+  //(otherwise will be deleted when model deleted)
+  other->colourMaps.clear();
+  other->objects.clear();
+  other->timesteps.clear();
+
+  reload();
 }
 
 void Model::updateObject(DrawingObject* target, lucGeometryType type)

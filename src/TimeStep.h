@@ -56,6 +56,15 @@ public:
       return properties["time"];
     return (float)step;
   }
+
+  bool operator< (const TimeStep &rhs) const
+  {
+    return step < rhs.step;
+  }
+  bool operator== (const TimeStep &rhs) const
+  {
+    return step == rhs.step;
+  }
 };
 
 #endif

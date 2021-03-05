@@ -180,6 +180,7 @@ public:
   int loadFixedGeometry(int obj_id=0);
   int readGeometryRecords(sqlite3_stmt* statement, bool cache=true);
   void mergeDatabases();
+  void mergeRecords(Model* other);
   void updateObject(DrawingObject* target, lucGeometryType type);
   void writeDatabase(const char* path, DrawingObject* obj=NULL, bool overwrite=true);
   void writeDatabase(Database& outdb, DrawingObject* obj=NULL);

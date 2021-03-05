@@ -3199,15 +3199,28 @@ bool LavaVu::loadFile(const std::string& file)
   //Database files always create their own Model object
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
+    //Only merge if prop set and there is already a database loaded
+    bool merge = amodel && session.global("merge");
+    Model* oldmodel = amodel;
     //Open database file, if a non-db model already loaded, load into that (unless disabled with "merge" property)
-    if (models.size() == 0 || (amodel && amodel->database && !session.global("merge")))
+    if (models.size() == 0 || (amodel && amodel->database))
     {
       amodel = new Model(session);
+      //if (!merge)
       models.push_back(amodel);
     }
 
     //Load objects from db
     amodel->load(fn);
+
+    //Merge records
+    if (merge)
+    {
+      Model* newmodel = amodel;
+      amodel = oldmodel;
+      amodel->mergeRecords(newmodel);
+      //delete newmodel; // Can't delete due to bad design of colourMaps ref on DrawingObject, so leave it as an empty model
+    }
 
     //Ensure default view selected
     aview = amodel->defaultView();
