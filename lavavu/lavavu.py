@@ -650,7 +650,17 @@ class Object(dict):
 
         if values is None:
             d = self.datasets[label]
-            values = [d['minimum']*0.99, d['maximum']*1.01]
+            minv = d["minimum"]
+            if minv is None:
+                minv = 0.0
+            else:
+                minv = 0.99*minv
+            maxv = d["maximum"]
+            if maxv is None:
+                maxv = 0.0
+            else:
+                maxv = 1.01*maxv
+            values = [minv, maxv]
         if isinstance(values, float) or isinstance(values, int):
             values = [values,values]
         newfilter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
