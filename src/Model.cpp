@@ -1755,7 +1755,6 @@ void Model::mergeRecords(Model* other)
   {
     o->dbid = 0;
     objects.push_back(o);
-    o->colourMap = o->opacityMap = o->textureMap = NULL;
   }
 
   //Colourmaps
@@ -1796,8 +1795,6 @@ void Model::mergeRecords(Model* other)
   other->objects.clear();
   other->timesteps.clear();
   other->views.clear();
-
-  session.colourMaps = colourMaps;
 
   reload();
 }

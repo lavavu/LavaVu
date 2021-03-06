@@ -3223,7 +3223,9 @@ bool LavaVu::loadFile(const std::string& file)
       Model* newmodel = amodel;
       amodel = oldmodel;
       amodel->mergeRecords(newmodel);
-      delete newmodel; // Can't delete due to bad design of colourMaps ref on DrawingObject, so leave it as an empty model
+      delete newmodel;
+      viewer->postdisplay = true;
+      viewset = RESET_YES;
     }
 
     //Ensure default view selected
