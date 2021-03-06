@@ -766,16 +766,12 @@ def export_any(filepath, source):
 
             if len(colours) <= 1:
                 #If we don't set a default material colour, trimesh import will set default colour for every vertex
-                #print(obj["colour"])
                 colour = obj.parent.parse_colour(obj["colour"])
-                #print(colour)
                 colour = numpy.array(colour*255, dtype=numpy.uint8)
-                #print(colour)
                 if len(colours) > 0:
                     colour = colours.view('uint8').reshape((-1,4))[0]
-                    #print(colour)
-                    if obj["opacity"] < 1.0:
-                        colour[3] *= obj["opacity"]
+                if obj["opacity"] < 1.0:
+                    colour[3] *= obj["opacity"]
                 #print("Single colour: export as material", colour)
                 mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial())
                 mesh.visual.material.baseColorFactor = colour
