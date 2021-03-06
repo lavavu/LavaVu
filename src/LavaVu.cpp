@@ -2535,6 +2535,10 @@ void LavaVu::display(bool redraw)
   double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
   if (time > 0.1)
     debug_print("%.4lf seconds to render scene\n", time);
+
+  //Sync colourmaps
+  if (session.colourMaps.size() != amodel->colourMaps.size())
+    amodel->colourMaps = session.colourMaps;
 }
 
 void LavaVu::drawAxis()
@@ -3206,8 +3210,8 @@ bool LavaVu::loadFile(const std::string& file)
     if (models.size() == 0 || (amodel && amodel->database))
     {
       amodel = new Model(session);
-      //if (!merge)
-      models.push_back(amodel);
+      if (!merge)
+        models.push_back(amodel);
     }
 
     //Load objects from db
@@ -3219,7 +3223,7 @@ bool LavaVu::loadFile(const std::string& file)
       Model* newmodel = amodel;
       amodel = oldmodel;
       amodel->mergeRecords(newmodel);
-      //delete newmodel; // Can't delete due to bad design of colourMaps ref on DrawingObject, so leave it as an empty model
+      delete newmodel; // Can't delete due to bad design of colourMaps ref on DrawingObject, so leave it as an empty model
     }
 
     //Ensure default view selected
@@ -3338,7 +3342,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   model = model_idx;
 
   //Save active colourmaps list on session
-  session.colourMaps = &amodel->colourMaps;
+  session.colourMaps = amodel->colourMaps;
 
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)

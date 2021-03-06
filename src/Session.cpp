@@ -69,7 +69,7 @@ void Session::reset()
     dims[i] = 0;
   }
 
-  colourMaps = NULL;
+  colourMaps.clear();
 }
 
 int Session::parse(Properties* target, const std::string& property)

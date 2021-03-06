@@ -552,6 +552,7 @@ ColourMap* Model::addColourMap(std::string name, std::string colours, std::strin
   ColourMap* cmap = new ColourMap(session, name, properties);
   cmap->loadPalette(colours);
   colourMaps.push_back(cmap);
+  session.colourMaps = colourMaps;
   return cmap;
 }
 
@@ -1761,6 +1762,7 @@ void Model::mergeRecords(Model* other)
   {
     colourMaps.push_back(c);
   }
+  session.colourMaps = colourMaps;
 
   //Geometry records
   for (auto g : other->geometry)
@@ -1782,11 +1784,17 @@ void Model::mergeRecords(Model* other)
   //Remove duplicates
   timesteps.erase(std::unique(timesteps.begin(), timesteps.end()), timesteps.end());
 
+  for (auto v : other->views)
+  {
+    views.push_back(v);
+  }
+
   //Clear data from other model as we own it now
   //(otherwise will be deleted when model deleted)
   other->colourMaps.clear();
   other->objects.clear();
   other->timesteps.clear();
+  other->views.clear();
 
   reload();
 }
