@@ -1052,7 +1052,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
     //Create volume object, or if static volume object exists, use it
     DrawingObject *vobj = volume;
     if (!vobj) vobj = aobject; //Use active object
-    if (!vobj) vobj = new DrawingObject(session, amodel->colourMaps, fn.base);
+    if (!vobj) vobj = new DrawingObject(session, fn.base);
     addObject(vobj);
 
     volumes->add(vobj);
@@ -1137,7 +1137,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   if (!vobj)
   {
     count = 0;
-    vobj = addObject(new DrawingObject(session, amodel->colourMaps, name));
+    vobj = addObject(new DrawingObject(session, name));
   }
   volumes->add(vobj);
 
@@ -1305,7 +1305,7 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
   {
     unsigned int samples = (width+height+depth)*0.6;
     if (samples < 128) samples = 128;
-    vobj = new DrawingObject(session, amodel->colourMaps, "volume");
+    vobj = new DrawingObject(session, "volume");
     json props = {
       {"density",    50},
       {"samples",    samples}
@@ -1448,7 +1448,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
   //opacity [0,1]
   DrawingObject *obj;
   std::string props = "colour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(session, amodel->colourMaps, fn.base, props));
+  obj = addObject(new DrawingObject(session, fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1563,7 +1563,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   std::string texfile = fn.base + "-texture." + fn.ext;
   DrawingObject *obj;
   std::string props = "cullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(session, amodel->colourMaps, fn.base, props));
+  obj = addObject(new DrawingObject(session, fn.base, props));
 
   //Default colourmap
   ColourMap* cmap = addColourMap("elevation", "darkgreen yellow brown");
@@ -1668,7 +1668,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(session, amodel->colourMaps, fn.base));
+  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base));
   Geometry* geom = NULL;
   std::string renderer = "triangles";
 
@@ -1919,7 +1919,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add points object
   if (points)
   {
-    DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps, "particles", "opacity=0.75\nlit=0\n"));
+    DrawingObject* obj = addObject(new DrawingObject(session, "particles", "opacity=0.75\nlit=0\n"));
     obj->properties.data["colourmap"] = cmap->name;
     //Add colour bar display
     colourBar(obj);
@@ -1945,7 +1945,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add lines
   if (lines)
   {
-    DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps, "line-segments", "lit=0\n"));
+    DrawingObject* obj = addObject(new DrawingObject(session, "line-segments", "lit=0\n"));
     obj->properties.data["colourmap"] = cmap->name;
     for (int i=0; i < 50; i++)
     {
@@ -1975,7 +1975,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     {
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
-      DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps, label, "opacity=0.5\n"));
+      DrawingObject* obj = addObject(new DrawingObject(session, label, "opacity=0.5\n"));
       Colour c;
       c.value = (0xff000000 | 0xff<<(8*i));
       obj->properties.data["colour"] = c.toJson();
@@ -1994,7 +1994,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
 
     /*
     Geometry* quads = amodel->getRenderer(lucGridType);
-    DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps, "cubes", "opacity=0.5\n"));
+    DrawingObject* obj = addObject(new DrawingObject(session, "cubes", "opacity=0.5\n"));
     Quaternion qrot;
     Colour c;
     c.r = 255;
@@ -2603,7 +2603,7 @@ void LavaVu::drawAxis()
   if (!amodel->axisobj)
   {
     //Ensure loaded without set timestep
-    amodel->axisobj = new DrawingObject(session, amodel->colourMaps);
+    amodel->axisobj = new DrawingObject(session);
     if (!aview->hasObject(amodel->axisobj)) aview->addObject(amodel->axisobj);
     axis->setup(aview);
     axis->clear(true);
@@ -2672,7 +2672,7 @@ void LavaVu::drawRulers()
   DrawingObject* obj = amodel->rulerobj;
   if (!obj)
   {
-    obj = new DrawingObject(session, amodel->colourMaps, "");
+    obj = new DrawingObject(session, "");
     obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0},
                              {"tubes", true}, {"glyphs", 1}, {"lit", false},
                              {"wireframe", false}, {"flat", true}});
@@ -2850,7 +2850,7 @@ void LavaVu::drawBorder()
   }
   if (!obj) 
   {
-    obj = amodel->borderobj = new DrawingObject(session, amodel->colourMaps);
+    obj = amodel->borderobj = new DrawingObject(session);
     //Must re-create renderer if object has been removed
     //if (border) delete border;
     //border = NULL;
@@ -3337,6 +3337,9 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 
   model = model_idx;
 
+  //Save active colourmaps list on session
+  session.colourMaps = &amodel->colourMaps;
+
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
   {
@@ -3582,7 +3585,7 @@ DrawingObject* LavaVu::colourBar(DrawingObject* obj)
   std::string name = "colourbar";
   if (!obj) obj = aobject;
   if (obj) name = obj->name() + "_colourbar";
-  DrawingObject* cbar = addObject(new DrawingObject(session, amodel->colourMaps, name, "colourbar=1\n"));
+  DrawingObject* cbar = addObject(new DrawingObject(session, name, "colourbar=1\n"));
   if (obj)
     cbar->properties.data["colourmap"] = obj->properties["colourmap"];
   return cbar;
@@ -3634,7 +3637,7 @@ void LavaVu::setObject(DrawingObject* target, std::string properties)
 DrawingObject* LavaVu::createObject(std::string properties)
 {
   if (!amodel) defaultModel();
-  DrawingObject* obj = addObject(new DrawingObject(session, amodel->colourMaps));
+  DrawingObject* obj = addObject(new DrawingObject(session));
 
   //Parse and merge property strings
   setObject(obj, properties);
@@ -4119,7 +4122,7 @@ DrawingObject* LavaVu::contour(DrawingObject* target, DrawingObject* source, std
   if (!target)
   {
     //Create a new object for the surface
-    target = new DrawingObject(session, amodel->colourMaps, source->name() + "_contours", properties);
+    target = new DrawingObject(session, source->name() + "_contours", properties);
     addObject(target);
     std::vector<std::string> copyprops = {"isovalues", "isovalue", "isowalls", "colour"};
     for (auto prop : copyprops)
@@ -4147,7 +4150,7 @@ DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, 
   if (!target)
   {
     //Create a new object for the surface
-    target = new DrawingObject(session, amodel->colourMaps, source->name() + "_isosurface", properties);
+    target = new DrawingObject(session, source->name() + "_isosurface", properties);
     addObject(target);
     std::vector<std::string> copyprops = {"isovalues", "isovalue", "isowalls", "colour"};
     for (auto prop : copyprops)

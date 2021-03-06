@@ -930,7 +930,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(session, colourMaps, otitle, props, object_id);
+    DrawingObject* obj = new DrawingObject(session, otitle, props, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
@@ -2425,7 +2425,7 @@ int Model::jsonRead(std::string data)
     DrawingObject* dest = findObject(name);
     if (!dest)
     {
-      dest = new DrawingObject(session, colourMaps, name);
+      dest = new DrawingObject(session, name);
       addObject(dest);
     }
 

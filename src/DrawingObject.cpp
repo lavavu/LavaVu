@@ -36,8 +36,8 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(Session& session, std::vector<ColourMap*> & colourMaps, std::string name, std::string props, unsigned int id)
-  : session(session), colourMaps(colourMaps), dbid(id), properties(session.globals, session.defaults)
+DrawingObject::DrawingObject(Session& session, std::string name, std::string props, unsigned int id)
+  : session(session), dbid(id), properties(session.globals, session.defaults)
 {
   texture = NULL;
   skip = session.global("noload");
@@ -58,6 +58,7 @@ DrawingObject::DrawingObject(Session& session, std::vector<ColourMap*> & colourM
   colourIdx = 0; //Default colouring data is first value block
   opacityIdx = MAX_DATA_ARRAYS+1;
   colourMap = opacityMap = textureMap = NULL;
+  setup();
 }
 
 DrawingObject::~DrawingObject()
@@ -82,6 +83,7 @@ void DrawingObject::updateRange(const std::string& label, const Range& newRange)
 
 ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* current)
 {
+  if (!session.colourMaps) return NULL;
   json prop = properties[propname];
   bool valid = true;
   if (prop.is_number())
@@ -89,9 +91,9 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     //Attempt to load by id
     //printf("WARNING: Load colourmap by ID is deprecated, use name\n");
     int cmapid = prop;
-    if (cmapid >= 0 && cmapid < (int)colourMaps.size())
+    if (cmapid >= 0 && cmapid < (int)session.colourMaps->size())
     {
-      ColourMap* cmap = colourMaps[cmapid];
+      ColourMap* cmap = (*session.colourMaps)[cmapid];
       //Replace integer props with names
       properties.data[propname] = cmap->name;
       return cmap;
@@ -105,16 +107,16 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
       return NULL;
 
     //Search defined colourmaps by name
-    for (unsigned int i=0; i < colourMaps.size(); i++)
-      if (data == colourMaps[i]->name)
-        return colourMaps[i];
+    for (unsigned int i=0; i < session.colourMaps->size(); i++)
+      if (data == (*session.colourMaps)[i]->name)
+        return (*session.colourMaps)[i];
 
     //Not found, assume property is a colourmap data string instead
     if (!current)
     {
       //Create a default colour map
       current = new ColourMap(session, name() + "_" + propname);
-      colourMaps.push_back(current);
+      session.colourMaps->push_back(current);
     }
 
     //Load the data string
@@ -126,7 +128,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     {
       //Create a default colour map
       current = new ColourMap(session, name() + "_" + propname);
-      colourMaps.push_back(current);
+      session.colourMaps->push_back(current);
     }
 
     //Load the data array

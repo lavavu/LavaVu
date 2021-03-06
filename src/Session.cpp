@@ -68,6 +68,8 @@ void Session::reset()
     max[i] = -HUGE_VALF;
     dims[i] = 0;
   }
+
+  colourMaps = NULL;
 }
 
 int Session::parse(Properties* target, const std::string& property)

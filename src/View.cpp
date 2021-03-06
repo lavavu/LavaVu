@@ -1067,6 +1067,9 @@ void View::drawOverlay()
     if (!objects[i]->properties["colourbar"] || !objects[i]->properties["visible"]) continue;
     objects[i]->setup(); //Required to cache colouring values
     ColourMap* cmap = objects[i]->colourMap;
+    //Use the first available colourmap by default
+    if (!cmap && session.colourMaps && session.colourMaps->size() > 0)
+      cmap = (*session.colourMaps)[0];
     if (!cmap) continue;
 
     float position = objects[i]->properties["position"];

@@ -92,9 +92,10 @@ public:
 class DrawingObject
 {
 public:
-  DrawingObject(Session& session, std::vector<ColourMap*> & colourMaps, std::string name="", std::string props="", unsigned int id=0);
+  DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ColourMap* colourMap;
   ColourMap* opacityMap;
+  ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   std::string name();
   float opacity;
   Colour colour;

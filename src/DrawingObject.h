@@ -47,7 +47,6 @@ typedef std::shared_ptr<ImageLoader> Texture_Ptr;
 class DrawingObject
 {
   Session& session;
-  std::vector<ColourMap*> & colourMaps;
 public:
   unsigned int dbid;
   bool skip;
@@ -75,7 +74,7 @@ public:
   //Default texture
   Texture_Ptr texture;
 
-  DrawingObject(Session& session, std::vector<ColourMap*> & colourMaps, std::string name="", std::string props="", unsigned int id=0);
+  DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
   void updateRange(const std::string& label, const Range& newRange);

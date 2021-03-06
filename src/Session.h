@@ -52,6 +52,9 @@ public:
   //Fonts
   FontManager fonts;
 
+  //Global colourmaps list for active model
+  std::vector<ColourMap*> * colourMaps;
+
   //List of properties that apply to colourMaps, views
   std::vector<std::string> colourMapProps;
   std::vector<std::string> viewProps;
