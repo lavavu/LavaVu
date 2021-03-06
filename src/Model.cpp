@@ -1755,6 +1755,7 @@ void Model::mergeRecords(Model* other)
   {
     o->dbid = 0;
     objects.push_back(o);
+    o->colourMap = o->opacityMap = o->textureMap = NULL;
   }
 
   //Colourmaps
@@ -1784,10 +1785,10 @@ void Model::mergeRecords(Model* other)
   //Remove duplicates
   timesteps.erase(std::unique(timesteps.begin(), timesteps.end()), timesteps.end());
 
-  for (auto v : other->views)
+  /*for (auto v : other->views)
   {
     views.push_back(v);
-  }
+  }*/
 
   //Clear data from other model as we own it now
   //(otherwise will be deleted when model deleted)
@@ -1795,6 +1796,8 @@ void Model::mergeRecords(Model* other)
   other->objects.clear();
   other->timesteps.clear();
   other->views.clear();
+
+  session.colourMaps = colourMaps;
 
   reload();
 }
