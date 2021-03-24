@@ -723,7 +723,7 @@ def plot_PLY(lv, filename):
     else:
         return lv.points(vertices=V, colours=C, normals=N, texcoords=T)
 
-def export_any(filepath, source):
+def export_any(filepath, source, name=None):
     """
     Export given object(s) to a file format supproted by trimesh, eg: GLTF or GLB file
     See: https://trimsh.org/trimesh.exchange.html
@@ -745,13 +745,19 @@ def export_any(filepath, source):
 
     objects = _get_objects(source)
     scene = trimesh.Scene()
+    facect = 0
     for obj in objects:
+        #Use object name to export unless name provided
+        oname = name
+        if oname is None:
+            oname = obj["name"]
         for i,e in enumerate(obj.data):
             #print(e)
             meshdict = {}
             meshdict["vertices"] = e.vertices.reshape(-1,3)
             meshdict["vertex_normals"] = e.normals.reshape(-1,3)
             meshdict["faces"] = e.indices.reshape(-1,3)
+            facect += e.indices.shape[0]
             if not len(meshdict["faces"]):
                 print("Empty",e)
                 continue
@@ -762,7 +768,7 @@ def export_any(filepath, source):
                 meshdict["vertex_colors"] = colours.view('uint8').reshape((-1,4))
 
             mesh = trimesh.load_mesh(meshdict)
-            scene.add_geometry(mesh, geom_name=obj["name"] + '#' + str(i))
+            scene.add_geometry(mesh, geom_name=oname + '#' + str(i))
 
             if len(colours) <= 1:
                 #If we don't set a default material colour, trimesh import will set default colour for every vertex
@@ -776,7 +782,10 @@ def export_any(filepath, source):
                 mesh.visual = trimesh.visual.TextureVisuals(material=trimesh.visual.material.PBRMaterial())
                 mesh.visual.material.baseColorFactor = colour
 
-    scene.export(file_obj=filepath)
+    if facect > 0:
+        scene.export(file_obj=filepath)
+    else:
+        print("No triangle facets to export")
 
     """
     #Try GLTF ascii?
