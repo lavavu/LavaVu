@@ -3205,7 +3205,7 @@ bool LavaVu::loadFile(const std::string& file)
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
     //Only merge if prop set and there is already a database loaded
-    bool merge = amodel && session.global("merge");
+    bool merge = amodel && amodel->database && amodel->objects.size() && session.global("merge");
     Model* oldmodel = amodel;
     //Open database file, if a non-db model already loaded, load into that (unless disabled with "merge" property)
     if (models.size() == 0 || (amodel && amodel->database))
