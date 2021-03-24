@@ -20909,6 +20909,58 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_unprocessed_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  std::vector< std::string,std::allocator< std::string > > *arg2 = (std::vector< std::string,std::allocator< std::string > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "LavaVu_unprocessed_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_unprocessed_set" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_unprocessed_set" "', argument " "2"" of type '" "std::vector< std::string,std::allocator< std::string > > *""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< std::string,std::allocator< std::string > > * >(argp2);
+  if (arg1) (arg1)->unprocessed = *arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_unprocessed_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::string,std::allocator< std::string > > *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_unprocessed_get" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  result = (std::vector< std::string,std::allocator< std::string > > *)& ((arg1)->unprocessed);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_0(PyObject *SWIGUNUSEDPARM(self), Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::string arg1 ;
@@ -30617,6 +30669,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_aobject_get", _wrap_LavaVu_aobject_get, METH_O, NULL},
 	 { "LavaVu_binpath_set", _wrap_LavaVu_binpath_set, METH_VARARGS, NULL},
 	 { "LavaVu_binpath_get", _wrap_LavaVu_binpath_get, METH_O, NULL},
+	 { "LavaVu_unprocessed_set", _wrap_LavaVu_unprocessed_set, METH_VARARGS, NULL},
+	 { "LavaVu_unprocessed_get", _wrap_LavaVu_unprocessed_get, METH_O, NULL},
 	 { "new_LavaVu", _wrap_new_LavaVu, METH_VARARGS, NULL},
 	 { "delete_LavaVu", _wrap_delete_LavaVu, METH_O, NULL},
 	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},
@@ -31010,6 +31064,8 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "LavaVu_aobject_get", _wrap_LavaVu_aobject_get, METH_O, NULL},
 	 { "LavaVu_binpath_set", _wrap_LavaVu_binpath_set, METH_VARARGS, NULL},
 	 { "LavaVu_binpath_get", _wrap_LavaVu_binpath_get, METH_O, NULL},
+	 { "LavaVu_unprocessed_set", _wrap_LavaVu_unprocessed_set, METH_VARARGS, NULL},
+	 { "LavaVu_unprocessed_get", _wrap_LavaVu_unprocessed_get, METH_O, NULL},
 	 { "new_LavaVu", _wrap_new_LavaVu, METH_VARARGS, NULL},
 	 { "delete_LavaVu", _wrap_delete_LavaVu, METH_O, NULL},
 	 { "LavaVu_destroy", _wrap_LavaVu_destroy, METH_O, NULL},

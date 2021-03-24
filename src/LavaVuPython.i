@@ -142,6 +142,7 @@ public:
   View* aview;
   DrawingObject* aobject;
   std::string binpath;
+  std::vector<std::string> unprocessed;
 
   LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   ~LavaVu();

@@ -110,6 +110,7 @@ public:
   char message[MAX_MSG];
   std::string help;
   std::string binpath;
+  std::vector<std::string> unprocessed;
 
   int view;
 

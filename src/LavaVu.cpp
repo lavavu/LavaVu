@@ -468,7 +468,8 @@ void LavaVu::arguments(std::vector<std::string> args)
     {
       //Otherwise, attempt to run as script command
       //(will be queued for when viewer is opened if invalid before)
-      parseCommand(args[i]);
+      if (!parseCommand(args[i]))
+        unprocessed.push_back(args[i]);
     }
   }
 }

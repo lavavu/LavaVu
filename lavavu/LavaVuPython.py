@@ -474,6 +474,7 @@ class LavaVu(object):
     aview = property(_LavaVuPython.LavaVu_aview_get, _LavaVuPython.LavaVu_aview_set)
     aobject = property(_LavaVuPython.LavaVu_aobject_get, _LavaVuPython.LavaVu_aobject_set)
     binpath = property(_LavaVuPython.LavaVu_binpath_get, _LavaVuPython.LavaVu_binpath_set)
+    unprocessed = property(_LavaVuPython.LavaVu_unprocessed_get, _LavaVuPython.LavaVu_unprocessed_set)
 
     def __init__(self, binpath: "std::string", havecontext: "bool"=False, omegalib: "bool"=False):
         _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))

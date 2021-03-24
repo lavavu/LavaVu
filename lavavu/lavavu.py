@@ -2821,6 +2821,12 @@ class Viewer(dict):
             method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
             self.__setattr__(key, method)
 
+        #Process unprocessed args (eg: files that can only be loaded via python api)
+        for arg in self.app.unprocessed:
+            if os.path.exists(arg):
+                self.file(arg)
+            self.app.unprocessed.clear()
+
     def _shutdown(self):
         #Wait for the render thread to exit
         if self.app:

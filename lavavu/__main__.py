@@ -4,7 +4,8 @@ def main():
     from . import lavavu
     import sys
     import platform
-    lv = lavavu.Viewer(arglist=sys.argv[1:], interactive=True, hidden=False)
+    lv = lavavu.Viewer(*sys.argv[1:])
+    lv.interactive()
 
 if __name__ == '__main__':
     main()
