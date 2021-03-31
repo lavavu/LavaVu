@@ -297,6 +297,7 @@
  > filename (string) : the name of the file to export to, extension defaults to .gldb  
  > objects (integer/string) : the indices or names of the objects to export (see: "list objects")  
  > If object ommitted all will be exported, hidden objects will be skipped.  
+ > If object(s) provided, filename must also be provided.  
 
 
 ### csv
