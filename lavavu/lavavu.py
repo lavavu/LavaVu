@@ -4858,7 +4858,9 @@ class DrawData(object):
         """
         array = None
         #Attempt to return an array with the correct shape
-        dims = self._obj["dims"][::-1]
+        dims = [0.,0.,0.]
+        if "dims" in self._obj.dict:
+            dims = self._obj.dict["dims"][::-1]
         if self.data.width > 1:
             #print("OBJECT W,H,D: ",self.data.width, self.data.height, self.data.depth)
             #dims = [self.data.depth, self.data.height, self.data.width]
@@ -4953,11 +4955,11 @@ class DrawData(object):
         array = _convert(array)
 
         #Attempt to set the dims based on the provided array shape
-        dims = [0,0,0]
+        dims = [0.,0.,0.]
         if self.data.width > 1:
             dims = [self.data.depth, self.data.height, self.data.width]
-        elif "dims" in self._obj:
-           dims = self._obj["dims"][::-1]
+        elif "dims" in self._obj.dict:
+            dims = self._obj.dict["dims"][::-1]
         #if "dims" in self._obj and len(array.shape) > 0:
         if len(array.shape) > 0:
             #Get dims from numpy shape
