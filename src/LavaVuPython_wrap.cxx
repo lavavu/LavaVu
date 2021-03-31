@@ -18244,6 +18244,65 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_OpenGLViewer_output_path_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "OpenGLViewer_output_path_set", 2, 2, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_output_path_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "OpenGLViewer_output_path_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "OpenGLViewer_output_path_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  if (arg1) (arg1)->output_path = *arg2;
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_output_path_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_output_path_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (std::string *) & ((arg1)->output_path);
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_OpenGLViewer_open__SWIG_0(PyObject *SWIGUNUSEDPARM(self), Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
@@ -30595,6 +30654,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "OpenGLViewer_height_get", _wrap_OpenGLViewer_height_get, METH_O, NULL},
 	 { "OpenGLViewer_timer_animate_set", _wrap_OpenGLViewer_timer_animate_set, METH_VARARGS, NULL},
 	 { "OpenGLViewer_timer_animate_get", _wrap_OpenGLViewer_timer_animate_get, METH_O, NULL},
+	 { "OpenGLViewer_output_path_set", _wrap_OpenGLViewer_output_path_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_output_path_get", _wrap_OpenGLViewer_output_path_get, METH_O, NULL},
 	 { "OpenGLViewer_open", _wrap_OpenGLViewer_open, METH_VARARGS, NULL},
 	 { "OpenGLViewer_init", _wrap_OpenGLViewer_init, METH_O, NULL},
 	 { "OpenGLViewer_display", _wrap_OpenGLViewer_display, METH_VARARGS, NULL},
@@ -30990,6 +31051,8 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "OpenGLViewer_height_get", _wrap_OpenGLViewer_height_get, METH_O, NULL},
 	 { "OpenGLViewer_timer_animate_set", _wrap_OpenGLViewer_timer_animate_set, METH_VARARGS, NULL},
 	 { "OpenGLViewer_timer_animate_get", _wrap_OpenGLViewer_timer_animate_get, METH_O, NULL},
+	 { "OpenGLViewer_output_path_set", _wrap_OpenGLViewer_output_path_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_output_path_get", _wrap_OpenGLViewer_output_path_get, METH_O, NULL},
 	 { "OpenGLViewer_open", _wrap_OpenGLViewer_open, METH_VARARGS, NULL},
 	 { "OpenGLViewer_init", _wrap_OpenGLViewer_init, METH_O, NULL},
 	 { "OpenGLViewer_display", _wrap_OpenGLViewer_display, METH_VARARGS, NULL},

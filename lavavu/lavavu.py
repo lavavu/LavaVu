@@ -3111,7 +3111,7 @@ class Viewer(dict):
 
     @property
     def step(self):
-        """    
+        """
         step : int
             Returns current timestep
         """
@@ -3119,11 +3119,27 @@ class Viewer(dict):
 
     @step.setter
     def step(self, value):
-        """    
+        """
         step : int
             Sets current timestep
         """
         self.timestep(value)
+
+    @property
+    def output_path(self):
+        """
+        output_path : str
+            Returns image output path
+        """
+        return self.app.viewer.output_path
+
+    @output_path.setter
+    def output_path(self, value):
+        """
+        output_path : str
+            Sets image output path
+        """
+        self.app.viewer.output_path = value
 
     def _get(self):
         #Import state from lavavu

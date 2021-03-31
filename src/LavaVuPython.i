@@ -73,6 +73,7 @@ public:
   bool visible;
   int width, height;
   int timer_animate = 50;
+  std::string output_path = "";
 
   virtual void open(int width=0, int height=0);
   virtual void init();

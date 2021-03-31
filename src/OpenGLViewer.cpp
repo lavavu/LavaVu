@@ -844,7 +844,10 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   }
   else
   {
-    retImg = image->write(path, jpegquality);
+    std::string outpath = path;
+    if (output_path.length())
+      outpath = output_path + "/" + filepath.file;
+    retImg = image->write(outpath, jpegquality);
 #ifdef __EMSCRIPTEN__
     std::string type =  jpegquality == 0 ? "image/png" : "image/jpeg";
     EM_ASM({ window.download($0, $1) }, retImg.c_str(), type.c_str());

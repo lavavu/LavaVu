@@ -379,6 +379,7 @@ class OpenGLViewer(object):
     width = property(_LavaVuPython.OpenGLViewer_width_get, _LavaVuPython.OpenGLViewer_width_set)
     height = property(_LavaVuPython.OpenGLViewer_height_get, _LavaVuPython.OpenGLViewer_height_set)
     timer_animate = property(_LavaVuPython.OpenGLViewer_timer_animate_get, _LavaVuPython.OpenGLViewer_timer_animate_set)
+    output_path = property(_LavaVuPython.OpenGLViewer_output_path_get, _LavaVuPython.OpenGLViewer_output_path_set)
     open = _swig_new_instance_method(_LavaVuPython.OpenGLViewer_open)
     init = _swig_new_instance_method(_LavaVuPython.OpenGLViewer_init)
     display = _swig_new_instance_method(_LavaVuPython.OpenGLViewer_display)
