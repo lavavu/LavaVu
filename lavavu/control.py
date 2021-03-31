@@ -1344,7 +1344,7 @@ class Filter(DualRange):
 
         #Get the default range limits from the matching data source
         fname = self.filter['by']
-        if not target["data"]:
+        if not target["data"] or not "minimum" in target["data"][fname]:
             #Attempt to update
             target.reload()
             target.parent.render()
