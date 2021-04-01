@@ -2348,31 +2348,6 @@ int Model::jsonRead(std::string data)
   //Load custom globals, merge with existing values
   Properties::mergeJSON(session.globals, imported);
 
-  // Import views
-  for (unsigned int v=0; v < inviews.size(); v++)
-  {
-    if (v >= views.size())
-    {
-      //Insert a view
-      View* view = new View(session);
-      views.push_back(view);
-      //Insert all objects for now
-      view->objects = objects;
-    }
-
-    View* view = views[v];
-
-    //Process list of keys to ignore on import if already set
-    for (auto del : skiplist)
-      if (view->properties.has(del) || session.globals.count(del))
-        inviews[v].erase(del);
-
-    //Apply base properties with merge
-    view->properties.merge(inviews[v]);
-
-    view->importProps(true);
-  }
-
   // Import colourmaps
   for (unsigned int i=0; i < cmaps.size(); i++)
   {
@@ -2433,8 +2408,10 @@ int Model::jsonRead(std::string data)
     DrawingObject* dest = findObject(name);
     if (!dest)
     {
-      dest = new DrawingObject(session, name);
-      addObject(dest);
+      //NOTE: we do not want to create objects that only exist in JSON here!
+      continue;
+      //dest = new DrawingObject(session, name);
+      //addObject(dest);
     }
 
     //Convert colourmap to use name
@@ -2451,6 +2428,31 @@ int Model::jsonRead(std::string data)
     //Merge properties
     dest->properties.merge(inobjects[i]);
     //reload(dest);
+  }
+
+  // Import views
+  for (unsigned int v=0; v < inviews.size(); v++)
+  {
+    if (v >= views.size())
+    {
+      //Insert a view
+      View* view = new View(session);
+      views.push_back(view);
+      //Insert all objects for now
+      view->objects = objects;
+    }
+
+    View* view = views[v];
+
+    //Process list of keys to ignore on import if already set
+    for (auto del : skiplist)
+      if (view->properties.has(del) || session.globals.count(del))
+        inviews[v].erase(del);
+
+    //Apply base properties with merge
+    view->properties.merge(inviews[v]);
+
+    view->importProps(true);
   }
 
   //If integer reload code provided, return it, otherwise reload if true, redraw otherwise
