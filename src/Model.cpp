@@ -1971,7 +1971,7 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       //Write the data entry
       Data_Ptr block = data[i]->dataContainer((lucGeometryDataType)data_type);
       if (!block || block->size() == 0) continue;
-      std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
+      if (infostream) std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block.get(), step);
     }
@@ -1980,7 +1980,7 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       //Write the value data entry
       DataContainer* block = (DataContainer*)data[i]->values[j].get();
       if (!block || block->size() == 0) continue;
-      std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
+      if (infostream) std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
       //This hack will work for up to 7 value data sets for now
