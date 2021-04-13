@@ -18,9 +18,9 @@ jobs:
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       #CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
-      CIBW_BEFORE_BUILD_LINUX: export LV_INC_DIRS=/usr/include/ffmpeg && yum install -y epel-release && rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel || true
-      CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-      CIBW_MANYLINUX_I686_IMAGE: manylinux2014
+      CIBW_BEFORE_BUILD_LINUX: apt-get update && apt-get install -y libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+      CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
+      CIBW_MANYLINUX_I686_IMAGE: manylinux_2_24
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -39,7 +39,7 @@ jobs:
           
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel==1.7.3
+          python -m pip install cibuildwheel==1.10.0
 
       - name: Build wheels
         run: |
@@ -91,7 +91,7 @@ jobs:
     strategy:
       matrix:
         #os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: [3.6, 3.7, 3.8, 3.9]
     runs-on: ${{ matrix.os }}
     steps:
@@ -104,12 +104,16 @@ jobs:
       - name: Install wheel
         run: python -m pip install lavavu
       - name: Run headless test (linux only)
+        #This needs to run with xvfb
+        uses: GabrielBB/xvfb-action@v1
         if: runner.os == 'Linux'
-        run: |
-          git clone --depth 1 https://github.com/lavavu/Testing
-          cd Testing
-          export LV_ECHO_FAIL=1
-          export LV_ARGS="-v"
-          python runall.py
-          cd ..
+        with:
+          working-directory: ./ #optional
+          run: |
+            git clone --depth 1 https://github.com/lavavu/Testing
+            cd Testing
+            export LV_ECHO_FAIL=1
+            export LV_ARGS="-v"
+            python runall.py
+            cd ..
 
