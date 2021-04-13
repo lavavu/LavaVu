@@ -109,11 +109,5 @@ jobs:
         if: runner.os == 'Linux'
         with:
           working-directory: ./ #optional
-          run: |
-            git clone --depth 1 https://github.com/lavavu/Testing
-            cd Testing
-            export LV_ECHO_FAIL=1
-            export LV_ARGS="-v"
-            python runall.py
-            cd ..
+          run: git clone --depth 1 https://github.com/lavavu/Testing && cd Testing && LV_ECHO_FAIL=1 LV_ARGS="-v" python runall.py
 
