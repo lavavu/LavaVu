@@ -1,6 +1,7 @@
 name: Conda
 
 on:
+  workflow_dispatch:
   #push
   release:
     types: [created, edited]
@@ -34,7 +35,7 @@ jobs:
             conda config --add channels underworldcode
             conda config --set anaconda_upload yes
             anaconda login --hostname github-actions-${{ matrix.os  }}-$RANDOM --username ${{ secrets.ANACONDA_USERNAME }} --password ${{ secrets.ANACONDA_PASSWORD }}
-            conda-build --channel conda-forge --user underworldcode conda
+            conda-build --no-test --channel conda-forge --user underworldcode conda
             anaconda logout
 
 #This works, but needs a different channel to provide alternate package
