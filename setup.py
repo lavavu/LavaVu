@@ -19,7 +19,7 @@ import shutil
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
-version = "1.8.1"
+version = "1.8.2"
 
 """
 To release a new verison:
@@ -65,6 +65,11 @@ def write_version():
 
 #Run with "new" to prepare for a new version after changing above
 if sys.argv[-1] == 'check':
+    #Check docs repo in sync first to avoid merge errors on release step
+    wd = os.getcwd()
+    os.chdir("docs")
+    os.system("git pull")
+    os.chdir(wd)
     write_version()
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
