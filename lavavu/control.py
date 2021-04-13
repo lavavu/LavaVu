@@ -1646,7 +1646,7 @@ class _ControlFactory(object):
 
     def export_actions(self, actions, uid=0, port=0, proxy=False):
         #Process actions
-        topjs = '<script type="text/javascript">\n'
+        topjs = '<script>\n'
         if port > 0:
             topjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid}, {port});\n'.format(uid=uid, port=port)
         else:
