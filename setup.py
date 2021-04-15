@@ -309,7 +309,8 @@ if __name__ == "__main__":
         inc_dirs += [os.path.join('windows-main', 'inc')]
         lib_dirs += [os.path.join('windows-main', LIBS)]
         ldflags += ['/LIBPATH:' + os.path.join('windows-main', LIBS)]
-        libs = [os.path.basename(l) for l in win_libs]
+        from pathlib import Path
+        libs = [Path(l).stem for l in win_libs]
         #Copy dlls into ./lavavu so can be found by package_data
         for d in win_dlls:
             shutil.copy(d, 'lavavu')
