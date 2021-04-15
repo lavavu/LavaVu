@@ -111,8 +111,6 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #include <conio.h>
 #include <direct.h>
 #define HAVE_STRUCT_TIMESPEC
-#include "windows/inc/pthread.h"
-//#include "windows/inc/zlib.h"
 #define PAUSE(msecs) Sleep(msecs);
 #define mkdir(dir, mode) _mkdir(dir)
 #define rmdir(dir) _rmdir(dir)
