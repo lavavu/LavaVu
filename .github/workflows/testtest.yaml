@@ -18,7 +18,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: actions/checkout@master
         with:
-          name: LavaVu/Testing
+          repository: LavaVu/Testing
+          path: Testing
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
       - name: Install wheel
