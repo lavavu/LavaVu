@@ -310,7 +310,7 @@ if __name__ == "__main__":
         lib_dirs += [os.path.join('windows-main', LIBS)]
         ldflags += ['/LIBPATH:' + os.path.join('windows-main', LIBS)]
         from pathlib import Path
-        libs = [Path(l).stem for l in win_libs]
+        libs = ['opengl32'] + [Path(l).stem for l in win_libs]
         #Copy dlls into ./lavavu so can be found by package_data
         for d in win_dlls:
             shutil.copy(d, 'lavavu')
