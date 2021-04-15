@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
     #OS Specific
     if P == 'Windows':
-        #Windows - includes all dependencies
+        #Windows - include all dependencies
 
         #VC++ can handle C or C++ without issues clang has,
         #so just throw sqlite source in with the rest
@@ -276,64 +276,46 @@ if __name__ == "__main__":
         else:
             arc = '32'
 
-        #Download, extract and install ffmpeg files
-        #(NOTE: sdist on windows is currently useless as does not include dlls,
-        #a fix would need to download other dll's here as we do for ffmpeg)
-        ffmpeg_dlls = []
-        ffmpeg_libs = []
+        #Download, extract and install binary libraries
+        win_dlls = []
+        win_libs = []
         try:
             sys.path.append('lavavu')
             import vutils
             import zipfile
-            src = "https://github.com/OKaluza/ffmpeg.zeranoe.com/raw/main/"
-            fn1 = 'ffmpeg-4.3.1-win' + arc + '-shared'
-            fn2 = 'ffmpeg-4.3.1-win' + arc + '-dev'
+            src = "https://github.com/lavavu/windows/archive/refs/heads/"
+            fnz = "main.zip"
+            outfn = vutils.download(src + fnz)
+            with zipfile.ZipFile(outfn, 'r') as zip_ref:
+                zip_ref.extractall('.')
             LIBS = 'lib' + arc
-            outfn = vutils.download(src + fn1 + '.zip')
-            with zipfile.ZipFile(outfn, 'r') as zip_ref:
-                zip_ref.extractall('.')
-            outfn = vutils.download(src + fn2 + '.zip')
-            with zipfile.ZipFile(outfn, 'r') as zip_ref:
-                zip_ref.extractall('.')
-            #Now copy into windows build dirs
-            libs = ['avformat', 'avcodec', 'avutil', 'swscale']
-            for lib in libs:
-                #Headers - move entire directories
-                dst = os.path.join('src', 'windows', 'inc', 'lib' + lib)
-                if not os.path.exists(dst):
-                    shutil.move(os.path.join(fn2, 'include', 'lib' + lib), dst)
-                #Lib file
-                dst = os.path.join('src', 'windows', LIBS)
-                shutil.copy(os.path.join(fn2, 'lib', lib + '.lib'), dst)
-                ffmpeg_libs += [lib]
-            #Just grab all the dlls
-            ffmpeg_dlls = glob.glob(os.path.join(fn1, 'bin', '*.dll'))
-
-            #If we got this far, enable video
+            # - Lib and dll files - just grab by current location
+            win_dlls = glob.glob(os.path.join('windows-main', LIBS, '*.dll'))
+            win_libs = glob.glob(os.path.join('windows-main', LIBS, '*.lib'))
+            #If we got this far, enable video, tiff
             defines += [('HAVE_LIBAVCODEC', '1'), ('HAVE_SWSCALE', '1')]
+            defines += [('HAVE_LIBTIFF', '1')]
 
         except (Exception) as e:
-            print("ffmpeg download/extract failed", str(e))
-            ffmpeg_dlls = []
-            ffmpeg_libs = []
+            print("windows binary libraries download/extract failed", str(e))
+            win_dlls = []
+            win_libs = []
             pass
 
         srcs += [os.path.join('src', 'png', 'lodepng.cpp')]
         srcs += [os.path.join('src', 'miniz', 'miniz.c')]
         defines += [('HAVE_GLFW', '1'), ('SQLITE_ENABLE_DESERIALIZE', '1')]
-        #defines += [('HAVE_LIBPNG', 1)]
-        #inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
-        #lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
-        inc_dirs += [os.path.join('src', 'windows', 'inc')]
-        lib_dirs += [os.path.join('src', 'windows', LIBS)]
-        #ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
-        ldflags += ['/LIBPATH:' + os.path.join('src', 'windows', LIBS)]
-        libs += ['opengl32', 'pthreadVC2', 'glfw3dll'] + ffmpeg_libs
-        dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
-                os.path.join('src', 'windows', LIBS, 'glfw3.dll')] + ffmpeg_dlls
+        #defines += [('HAVE_LIBPNG', '1')]
+        inc_dirs += [os.path.join('windows-main', 'inc')]
+        lib_dirs += [os.path.join('windows-main', LIBS)]
+        ldflags += ['/LIBPATH:' + os.path.join('windows-main', LIBS)]
+        libs = win_libs
         #Copy dlls into ./lavavu so can be found by package_data
-        for d in dlls:
+        for d in win_dlls:
             shutil.copy(d, 'lavavu')
+        #print(libs)
+        #print(inc_dirs)
+        #print(lib_dirs)
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
