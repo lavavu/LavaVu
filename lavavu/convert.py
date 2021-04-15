@@ -454,14 +454,15 @@ def _write_OBJ(f, m, filepath, obj, offset=1, verbose=False, vertexcolours=True)
         #Colours?
         cv0 = ""
         vperc = 1
-        if colourdict and len(data.colours):
+        if len(data.colours):
             vperc = int(verts.shape[0] / len(data.colours))
 
         if verbose: print("- Writing vertices:",verts.shape)
         for vi,v in enumerate(verts):
             #Vertex colour with vertex? (only if flag passed)
             if vertexcolours and len(data.colours):
-                c = data.colours[vi // vperc]
+                #if vi%10==0: print(len(data.colours), len(verts), vperc, vi)
+                c = data.colours[len(data.colours) // vperc - 1]
                 rgb = colour2rgb(c)
                 f.write("v %.6f %.6f %.6f %.6f %.6f %.6f\n" % (v[0], v[1], v[2], rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0))
             else:
@@ -849,3 +850,4 @@ def read_any(filepath, lv):
             else:
                 tris.colours(geometry.visual.material.baseColorFactor)
 
+    return tris
