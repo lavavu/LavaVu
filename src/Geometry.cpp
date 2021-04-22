@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-float Vertex::VERT_EPSILON = 0.001; //Minimum distance before vertices will be merged
+float Vertex::VERT_EPSILON = 0.000001; //Minimum distance before vertices will be merged
 
 //Init static, names list
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume", "screen"};
@@ -305,6 +305,11 @@ int GeomData::colourCount()
 unsigned int GeomData::valuesLookup(const json& by)
 {
   //Gets a valid value index by property, either actual index or string label
+
+  //If we get here before setup() called, min/max are not set
+  //assert(!std::isnan(min) && std::isinf(min));
+  //assert(!std::isnan(max) && std::isinf(max));
+
   static unsigned int index = 0;
   static DrawingObject* last = NULL;
   if (draw != last)

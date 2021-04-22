@@ -336,8 +336,11 @@ void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<
   //Search for duplicates and replace references to normals
   int match = 0;
   int dupcount = 0;
+  //Set vertex comparison epsilon to 1/100,000th of model dimensions
+  Vertex::VERT_EPSILON = view->model_size * 0.00001;
   for (unsigned int v=1; v<verts.size(); v++)
   {
+    //This uses Vertex::VERT_EPSILON to decide equality
     if (verts[match] == verts[v])
     {
       // If the angle between a given face normal and the face normal
@@ -376,7 +379,7 @@ void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<
     }
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to replace duplicates (%d/%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size());
+  debug_print("  %.4lf seconds to replace duplicates (%d/%d) epsilon: %f\n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size(), Vertex::VERT_EPSILON);
   t1 = clock();
 
   if (vnormals)
