@@ -419,7 +419,7 @@ class Object(dict):
     be retrieved from the object list
 
     New objects are also created using viewer methods
-    
+
     Parameters
     ----------
     **kwargs
@@ -447,6 +447,11 @@ class Object(dict):
     >>> obj.help('opacity') # doctest: +SKIP
 
     """
+
+    #(Object both inherits from dict and contains a dict, the subclassed dict holds all
+    #available properties with their default values, the internal dict holds actual properties set on the object)
+    #This is to support showing all available props in tab completion in jupyter
+
     def __init__(self, parent, *args, **kwargs):
         self.dict = kwargs
         self._parent = weakref.ref(parent)
@@ -4579,6 +4584,8 @@ class Viewer(dict):
         """
         import convert
         if objects == None: objects = self.objects.list
+        if not isinstance(objects, list):
+            objects = [objects]
         if rgba:
             for obj in objects:
                 obj.bakecolour()
