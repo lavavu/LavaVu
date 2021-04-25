@@ -205,9 +205,6 @@ void LavaVu::destroy()
   //Ensure not processed twice
   if (viewer)
   {
-    //Clear all model data
-    clearAll();
-
     if (sort_thread.joinable())
     {
       viewer->quitProgram = true;
@@ -219,6 +216,10 @@ void LavaVu::destroy()
 
     //Need to call display to switch contexts before freeing OpenGL resources
     viewer->display(false);
+
+    //Clear all model data
+    clearAll();
+
     session.destroy();
 
     close();
