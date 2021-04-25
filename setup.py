@@ -69,6 +69,8 @@ if sys.argv[-1] == 'check':
     wd = os.getcwd()
     os.chdir("docs")
     os.system("git pull")
+    os.chdir("src")
+    os.system("pip install -r requirements.txt")
     os.chdir(wd)
     write_version()
     os.system("LV_RELEASE=1 make -j$(nproc)")
