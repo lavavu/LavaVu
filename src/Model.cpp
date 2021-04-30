@@ -1822,14 +1822,32 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool overwrite)
   //Write objects to a new database?
   if (path)
   {
+    bool deleted = true;
     if (overwrite && FileExists(path))
-      remove(path);
+    {
+      //On windows, this can fail even if file is only open for read access
+      if (remove(path) != 0)
+      {
+        std::cerr << "Error removing database file (probably open elsewhere): " << path << std::endl;
+        deleted = false;
+      }
+    }
     Database outdb = Database(FilePath(path));
     if (!outdb.open(true))
     {
       printf("Database write failed '%s': %s\n", path, sqlite3_errmsg(outdb.db));
       return;
     }
+
+    if (overwrite && !deleted)
+    {
+      //Reset(empty) the database
+      std::cerr << "Resetting database as we were unable to delete\n";
+      sqlite3_db_config(outdb.db, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
+      sqlite3_exec(outdb.db, "VACUUM", 0, 0, 0);
+      sqlite3_db_config(outdb.db, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    }
+
     writeDatabase(outdb, obj);
   }
   else
