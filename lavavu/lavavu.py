@@ -2830,7 +2830,7 @@ class Viewer(dict):
         for arg in self.app.unprocessed:
             if os.path.exists(arg):
                 self.file(arg)
-            self.app.unprocessed.clear()
+        self.app.unprocessed.clear()
 
     def _shutdown(self):
         #Wait for the render thread to exit
