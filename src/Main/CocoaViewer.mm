@@ -198,8 +198,8 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   //redisplay = _viewer->mouseMove((int)point.x, _viewer->height-(int)point.y);
-  _viewer->mouseX = (int)point.x;
-  _viewer->mouseY = (int)point.y;
+  viewer->mouseX = (int)point.x;
+  viewer->mouseY = (int)point.y;
   //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
