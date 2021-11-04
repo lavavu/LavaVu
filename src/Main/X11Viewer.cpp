@@ -250,11 +250,7 @@ void X11Viewer::execute()
       mousePress(button, true, event.xmotion.x, event.xmotion.y);
       break;
     case MotionNotify:
-      if (mouseState)
-      {
-        mouseMove(event.xmotion.x, event.xmotion.y);
-        redisplay = true;
-      }
+      redisplay = mouseMove(event.xmotion.x, event.xmotion.y);
       break;
     case KeyPress:
       // Convert to cross-platform codes for event handler
@@ -417,7 +413,7 @@ bool X11Viewer::createWindow(int width, int height)
   swa.colormap = colormap = XCreateColormap(Xdisplay, RootWindow(Xdisplay, vi->screen), vi->visual, AllocNone);
   swa.border_pixel = 0;
   swa.background_pixel = 0;
-  swa.event_mask = ExposureMask | StructureNotifyMask | ButtonReleaseMask | ButtonPressMask | ButtonMotionMask | KeyPressMask;
+  swa.event_mask = ExposureMask | StructureNotifyMask | ButtonReleaseMask | ButtonPressMask | PointerMotionMask | ButtonMotionMask | KeyPressMask;
 
   if (!sHints || !wmHints)
   {

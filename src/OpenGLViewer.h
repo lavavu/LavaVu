@@ -132,7 +132,8 @@ public:
   int mouseState = 0;
   ShiftState keyState = {false, false, false};
   MouseButton button = NoButton;
-  int last_x, last_y;
+  int mouseX, mouseY;
+  int lastX, lastY;
 
   int blend_mode = BLEND_NORMAL;
   int outwidth = 0, outheight = 0;

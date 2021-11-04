@@ -127,8 +127,8 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     if (!x && !y) return false;
 #endif
     viewer->button = btn;
-    viewer->last_x = x;
-    viewer->last_y = y;
+    viewer->lastX = x;
+    viewer->lastY = y;
 
 #ifdef __EMSCRIPTEN__
   //Ondrag mode switched in gui
@@ -193,11 +193,15 @@ bool LavaVu::mouseMove(int x, int y)
   //Skip false events when using touchscreen
   if (!x && !y) return false;
 #endif
+  viewer->mouseX = x;
+  viewer->mouseY = y;
+  if (!viewer->mouseState) return false;
+
   float adjust;
-  int dx = x - viewer->last_x;
-  int dy = y - viewer->last_y;
-  viewer->last_x = x;
-  viewer->last_y = y;
+  int dx = x - viewer->lastX;
+  int dy = y - viewer->lastY;
+  viewer->lastX = x;
+  viewer->lastY = y;
   if (viewer->button)
     viewer->idle = 0; //Reset idle timer
 

@@ -235,8 +235,7 @@ static void mouseclick_callback(GLFWwindow* window, int button, int action, int 
 static void mousemove_callback(GLFWwindow* window, double xpos, double ypos)
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
-  if (self->mouseState)
-    self->redisplay = self->mouseMove((int)xpos, (int)ypos);
+  self->redisplay = self->mouseMove((int)xpos, (int)ypos);
 }
 
 static void mousescroll_callback(GLFWwindow* window, double xoffset, double yoffset)

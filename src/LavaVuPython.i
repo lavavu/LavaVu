@@ -74,6 +74,8 @@ public:
   int width, height;
   int timer_animate = 50;
   std::string output_path = "";
+  int mouseState = 0;
+  int mouseX, mouseY;
 
   virtual void open(int width=0, int height=0);
   virtual void init();
