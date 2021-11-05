@@ -23,6 +23,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r"
+          sudo sed -i '/-updates/d' /etc/apt/sources.list
+          sudo apt-get update
           sudo apt-get install mesa-utils libgl1-mesa-dev libosmesa-dev
       - name: Install prereqs
         run: python -m pip install -r requirements.txt
