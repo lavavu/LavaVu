@@ -16,7 +16,7 @@ jobs:
         uses: docker/build-push-action@v1
         with:
           username: ${{ github.actor }}
-          password: ${{ secrets.LAVAVU_PACKAGES }}
+          password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
           repository: lavavu/lavavu
           tag_with_ref: true
