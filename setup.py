@@ -395,7 +395,6 @@ if __name__ == "__main__":
             cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
-            defines += [('NS_FORMAT_ARGUMENT(A)', '')] #Fix for bug in latest xcode
             libs += ['c++', 'objc']
             #Can't use extra_link_args because they are appended by setuptools but frameworks must come first
             os.environ['LDFLAGS'] = '-framework Cocoa -framework Quartz -framework OpenGL'
