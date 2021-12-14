@@ -429,10 +429,10 @@ if __name__ == "__main__":
     if P == 'Windows':
         package_data['lavavu'] += ['*.dll']
 
-    #If built with libOSMesa, rename package so can be distributed as an alternative
     dist_name = "lavavu"
-    if "OSMesa" in libs:
-        dist_name = "lavavu-osmesa"
+    #Rename package so can be distributed as an alternative (eg: lavavu-osmesa)
+    if 'LV_PACKAGE' in os.environ:
+        dist_name = os.environ['LV_PACKAGE']
 
     setup(name = dist_name,
           author            = "Owen Kaluza",

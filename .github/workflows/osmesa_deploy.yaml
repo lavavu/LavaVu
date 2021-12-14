@@ -15,7 +15,7 @@ jobs:
       CIBW_BUILD_VERBOSITY: 3
       CIBW_SKIP: cp35-* *-manylinux_i686
       CIBW_BUILD: cp3?-*
-      CIBW_ENVIRONMENT: LV_OSMESA=1 LV_INC_DIRS=/usr/include/ffmpeg
+      CIBW_ENVIRONMENT: LV_PACKAGE=lavavu-osmesa LV_OSMESA=1 LV_INC_DIRS=/usr/include/ffmpeg
       CIBW_BEFORE_BUILD_LINUX: rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel meson llvm-devel python3 && yum-builddep -y mesa-libglapi && pip3 install mako && curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz && tar xf mesa-19.1.7.tar.xz && rm -f mesa-19.1.7.tar.xz && cd mesa-19.1.7/ && meson build/ --buildtype=release -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && ninja -C build/ -j5 && ninja -C build/ install || true
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
       CIBW_MANYLINUX_I686_IMAGE: manylinux2014
