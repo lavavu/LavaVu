@@ -285,10 +285,10 @@ if __name__ == "__main__":
             sys.path.append('lavavu')
             import vutils
             import zipfile
-            src = "https://github.com/lavavu/windows/archive/refs/heads/"
-            fnz = "main.zip"
-            outfn = vutils.download(src + fnz)
-            with zipfile.ZipFile(outfn, 'r') as zip_ref:
+            src = "https://codeload.github.com/lavavu/windows/zip/refs/heads/main"
+            fnz = "windows-main.zip"
+            vutils.download(src, fnz)
+            with zipfile.ZipFile(fnz, 'r') as zip_ref:
                 zip_ref.extractall('.')
             LIBS = 'lib' + arc
             # - Lib and dll files - just grab by current location
