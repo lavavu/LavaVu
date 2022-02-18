@@ -349,7 +349,10 @@ if __name__ == '__main__':
     import lavavu
     import asyncio
     lv = lavavu.Viewer()
-    print(lv.server.port)
+
+    import logging
+    logging.getLogger('aiohttp.server').setLevel(logging.CRITICAL)
+
     lv.browser()
     lv.app.loop()
     #lv.interactive()
