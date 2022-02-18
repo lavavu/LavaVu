@@ -586,7 +586,8 @@ void View::projection(int eye)
   //default is to set to distance to model front edge...
   float focal_length = fabs(model_trans[2]) - model_size * 0.5; //3/4 of model size - distance from eye to model centre
   focal_length += focal_length_adj;   //Apply user adjustment (default 0)
-  if (focal_length < 0) focal_length = 0.1;
+  //Limit min focal length (definitely must not be zero!)
+  if (focal_length <= 0.1) focal_length = 0.1;
 
   //Calculate eye separation based on focal length
   eye_separation = focal_length * eye_sep_ratio;
