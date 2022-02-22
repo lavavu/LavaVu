@@ -40,12 +40,12 @@ requirements:
     - ffmpeg
     - sqlite
     - libtiff
-    - numpy >=1.11
+    - numpy >=1.18
     - jupyter-server-proxy
     - aiohttp
   run:
     - glfw
-    - numpy >=1.11
+    - numpy >=1.18
     - jupyter-server-proxy
     - aiohttp
 
@@ -77,4 +77,5 @@ about:
 
 extra:
   recipe-maintainers:
-    - rbeucher, okaluza
+    - rbeucher
+    - okaluza
