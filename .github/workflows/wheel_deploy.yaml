@@ -108,10 +108,10 @@ jobs:
         run: python -c "import sys; print(sys.version)"
       - name: Install wheel
         run: python -m pip install --only-binary=lavavu lavavu
-      - name: Run headless test (linux only)
-        env:
-          LV_ECHO_FAIL: "1"
-          LV_ARGS: "-v"
+      #- name: Run headless test (linux only)
+        #env:
+        #  LV_ECHO_FAIL: "1"
+        #  LV_ARGS: "-v"
         #This needs to run with xvfb
         #uses: GabrielBB/xvfb-action@v1
         #if: runner.os == 'Linux'
