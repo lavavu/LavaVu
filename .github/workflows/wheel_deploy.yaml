@@ -39,7 +39,7 @@ jobs:
           
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel==1.10.0
+          python -m pip install cibuildwheel==2.3.1
 
       - name: Build wheels
         run: |
@@ -113,9 +113,9 @@ jobs:
           LV_ECHO_FAIL: "1"
           LV_ARGS: "-v"
         #This needs to run with xvfb
-        uses: GabrielBB/xvfb-action@v1
-        if: runner.os == 'Linux'
-        with:
-          working-directory: ./Testing
-          run: python runall.py
+        #uses: GabrielBB/xvfb-action@v1
+        #if: runner.os == 'Linux'
+        #with:
+        #  working-directory: ./Testing
+        #  run: python runall.py
 
