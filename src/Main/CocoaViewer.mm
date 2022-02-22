@@ -38,6 +38,8 @@
 //Only single CocoaWindow can be opened due to use of globals
 #ifdef HAVE_CGL
 
+#define NS_FORMAT_ARGUMENT(A)
+
 #include "CocoaViewer.h"
 
 #import <Cocoa/Cocoa.h>
