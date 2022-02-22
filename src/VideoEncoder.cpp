@@ -242,10 +242,13 @@ AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
 
 void VideoEncoder::open_video()
 {
-  AVCodecContext *c = video_enc;
+  AVCodec *codec;
+  AVCodecContext *c;
+
+  c = video_enc;
 
   /* find the video encoder */
-  const AVCodec *codec = avcodec_find_encoder(c->codec_id);
+  codec = avcodec_find_encoder(c->codec_id);
   if (!codec) abort_program("codec not found");
 
   /* open the codec */
@@ -288,7 +291,8 @@ void VideoEncoder::write_video_frame()
 {
   int ret = 0;
   AVCodecContext *c = video_enc;
-  AVPacket* pkt = av_packet_alloc();
+  AVPacket pkt;
+  av_init_packet(&pkt);
 
   /* encode the image */
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(54,0,0)
@@ -296,42 +300,41 @@ void VideoEncoder::write_video_frame()
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,64,0)
   ret = avcodec_send_frame(c, picture);
   assert(ret >= 0);
-  ret = avcodec_receive_packet(c, pkt);
+  ret = avcodec_receive_packet(c, &pkt);
   if (!ret) got_packet = 1;
   //if (ret == 0) got_packet = 1;
   assert(ret == 0 || ret == AVERROR(EAGAIN));
 #else
-  pkt->size = video_outbuf_size;
-  pkt->data = video_outbuf;
-  ret = avcodec_encode_video2(c, pkt, picture, &got_packet);
+  pkt.size = video_outbuf_size;
+  pkt.data = video_outbuf;
+  ret = avcodec_encode_video2(c, &pkt, picture, &got_packet);
 #endif
   if (got_packet)
   {
-    if (pkt->pts != AV_NOPTS_VALUE)
-      pkt->pts = av_rescale_q(pkt->pts, c->time_base, video_st->time_base);
-    if (pkt->dts != AV_NOPTS_VALUE)
-      pkt->dts = av_rescale_q(pkt->dts, c->time_base, video_st->time_base);
+    if (pkt.pts != AV_NOPTS_VALUE)
+      pkt.pts = av_rescale_q(pkt.pts, c->time_base, video_st->time_base);
+    if (pkt.dts != AV_NOPTS_VALUE)
+      pkt.dts = av_rescale_q(pkt.dts, c->time_base, video_st->time_base);
 #else
   ret = avcodec_encode_video(c, video_outbuf, video_outbuf_size, picture);
   /* if zero size, it means the image was buffered */
   if (ret > 0)
   {
     if (c->coded_frame->pts != AV_NOPTS_VALUE)
-      pkt->pts= av_rescale_q(c->coded_frame->pts, c->time_base, video_st->time_base);
+      pkt.pts= av_rescale_q(c->coded_frame->pts, c->time_base, video_st->time_base);
     if (c->coded_frame->key_frame)
-      pkt->flags |= AV_PKT_FLAG_KEY;
-    pkt->stream_index = video_st->index;
-    pkt->data = video_outbuf;
-    pkt->size = ret;
+      pkt.flags |= AV_PKT_FLAG_KEY;
+    pkt.stream_index = video_st->index;
+    pkt.data = video_outbuf;
+    pkt.size = ret;
 #endif
     /* write the compressed frame in the media file */
-    ret = av_interleaved_write_frame(oc, pkt);
+    ret = av_interleaved_write_frame(oc, &pkt);
   }
 
   //if (ret != 0) abort_program("Error while writing video frame\n");
   std::cout << " frame " << frame_count << std::endl;
   frame_count++;
-  av_packet_free(&pkt);
 }
 
 void VideoEncoder::close_video()
@@ -346,13 +349,15 @@ void VideoEncoder::close_video()
 
 AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 {
+  AVOutputFormat *fmt;
   /* auto detect the output format from the name. default is mpeg. */
-  AVOutputFormat *fmt = (AVOutputFormat *)av_guess_format(NULL, filename, NULL);
+  fmt = av_guess_format(NULL, filename, NULL);
   if (!fmt)
   {
     debug_print("Could not deduce output format from file extension: using MPEG.");
-    fmt = (AVOutputFormat *)av_guess_format("mpeg", NULL, NULL);
+    fmt = av_guess_format("mpeg", NULL, NULL);
   }
+  if (!fmt) abort_program("Could not find suitable output format");
   return fmt;
 }
 
@@ -377,7 +382,7 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
   /* allocate the output media context */
   oc = avformat_alloc_context();
   if (!oc) abort_program("Memory error");
-  oc->oformat = (AVOutputFormat*)defaultCodec(filename.c_str());
+  oc->oformat = defaultCodec(filename.c_str());
 
   /* Codec override, use h264 for mp4 if available */
   //Always used if available, unless extension is .mpg, in which case we fall back to mpeg1
