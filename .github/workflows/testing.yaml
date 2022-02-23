@@ -1,6 +1,11 @@
 name: Test
 
-on: [push]
+#Run on pushed commits but not tags
+#https://github.community/t/dont-run-on-tag-creation/137469/7
+on:
+  push:
+    branches:
+      - '**'
 
 jobs:
   build:
