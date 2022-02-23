@@ -8,7 +8,7 @@ package:
 source:
   git_url: https://github.com/lavavu/LavaVu.git
   git_depth: 1 # (Defaults to -1/not shallow)
-  git_rev: "{{ version }}"
+  #git_rev: "{{ version }}"
 
 build:
   number: 1
@@ -19,6 +19,7 @@ build:
    - LV_OSMESA
    - LV_GLFW
    - MESA_DIR
+  script: "{{ PYTHON }} -m pip install --no-deps ."
 
 requirements:
   build:
