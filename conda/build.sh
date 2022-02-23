@@ -14,5 +14,5 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 #python -m pip install -vv https://pypi.debian.net/lavavu/${WHEEL}
 
 # install using pip from the whl file
-$PYTHON -m pip install lavavu
+$PYTHON -m pip install --yes lavavu
 
