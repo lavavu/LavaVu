@@ -13,10 +13,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_SKIP: cp*-win32
+      CIBW_SKIP: cp*-win32 *-musllinux_*
       CIBW_BUILD: cp36-* cp37-* cp38-* cp39-* cp310-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
-      #CIBW_REPAIR_WHEEL_COMMAND_MACOS: 'delocate-listdeps {wheel} && delocate-wheel --require-archs x86_64 -v -w {dest_dir} {wheel}'
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_BEFORE_BUILD_LINUX: apt-get update && apt-get install -y libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_24
