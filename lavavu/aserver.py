@@ -101,14 +101,6 @@ def img_response(lv, query={}):
     else:
         return web.Response(text='', headers=headers)
 
-async def index(request):
-    global headers
-    #Index request returns full screen interactive view
-    lv = _get_viewer(request.app['viewer'])
-    w = lv.control.Window(align=None, wrapper=None, fullscreen=True)
-    code = lv.control.show(True, filename="")
-    return web.Response(text=code, headers=headers, content_type='text/html')
-
 async def handle_get(request):
     global headers
     lv = _get_viewer(request.app['viewer'])
@@ -120,7 +112,14 @@ async def handle_get(request):
     #for q in request.query:
     #    print(q, request.query[q])
 
-    if request.path.startswith('/image'):
+    if request.path == '/':
+        #Index request returns full screen interactive view
+        lv = _get_viewer(request.app['viewer'])
+        w = lv.control.Window(align=None, wrapper=None, fullscreen=True)
+        code = lv.control.show(True, filename="")
+        response = web.Response(text=code, headers=headers, content_type='text/html')
+
+    elif request.path.startswith('/image'):
         response = img_response(lv, request.query)
 
     elif request.path.startswith('/command=') or request.path.startswith('/icommand='):
@@ -177,13 +176,13 @@ async def handle_get(request):
 
     return response
 
-async def index_post(request):
+async def handle_post(request):
     lv = _get_viewer(request.app['viewer'])
     #print("POST", request.path)
     #text = await request.text()
     text = ''
     #Always interpret post data as commands
-    #(can perform othe r actions too based on path later if we want)
+    #(can perform other actions too based on path later if we want)
     if request.body_exists:
         body = await request.read()
         #body = await request.text()
@@ -288,8 +287,7 @@ async def _serve(viewer, sock):
         #Store viewer
         app["viewer"] = viewer
         #Add routes
-        app.router.add_get('/', index)
-        app.router.add_post('/', index_post),
+        app.router.add_post('/{tail:.*}', handle_post),
         app.router.add_get('/{tail:.*}', handle_get)
 
         #Static routes? https://docs.aiohttp.org/en/stable/web_advanced.html

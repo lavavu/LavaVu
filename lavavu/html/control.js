@@ -181,7 +181,7 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
     var xhttp = new XMLHttpRequest();
     var params = undefined;
     if (usepost) {
-      var url = this.baseurl + "/command";
+      var url = this.baseurl;
       xhttp.open('POST', this.baseurl, true);
       params = cmd;
       //console.log("POST: " + params);
