@@ -1,6 +1,7 @@
 name: OSMesa
 
 on:
+  workflow_dispatch:
   #push
   # Runs when a (published) GitHub Release is created
   release:
@@ -13,8 +14,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_SKIP: cp35-* *-manylinux_i686
-      CIBW_BUILD: cp3?-*
+      CIBW_SKIP: cp35-* *-manylinux_i686 *-musllinux_*
+      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-* cp310-*
       CIBW_ENVIRONMENT: LV_PACKAGE=lavavu-osmesa LV_OSMESA=1 LV_INC_DIRS=/usr/include/ffmpeg
       CIBW_BEFORE_BUILD_LINUX: rpm -v --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro && rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm && yum install -y libtiff-devel ffmpeg-devel meson llvm-devel python3 && yum-builddep -y mesa-libglapi && pip3 install mako && curl -LO https://archive.mesa3d.org/mesa-19.1.7.tar.xz && tar xf mesa-19.1.7.tar.xz && rm -f mesa-19.1.7.tar.xz && cd mesa-19.1.7/ && meson build/ --buildtype=release -Dosmesa=gallium -Dgallium-drivers=swrast -Ddri-drivers= -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && ninja -C build/ -j5 && ninja -C build/ install || true
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
@@ -57,4 +58,51 @@ jobs:
           user: ${{ secrets.pypi_username }}
           password: ${{ secrets.pypi_password }}
           # To test: repository_url: https://test.pypi.org/legacy/
+
+  deploy_docker:
+    needs: [upload_pypi] #Requires lavavu-osmesa package to be uploaded
+    name: Build and push Docker image to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out the repo
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+
+    - name: Add SHORT_SHA env property with commit short sha
+      run: echo "SHORT_SHA=`git rev-parse --short HEAD`" >> $GITHUB_ENV
+
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        # list of Docker images to use as base name for tags
+        images: |
+          ghcr.io/lavavu/lavavu
+        # generate Docker tags based on the following events/attributes
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push to GitHub Packages
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/lavavu/lavavu:latest
+          ${{ steps.meta.outputs.tags }}
 
