@@ -26,7 +26,7 @@ RUN pip3 install --no-cache \
         pillow \
         scipy \
         h5py \
-        rise \
+        RISE \
         jupyter-server-proxy \
         jupyterlab \
         lavavu-osmesa
@@ -49,14 +49,11 @@ WORKDIR ${HOME}
 # delete some unnecessary files,
 # trust included notebooks,
 # add a notebook profile.
-# setup RISE for notebook slideshows
 RUN cd ~ && \
     find . -name \*.ipynb  -print0 | xargs -0 jupyter trust && \
     mkdir .jupyter && \
     echo "c.ServerApp.ip = '0.0.0.0'" >> .jupyter/jupyter_notebook_config.py && \
-    echo "c.ServerApp.token = ''" >> .jupyter/jupyter_notebook_config.py && \
-    jupyter nbextension install rise --user --py && \
-    jupyter nbextension enable rise --user --py
+    echo "c.ServerApp.token = ''" >> .jupyter/jupyter_notebook_config.py
 
 # launch notebook
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--NotebookApp.token=''", "--no-browser"]
