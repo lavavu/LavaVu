@@ -31,7 +31,7 @@ function WindowInteractor(id, uid, port) {
   //Connection attempts via this function, pass url
   this.baseurl = null;
   var that = this;
-  var connect = function(url) {
+  var connect = function(url, redirect) {
     var xhttp = new XMLHttpRequest();
     xhttp.onload = function() {
       //Success? Use current url
@@ -40,9 +40,15 @@ function WindowInteractor(id, uid, port) {
           if (that.uid && that.uid != parseInt(xhttp.response)) {
             console.log("--- Connection OK, but UID does not match! " + url + " : " + that.uid + " != " + xhttp.response);
           } else {
-            //Remove last slash if any
-            if (url.slice(-1) == '/')
-              url = url.slice(0,-1);
+            if (redirect) {
+              //Use the redirected url
+              url = xhttp.responseURL;
+              url = url.substr(0, url.indexOf('/connect?'));
+            } else {
+              //Remove last slash if any
+              if (url.slice(-1) == '/')
+                url = url.slice(0,-1);
+            }
             console.log("--- Connected to LavaVu via " + url + " UID: " + that.uid);
             that.baseurl = url;
             //Ready to initialise
@@ -95,7 +101,7 @@ function WindowInteractor(id, uid, port) {
       // In an authenticated setting, user-redirect is used to tell the hub to
       // make a link with the correct path for the user. jupyter-server-proxy
       // documentation tells us to use a link of this form.
-      connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/user-redirect/proxy/" + port);
+      connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/user-redirect/proxy/" + port, true);
     }
     if (loc.hostname != "localhost") {
       connect("https://localhost:" + port);
