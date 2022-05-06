@@ -3,7 +3,7 @@
 # No longer need to build our own mesa
 # Test with:
 # https://mybinder.org/v2/gh/lavavu/LavaVu/master?filepath=notebooks
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 LABEL maintainer="owen.kaluza@monash.edu"
 LABEL repo="https://github.com/lavavu/LavaVu"
