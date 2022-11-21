@@ -292,7 +292,11 @@ void VideoEncoder::write_video_frame()
   int ret = 0;
   AVCodecContext *c = video_enc;
   AVPacket pkt;
-  av_init_packet(&pkt);
+  //https://github.com/FFmpeg/FFmpeg/commit/f7db77bd8785d1715d3e7ed7e69bd1cc991f2d07
+  memset(&pkt, 0, sizeof(pkt));
+  pkt.pts                  = AV_NOPTS_VALUE;
+  pkt.dts                  = AV_NOPTS_VALUE;
+  pkt.pos                  = -1;
 
   /* encode the image */
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(54,0,0)
@@ -347,20 +351,6 @@ void VideoEncoder::close_video()
 /**************************************************************/
 /* media file output */
 
-AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
-{
-  AVOutputFormat *fmt;
-  /* auto detect the output format from the name. default is mpeg. */
-  fmt = av_guess_format(NULL, filename, NULL);
-  if (!fmt)
-  {
-    debug_print("Could not deduce output format from file extension: using MPEG.");
-    fmt = av_guess_format("mpeg", NULL, NULL);
-  }
-  if (!fmt) abort_program("Could not find suitable output format");
-  return fmt;
-}
-
 //OutputInterface
 void VideoEncoder::open(unsigned int w, unsigned int h)
 {
@@ -380,9 +370,29 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 #endif
 
   /* allocate the output media context */
+#if LIBAVCODEC_VERSION_MAJOR < 60
+  //Deprecated api
   oc = avformat_alloc_context();
+  /* auto detect the output format from the name. default is mpeg. */
+  AVOutputFormat *fmt = av_guess_format(NULL, filename.c_str(), NULL);
+  if (!fmt)
+  {
+    debug_print("Could not deduce output format from file extension: using MPEG.");
+    fmt = av_guess_format("mpeg", NULL, NULL);
+    if (!fmt) abort_program("Could not find suitable output format");
+  }
+  oc->oformat = fmt;
+#else
+  //Current api: https://ffmpeg.org/doxygen/trunk/muxing_8c-example.html#a68
+  avformat_alloc_output_context2(&oc, NULL, NULL, filename.c_str());
+  if (!oc)
+  {
+    printf("Could not deduce output format from file extension: using MPEG.\n");
+    avformat_alloc_output_context2(&oc, NULL, "mpeg", filename.c_str());
+  }
+#endif
+
   if (!oc) abort_program("Memory error");
-  oc->oformat = defaultCodec(filename.c_str());
 
   /* Codec override, use h264 for mp4 if available */
   //Always used if available, unless extension is .mpg, in which case we fall back to mpeg1
@@ -396,8 +406,6 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
   assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
   if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
     video_st = add_video_stream(oc->oformat->video_codec);
-
-  oc->oformat->audio_codec = AV_CODEC_ID_NONE;
 
 #ifdef HAVE_SWSCALE
   //Get swscale context to convert RGB to YUV(420/422)

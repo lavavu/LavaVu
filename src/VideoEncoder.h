@@ -147,7 +147,6 @@ protected:
   void open_video();
   void write_video_frame();
   void close_video();
-  AVOutputFormat *defaultCodec(const char *filename);
 #else
   int frame = 0;
 #endif //HAVE_LIBAVCODEC
