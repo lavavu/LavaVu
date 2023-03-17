@@ -6,10 +6,16 @@ from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
 from setuptools import Extension
 from setuptools import find_packages
-from setuptools import distutils
-from setuptools._distutils import sysconfig
-from setuptools._distutils import ccompiler
-from setuptools._distutils.errors import CompileError, LinkError
+try:
+    from setuptools import _distutils as distutils
+    from setuptools._distutils import sysconfig
+    from setuptools._distutils import ccompiler
+    from setuptools._distutils.errors import CompileError, LinkError
+except ImportError:
+    import distutils
+    from distutils import sysconfig
+    from distutils import ccompiler
+    from distutils.errors import CompileError, LinkError
 import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
