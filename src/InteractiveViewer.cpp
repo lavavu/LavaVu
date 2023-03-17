@@ -3452,7 +3452,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface", "texture", "populate", "bake", "bakecolour", "glaze", "csv", "json", "tiles", "valuerange", "colourmap", "colourbar", "pointtype", "scale"},
     {"background", "alpha", "axis", "rulers", "colourmap",
      "antialias", "pointtype", "pointsample", "border", "title", "scale", "modelscale"},
-    {"next", "play", "stop", "open", "interactive", "display"},
+    {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "verbose", "toggle", "createvolume", "clearvolume", "palette"}
   };
@@ -3545,7 +3545,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
         //anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &isspace), anchor.end());
         std::replace(anchor.begin(), anchor.end(), ',', '-');
         TOC += " * [" + target + "](#" + anchor + ")\n";
-        content << "\n## " << target << "\n\n";
+        content << "\n## " << anchor << "\n\n";
         content << "| Property         | Type       | Default            | Description                               |\n";
         content << "| ---------------- | ---------- | ------------------ | ----------------------------------------- |\n";
         last = target;
