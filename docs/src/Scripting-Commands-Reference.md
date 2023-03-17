@@ -21,7 +21,7 @@
 [background](#background), [alpha](#alpha), [axis](#axis), [rulers](#rulers), [colourmap](#colourmap), [antialias](#antialias), [pointtype](#pointtype), [pointsample](#pointsample), [border](#border), [title](#title), [scale](#scale), [modelscale](#modelscale)
  - **[Scripting](#scripting-commands)**  
 
-[next](#next), [play](#play), [stop](#stop), [open](#open), [interactive](#interactive), [display](#display)
+[next](#next), [play](#play), [stop](#stop), [open](#open), [interactive](#interactive)
  - **[Miscellanious](#miscellanious-commands)**  
 
 [shaders](#shaders), [blend](#blend), [props](#props), [defaults](#defaults), [test](#test), [voltest](#voltest), [newstep](#newstep), [filter](#filter), [filterout](#filterout), [filtermin](#filtermin), [filtermax](#filtermax), [clearfilters](#clearfilters), [verbose](#verbose), [toggle](#toggle), [createvolume](#createvolume), [clearvolume](#clearvolume), [palette](#palette)

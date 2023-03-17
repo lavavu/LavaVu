@@ -87,7 +87,7 @@
 |*colourby*        | string or integer | 0              | Index or label of data set to colour object by (requires colour map)|
 |*opacityby*       | string or integer | ""             | Index or label of data set to apply transparency to object by (requires opacity map)|
 
-## object,line
+## object-line
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -98,7 +98,7 @@
 |*linewidth*       | real       | 1.0            | Line width scaling|
 |*tubes*           | boolean    | false          | Draw lines as 3D tubes|
 
-## object,point
+## object-point
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -107,7 +107,7 @@
 |*scalepoints*     | real       | 1.0            | Point scaling multiplier, applies to all points objects|
 |*sizeby*          | string or integer | ""             | Index or label of data set to apply to point sizes|
 
-## object,surface
+## object-surface
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -117,7 +117,7 @@
 |*smoothangle*     | int        | 90             | Angle between surface normals (in degrees) below which normals will be smoothed. Reduce this to preserve hard edges.|
 |*flip*            | boolean    | false          | Set this flag to reverse the surface faces (currently implemented for grids only)|
 
-## object,volume
+## object-volume
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -138,7 +138,7 @@
 |*texturesize*     | int[3]     | [0,0,0]        | Volume texture size limit (for crop)|
 |*textureoffset*   | int[3]     | [0,0,0]        | Volume texture offset (for crop)|
 
-## object,vector
+## object-vector
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -151,7 +151,7 @@
 |*autoscale*       | boolean    | true           | Automatically scale vectors based on maximum magnitude|
 |*radius*          | real       | 0.02           | When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.|
 
-## object,tracer
+## object-tracer
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
@@ -161,7 +161,7 @@
 |*connect*         | boolean    | true           | Set false to render tracers as points instead of connected lines|
 |*scaletracers*    | real       | 1.0            | Tracer scaling multiplier, applies to all tracer objects|
 
-## object,shape
+## object-shape
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
