@@ -6,10 +6,10 @@ from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
 from setuptools import Extension
 from setuptools import find_packages
-import distutils
-import distutils.sysconfig
-import distutils.ccompiler
-from distutils.errors import CompileError, LinkError
+from setuptools import distutils
+from setuptools._distutils import sysconfig
+from setuptools._distutils import ccompiler
+from setuptools._distutils.errors import CompileError, LinkError
 import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
@@ -137,9 +137,9 @@ if 'LV_INC_DIRS' in os.environ:
 def build_sqlite3(sqlite3_path):
     """Builds sqlite3 from included submodule
     """
-    compiler = distutils.ccompiler.new_compiler()
-    assert isinstance(compiler, distutils.ccompiler.CCompiler)
-    distutils.sysconfig.customize_compiler(compiler)
+    compiler = ccompiler.new_compiler()
+    assert isinstance(compiler, ccompiler.CCompiler)
+    sysconfig.customize_compiler(compiler)
 
     #Add any include dirs
     compiler.add_include_dir(sqlite3_path)
@@ -171,9 +171,9 @@ def check_libraries(libraries, headers, extra_lib_dirs=[], extra_inc_dirs=[]):
         fp.write(c_code)
 
     # and try to compile it
-    compiler = distutils.ccompiler.new_compiler()
-    assert isinstance(compiler, distutils.ccompiler.CCompiler)
-    distutils.sysconfig.customize_compiler(compiler)
+    compiler = ccompiler.new_compiler()
+    assert isinstance(compiler, ccompiler.CCompiler)
+    sysconfig.customize_compiler(compiler)
 
     #Add any extra library or include dirs
     for l in lib_dirs + extra_lib_dirs:
@@ -256,8 +256,8 @@ if __name__ == "__main__":
     if num_jobs > 1:
         try:
             from numpy.distutils.ccompiler import CCompiler_compile
-            import distutils.ccompiler
-            distutils.ccompiler.CCompiler.compile = CCompiler_compile
+            from setuptools._distutils import ccompiler
+            ccompiler.CCompiler.compile = CCompiler_compile
             os.environ['NPY_NUM_BUILD_JOBS'] = str(num_jobs)
             print('Using parallel build, jobs: ', num_jobs)
         except ImportError:
