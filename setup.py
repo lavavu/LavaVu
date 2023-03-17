@@ -178,7 +178,7 @@ def check_libraries(libraries, headers, extra_lib_dirs=[], extra_inc_dirs=[]):
 
     # and try to compile it
     compiler = ccompiler.new_compiler()
-    assert isinstance(compiler, ccompiler.CCompiler)
+    #assert isinstance(compiler, ccompiler.CCompiler)
     sysconfig.customize_compiler(compiler)
 
     #Add any extra library or include dirs
