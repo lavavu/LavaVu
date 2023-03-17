@@ -144,7 +144,7 @@ def build_sqlite3(sqlite3_path):
     """Builds sqlite3 from included submodule
     """
     compiler = ccompiler.new_compiler()
-    assert isinstance(compiler, ccompiler.CCompiler)
+    #assert isinstance(compiler, ccompiler.CCompiler)
     sysconfig.customize_compiler(compiler)
 
     #Add any include dirs
