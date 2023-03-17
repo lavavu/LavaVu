@@ -14,7 +14,7 @@ jobs:
     env:
       CIBW_BUILD_VERBOSITY: 3
       CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
-      CIBW_BUILD: cp36-* cp37-* cp38-* cp39-* cp310-* cp311-*
+      CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_BEFORE_BUILD_LINUX: apt-get update && apt-get install -y libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
