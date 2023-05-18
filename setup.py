@@ -10,12 +10,10 @@ try:
     from setuptools import _distutils as distutils
     from setuptools._distutils import sysconfig
     from setuptools._distutils import ccompiler
-    from setuptools._distutils.errors import CompileError, LinkError
 except ImportError:
     import distutils
     from distutils import sysconfig
     from distutils import ccompiler
-    from distutils.errors import CompileError, LinkError
 import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
@@ -154,7 +152,7 @@ def build_sqlite3(sqlite3_path):
     try:
         obj = compiler.compile([os.path.join(sqlite3_path, 'sqlite3.c')], 'build')
         return obj
-    except CompileError:
+    except Exception:
         print('sqlite3 compile error')
         raise
 
@@ -194,11 +192,8 @@ def check_libraries(libraries, headers, extra_lib_dirs=[], extra_inc_dirs=[]):
             bin_file_name,
             libraries=libraries,
         )
-    except (CompileError) as e:
-        print('Libraries ' + str(libraries) + ' test compile error', e)
-        ret_val = False
-    except (LinkError) as e:
-        print('Libraries ' + str(libraries) + ' test link error', e)
+    except (Exception) as e:
+        print('Libraries ' + str(libraries) + ' test build error', e)
         ret_val = False
     else:
         print('Libraries ' + str(libraries) + ' found and passed compile test')
