@@ -1108,7 +1108,7 @@ class Object(dict):
             self.parent.app.clearTexture(self.ref)
             return
         if isinstance(data, str):
-            self.parent.app.setTexture(self.ref, data)
+            self.parent.app.setTexture(self.ref, data, flip, filter, bgr)
             return
 
         data = _convert(data)

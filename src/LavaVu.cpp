@@ -3853,14 +3853,16 @@ void LavaVu::clearTexture(DrawingObject* target)
     std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
-void LavaVu::setTexture(DrawingObject* target, std::string texpath)
+void LavaVu::setTexture(DrawingObject* target, std::string texpath, bool flip, int filter, bool bgr)
 {
   //GL_Check_Thread(viewer->render_thread);
   if (!amodel || !target) return;
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
-    Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
+    Texture_Ptr texture = std::make_shared<ImageLoader>(texpath, flip);
+    texture->filter = filter;
+    texture->bgr = bgr;
     container->setTexture(target, texture);
     reloadObject(target);
   }

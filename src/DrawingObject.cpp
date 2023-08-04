@@ -241,7 +241,8 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
       std::string texfn = properties["texture"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
-        tex = texture = std::make_shared<ImageLoader>(texfn, properties["fliptexture"]);
+        bool flip = properties["fliptexture"];
+        tex = texture = std::make_shared<ImageLoader>(texfn, flip);
         tex->load();
       }
       else if (texfn.substr(0,22) == "data:image/png;base64,")
