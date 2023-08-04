@@ -729,7 +729,7 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
         glyphs->display();
 
         //Copy entries
-        //printf("L %d T %d P %d\n", glyphs->lines->records.size(), glyphs->tris->records.size(), glyphs->points->records.size());
+        std::cout << "Converting LINES " << glyphs->lines->records.size() << " TRIS " << glyphs->tris->records.size() << " PTS " << glyphs->points->records.size() << std::endl;
         for (auto gp : glyphs->lines->records)
         {
           if (!obj || gp->draw == obj)
