@@ -513,7 +513,7 @@ class Object(dict):
         if key == "colourmap":
             if isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
                 value = value.name #Use name instead of object when setting colourmap on object
-            elif not self.parent.app.getColourMap(value):
+            elif not self.parent.app.getColourMap(value if value is not None else 0):
                 #Not found by passed id/name/ref, use the value to set map data
                 cmap = self.colourmap(value)
                 value = cmap.name
