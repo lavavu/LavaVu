@@ -43,6 +43,35 @@ EM_JS(void, set_theme, (int light), {
 });
 #endif
 
+Quaternion rotationFromProperty(const json& jsonprop)
+{
+  Quaternion orot;
+  float rot[4];
+  if (jsonprop.size() == 4)
+  {
+    //std::cout << "QROT: " << jsonprop << std::endl;
+    Properties::toArray<float>(jsonprop, rot, 4);
+    orot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
+  }
+  else
+  {
+    //std::cout << "EROT: " << jsonprop << std::endl;
+    Properties::toArray<float>(jsonprop, rot, 3);
+    orot.fromEuler(rot[0], rot[1], rot[2]);
+
+    Quaternion xrot, yrot, zrot;
+    xrot.fromAxisAngle(Vec3d(1, 0, 0), rot[0]);
+    xrot.normalise();
+    yrot.fromAxisAngle(Vec3d(0, 1, 0), rot[1]);
+    yrot.normalise();
+    zrot.fromAxisAngle(Vec3d(0, 0, 1), rot[2]);
+    zrot.normalise();
+
+    orot = xrot * yrot * zrot;
+  }
+  return orot;
+}
+
 View::View(Session& session, float xf, float yf) : properties(session.globals, session.defaults), session(session)
 {
   // default view params
@@ -699,31 +728,8 @@ void View::apply(Properties* objprops)
     Quaternion orot;
     if (objprops->has("rotate"))
     {
-      float rot[4];
       json jrot = (*objprops)["rotate"];
-      if (jrot.size() == 4)
-      {
-        //std::cout << "QROT: " << jrot << std::endl;
-        Properties::toArray<float>(jrot, rot, 4);
-        orot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
-      }
-      else
-      {
-        //std::cout << "EROT: " << jrot << std::endl;
-        Properties::toArray<float>(jrot, rot, 3);
-        orot.fromEuler(rot[0], rot[1], rot[2]);
-
-        Quaternion xrot, yrot, zrot;
-        xrot.fromAxisAngle(Vec3d(1, 0, 0), rot[0]);
-        xrot.normalise();
-        yrot.fromAxisAngle(Vec3d(0, 1, 0), rot[1]);
-        yrot.normalise();
-        zrot.fromAxisAngle(Vec3d(0, 0, 1), rot[2]);
-        zrot.normalise();
-
-        orot = xrot * yrot * zrot;
-      }
-
+      orot = rotationFromProperty(jrot);
       obj_rotation = &orot;
     }
 

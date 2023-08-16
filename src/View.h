@@ -74,6 +74,8 @@ public:
   }
 };
 
+Quaternion rotationFromProperty(const json& jsonprop);
+
 class View
 {
 public:

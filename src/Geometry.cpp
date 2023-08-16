@@ -2884,11 +2884,6 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   const Vec3d& scale3 = scale3d ? view->scale : Vec3d(1.0, 1.0, 1.0);
   const Vec3d& iscale = scale3d ? view->iscale : Vec3d(1.0, 1.0, 1.0);
 
-  //Apply a 90 degree rotation to align equirectangular textures correctly
-  Quaternion qrot(0, 0.707107, 0, 0.707107);
-  if (texCoords)
-    rot = rot * qrot;
-
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
   unsigned int voffset = g->count();
@@ -2903,30 +2898,32 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
       pos = centre + rot * (radii * edge) * iscale;
 
-      tex[0] = 1.0 - i/(float)segment_count;
-      tex[1] = 1.0 - 2*(j+1)/(float)segment_count;
-
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
       normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
       if (texCoords)
+      {
+        tex[0] = 1.0 - i/(float)segment_count;
+        tex[1] = 1.0 - 2*(j+1)/(float)segment_count;
         g->_texCoords->read(1, tex);
+      }
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
       pos = centre + rot * (radii * edge) * iscale;
 
-      tex[0] = 1.0 - i/(float)segment_count;
-      tex[1] = 1.0 - 2*j/(float)segment_count;
-
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
       normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
       if (texCoords)
+      {
+        tex[0] = 1.0 - i/(float)segment_count;
+        tex[1] = 1.0 - 2*j/(float)segment_count;
         g->_texCoords->read(1, tex);
+      }
 
       //Triangle strip indices
       if (i > 0)

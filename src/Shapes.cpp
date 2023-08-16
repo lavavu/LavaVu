@@ -130,6 +130,26 @@ void Shapes::update()
         Vec3d vec(geom[i]->render->vectors[v]);
         rot = vectorRotation(vec);
       }
+      //Otherwise use the rotation property
+      else
+      {
+        //std::cout << props.data << std::endl;
+        if (props.has("rotation"))
+        {
+          json jrot = props["rotation"];
+          //std::cout << "JROT: " << jrot << std::endl;
+          rot = rotationFromProperty(jrot);
+        }
+        //Default rotation for spheres for texturing
+        else if (shape == 0 && hasTexture)
+        {
+          //Apply a 90 degree rotation to align equirectangular textures correctly
+          //(for textures that map longitudes [-180,180] to texcoords [0,1])
+          //(if using a longitudes [0,360] texture, pass "rotation" property == [0,-90,0])
+          rot = Quaternion(0, 0.707107, 0, 0.707107); //90 degrees about Y == [0,90,0]
+        }
+        //std::cout << "QROT: " << rot << std::endl;
+      }
 
       //Create shape
       if (shape == 1)

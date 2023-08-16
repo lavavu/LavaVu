@@ -1445,6 +1445,22 @@
       true
     ]
   },
+  "rotation": {
+    "default": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "target": "object,shape",
+    "type": "quaternion",
+    "desc": "Shape rotation about Y axis, applies to all shape objects, [x,y,z,y] or [X,Y,Z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "colourbar": {
     "default": false,
     "target": "colourbar",
@@ -1680,7 +1696,7 @@
     ],
     "target": "view",
     "type": "quaternion",
-    "desc": "Camera rotation quaternion [x,y,z,w]",
+    "desc": "Camera rotation quaternion [x,y,z,w], if applied to an object rotates the object, can be quaternion or Euler angles [x,y,z] in this case",
     "strict": true,
     "redraw": 0,
     "control": [
