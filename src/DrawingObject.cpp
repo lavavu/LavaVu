@@ -221,8 +221,6 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 {
   GL_Error_Check;
   //Use/load default texture
-  tex->repeat = properties["repeat"];
-  tex->filter = properties["texturefilter"];
   if (tex->empty())
   {
     if (tex->source || !tex->fn.empty())
@@ -256,9 +254,6 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 
         ImageData* data = new ImageData(width, height, channels, png);
         tex = texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
-        tex->repeat = properties["repeat"];
-        tex->filter = properties["texturefilter"];
-        tex->flip = properties["fliptexture"];
 
         texture->load(data);
 
@@ -294,6 +289,10 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
   }
   //else
   //  printf("Not loading, is empty\n");
+  tex->repeat = properties["repeat"];
+  tex->filter = properties["texturefilter"];
+  tex->flip = properties["fliptexture"];
+  //printf("Loaded texture, repeat %d\n", tex->repeat);
 
   GL_Error_Check;
   return tex->use();

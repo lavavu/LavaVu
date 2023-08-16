@@ -570,7 +570,7 @@ TextureData* ImageLoader::use()
     GL_Error_Check;
     glBindTexture(ttype, texture->id);
     GL_Error_Check;
-    //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
+    //printf("USE TEXTURE: (id %d unit %d) repeat %d\n", texture->id, texture->unit, repeat);
 
     if (repeat)
     {
