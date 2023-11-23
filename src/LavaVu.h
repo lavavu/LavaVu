@@ -118,7 +118,7 @@ public:
   View* aview = NULL;   //Active viewport
   DrawingObject* aobject = NULL; //Selected object
 
-  LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
+  LavaVu(std::string binpath, bool havecontext=false);
   void defaults();
   virtual ~LavaVu();
   void destroy();

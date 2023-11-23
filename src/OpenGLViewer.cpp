@@ -611,13 +611,10 @@ void OpenGLViewer::display(bool redraw)
 
     if (app->parseCommands(cmd))
     {
-      if (!app->session.omegalib)
-      {
-        //This break causes server commands to back up and not all be processed in loop
-        //However, animate "play" repeats forever without display if not enabled
-        if (animate > 0)
-          break;
-      }
+      //This break causes server commands to back up and not all be processed in loop
+      //However, animate "play" repeats forever without display if not enabled
+      if (animate > 0)
+        break;
     }
   }
 

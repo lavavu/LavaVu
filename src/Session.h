@@ -21,8 +21,6 @@ public:
   bool automate;
   //Context provided by user
   bool havecontext;
-  //Set when called from omegalib, camera handled externally
-  bool omegalib;
 
   //Model
   int now;

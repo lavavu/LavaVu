@@ -69,7 +69,7 @@
 #endif
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp()
+LavaVu::LavaVu(std::string binpath, bool havecontext) : ViewerApp()
 {
 #ifdef DEBUG
   std::cout << "This is a DEBUG build of LavaVu, not for production use!\n";
@@ -80,14 +80,13 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   frametime = std::chrono::system_clock::now();
   fps = framecount = 0;
   session.havecontext = havecontext;
-  session.omegalib = omegalib;
   historyline = -1;
   last_cmd = multiline = "";
 
   defaultScript = "init.script";
 
   //Create viewer window
-  if (!omegalib && !havecontext)
+  if (!havecontext)
   {
 #if defined HAVE_X11
   if (!viewer) viewer = new X11Viewer();
@@ -129,12 +128,9 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 
   //Add default console input attachment to viewer
 #ifndef __EMSCRIPTEN__
-  if (!omegalib)
-  {
-    static StdInput stdi;
-    //TODO: input freezing from terminal again!
-    viewer->addInput(&stdi);
-  }
+  static StdInput stdi;
+  //TODO: input freezing from terminal again!
+  viewer->addInput(&stdi);
 #endif
 }
 
@@ -173,9 +169,6 @@ void LavaVu::defaults()
   status = true;
   writeimage = false;
   writemovie = 0;
-  //Omegalib defaults
-  if (session.omegalib)
-    session.globals["vectorfont"] = true;
   message[0] = '\0';
   volume = NULL;
 
@@ -2358,7 +2351,7 @@ void LavaVu::display(bool redraw)
 
   clock_t t1 = clock();
 
-  if (session.globals.count("resolution") && !viewer->imagemode && !session.omegalib)
+  if (session.globals.count("resolution") && !viewer->imagemode)
   {
     //Resize if required
     int res[2];
@@ -2396,96 +2389,89 @@ void LavaVu::display(bool redraw)
   else //Single viewport, always disable filter
     aview->filtered = false;
 
-  if (session.omegalib)
-  {
-    drawSceneBlended();
-  }
-  else
-  {
 #ifndef GLES2
-    if (aview->stereo)
+  if (aview->stereo)
+  {
+    viewApply(view);
+    GL_Error_Check;
+
+    bool sideBySide = false;
+    if (viewer->stereoBuffer)
     {
-      viewApply(view);
-      GL_Error_Check;
-
-      bool sideBySide = false;
-      if (viewer->stereoBuffer)
-      {
-        // Draw to the left buffer
-        glDrawBuffer(GL_LEFT);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      }
-      else
-      {
-        /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // Apply red filter for left eye
-        if (aview->background.value < aview->inverse.value)
-           glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
-        else  //Use opposite mask for light backgrounds
-           glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
-           */
-        sideBySide = true;
-      }
-
-      // Render the left-eye view
-      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
-      aview->projection(EYE_LEFT);
-      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
-      aview->apply();
-      // Draw scene
-      drawSceneBlended();
-
-      if (viewer->stereoBuffer)
-      {
-        // Draw to the right buffer
-        glDrawBuffer(GL_RIGHT);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      }
-      else
-      {
-        /*/ Clear the depth buffer so red/cyan components are blended
-        glClear(GL_DEPTH_BUFFER_BIT);
-        // Apply cyan filter for right eye
-        if (aview->background.value < aview->inverse.value)
-           glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
-        else  //Use opposite mask for light backgrounds
-           glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
-        */
-      }
-
-      // Render the right-eye view
-      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
-      aview->projection(EYE_RIGHT);
-      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
-      aview->apply();
-      // Draw scene (no sort required this time)
-      drawSceneBlended(true);
-
-      // Restore full-colour
-      //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+      // Draw to the left buffer
+      glDrawBuffer(GL_LEFT);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     else
-#endif
     {
-      //Loop through all viewports and display each
-      int selview = view;
-      for (unsigned int v=0; v<amodel->views.size(); v++)
-      {
-        viewApply(v);
-        GL_Error_Check;
-
-        //Require reload of object data for multiple viewports
-        if (amodel->views.size() > 1)
-          amodel->reloadRedraw(NULL, true);
-
-        // Default non-stereo render
-        aview->projection(EYE_CENTRE);
-        drawSceneBlended(v > 0);
-      }
-
-      if (view != selview)
-      viewSelect(selview);
+      /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      // Apply red filter for left eye
+      if (aview->background.value < aview->inverse.value)
+         glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+      else  //Use opposite mask for light backgrounds
+         glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+         */
+      sideBySide = true;
     }
+
+    // Render the left-eye view
+    if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
+    aview->projection(EYE_LEFT);
+    if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
+    aview->apply();
+    // Draw scene
+    drawSceneBlended();
+
+    if (viewer->stereoBuffer)
+    {
+      // Draw to the right buffer
+      glDrawBuffer(GL_RIGHT);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+    else
+    {
+      /*/ Clear the depth buffer so red/cyan components are blended
+      glClear(GL_DEPTH_BUFFER_BIT);
+      // Apply cyan filter for right eye
+      if (aview->background.value < aview->inverse.value)
+         glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+      else  //Use opposite mask for light backgrounds
+         glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+      */
+    }
+
+    // Render the right-eye view
+    if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
+    aview->projection(EYE_RIGHT);
+    if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
+    aview->apply();
+    // Draw scene (no sort required this time)
+    drawSceneBlended(true);
+
+    // Restore full-colour
+    //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+  }
+  else
+#endif
+  {
+    //Loop through all viewports and display each
+    int selview = view;
+    for (unsigned int v=0; v<amodel->views.size(); v++)
+    {
+      viewApply(v);
+      GL_Error_Check;
+
+      //Require reload of object data for multiple viewports
+      if (amodel->views.size() > 1)
+        amodel->reloadRedraw(NULL, true);
+
+      // Default non-stereo render
+      aview->projection(EYE_CENTRE);
+      drawSceneBlended(v > 0);
+    }
+
+    if (view != selview)
+    viewSelect(selview);
   }
 
   //Calculate FPS
@@ -2500,12 +2486,9 @@ void LavaVu::display(bool redraw)
       framecount = 0;
       frametime = now;
     }
-    if (!session.omegalib)
-    {
-      std::stringstream ss;
-      ss << "FPS: " << std::setprecision(3) << fps;
-      displayText(ss.str(), 1);
-    }
+    std::stringstream ss;
+    ss << "FPS: " << std::setprecision(3) << fps;
+    displayText(ss.str(), 1);
   }
 
   if ((viewer->visible && !viewer->imagemode) || message[0] == ':')
@@ -3156,12 +3139,8 @@ void LavaVu::drawSceneBlended(bool nosort)
     break;
   }
 
-  if (!session.omegalib)
-  {
-    drawAxis();
-
-    aview->drawOverlay();
-  }
+  drawAxis();
+  aview->drawOverlay();
 }
 
 void LavaVu::drawScene()
@@ -3181,7 +3160,7 @@ void LavaVu::drawScene()
   GL_Error_Check;
 
   //Draw a filled border box first
-  if (!session.omegalib && aview->properties["fillborder"])
+  if (aview->properties["fillborder"])
     drawBorder();
 
   //Call the renderers
@@ -3189,7 +3168,7 @@ void LavaVu::drawScene()
     g->display();
 
   //Line border and rulers drawn after
-  if (!session.omegalib && !aview->properties["fillborder"])
+  if (!aview->properties["fillborder"])
     drawBorder();
   drawRulers();
 }

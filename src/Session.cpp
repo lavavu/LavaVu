@@ -3,7 +3,6 @@
 Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1)
 {
   havecontext = false;
-  omegalib = false;
   segments = 0;    // Saves segment count for circle based objects
   //reset();
   defaults = json::object();
