@@ -242,7 +242,7 @@ AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
 
 void VideoEncoder::open_video()
 {
-  AVCodec *codec;
+  const AVCodec *codec;
   AVCodecContext *c;
 
   c = video_enc;
@@ -370,18 +370,14 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 #endif
 
   /* allocate the output media context */
-#if LIBAVCODEC_VERSION_MAJOR < 60
+#if LIBAVCODEC_VERSION_MAJOR < 59 //CHECK THIS VERSION
   //Deprecated api
   oc = avformat_alloc_context();
   /* auto detect the output format from the name. default is mpeg. */
-  AVOutputFormat *fmt = av_guess_format(NULL, filename.c_str(), NULL);
-  if (!fmt)
-  {
-    debug_print("Could not deduce output format from file extension: using MPEG.");
-    fmt = av_guess_format("mpeg", NULL, NULL);
-    if (!fmt) abort_program("Could not find suitable output format");
-  }
-  oc->oformat = fmt;
+  const AVOutputFormat *fmt = av_guess_format(NULL, filename.c_str(), NULL);
+  if (!fmt) abort_program("Could not find suitable output format");
+
+  //oc->oformat = fmt;
 #else
   //Current api: https://ffmpeg.org/doxygen/trunk/muxing_8c-example.html#a68
   avformat_alloc_output_context2(&oc, NULL, NULL, filename.c_str());
@@ -397,15 +393,23 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
   /* Codec override, use h264 for mp4 if available */
   //Always used if available, unless extension is .mpg, in which case we fall back to mpeg1
   if (filename.find(".mp4") != std::string::npos && avcodec_find_encoder(AV_CODEC_ID_H264))
-    oc->oformat->video_codec = AV_CODEC_ID_H264; //h.264
+//#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(??,??,??)
+#if LIBAVCODEC_VERSION_MAJOR >= 59 //CHECK THIS VERSION
+    oc->video_codec_id = AV_CODEC_ID_H264;
+#else
+    oc->oformat->video_codec = AV_CODEC_ID_H264;
+#endif
 
   /* add the audio and video streams using the default format codecs
      and initialize the codecs */
   video_st = NULL;
   video_enc = NULL;
-  assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
-  if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
-    video_st = add_video_stream(oc->oformat->video_codec);
+  //assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
+  assert(oc->video_codec_id != AV_CODEC_ID_NONE);
+  //if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
+  if (oc->video_codec_id != AV_CODEC_ID_NONE)
+    video_st = add_video_stream(oc->video_codec_id);
+    //video_st = add_video_stream(oc->oformat->video_codec);
 
 #ifdef HAVE_SWSCALE
   //Get swscale context to convert RGB to YUV(420/422)
@@ -554,7 +558,7 @@ void VideoEncoder::display()
 #endif
 
   /* Calculate PTS for h264 */
-  picture->pts = video_enc->frame_number;
+  picture->pts = video_enc->frame_num;
 
   /* write video frames */
   write_video_frame();
