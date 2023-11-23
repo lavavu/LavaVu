@@ -1855,6 +1855,22 @@
       true
     ]
   },
+  "port": {
+    "default": [
+      0,
+      0,
+      1.0,
+      1.0
+    ],
+    "target": "view",
+    "type": "real[4]",
+    "desc": "Viewport position and dimensions array [x,y,width,height] in normalised coords [0,1]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "min": {
     "default": [
       0,
