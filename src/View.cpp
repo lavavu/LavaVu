@@ -885,6 +885,17 @@ void View::importProps(bool force)
       farclip = properties.data["far"];
 
     setBackground();
+
+    //Allow viewport set from "port" array property
+    if (properties.has("port"))
+    {
+      float p[4];
+      Properties::toArray<float>(properties["port"], p, 4);
+      x = p[0];
+      y = p[1];
+      w = p[2];
+      h = p[3];
+    }
   }
   catch (std::exception& e)
   {
@@ -906,6 +917,8 @@ void View::exportProps()
   properties.data["fov"] = fov;
   properties.data["near"] = nearclip;
   properties.data["far"] = farclip;
+  if (x > 0.0 || y > 0.0 || w != 1.0 || h != 1.0)
+    properties.data["port"] = json::array({x, y, w, h});
 
   //Can't set min/max properties from auto calc or will override future bounding box calc,
   //useful to get the calculated bounding box, so export as "bounds"
