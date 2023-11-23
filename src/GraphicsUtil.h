@@ -43,9 +43,12 @@
 
 #include "stb_image_resize.h"
 
+#define BLEND_NONE -1
 #define BLEND_NORMAL 0
 #define BLEND_PNG 1
 #define BLEND_ADD 2
+#define BLEND_PRE 3
+#define BLEND_DEF 4
 
 #define FONT_VECTOR -1
 #define FONT_LINE    0

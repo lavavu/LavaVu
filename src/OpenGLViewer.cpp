@@ -687,8 +687,11 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
   //debug_print("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
-  blend_mode = BLEND_NORMAL;
-  if (channels == 4) blend_mode = BLEND_PNG;
+  if (blend_mode == BLEND_NONE)
+  {
+    blend_mode = BLEND_NORMAL;
+    if (channels == 4) blend_mode = BLEND_PNG;
+  }
 
   //Enable FBO for image output even while visible if dimensions don't match
   if (visible && (fbo.downsample > 1 || w != width || h != height))
@@ -732,7 +735,7 @@ void OpenGLViewer::outputOFF()
   {
     disableFBO();
     //Restore settings
-    blend_mode = BLEND_NORMAL;
+    blend_mode = BLEND_NONE;
   }
 
   //Restore size

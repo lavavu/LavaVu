@@ -2899,7 +2899,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Select blending type\n\n"
               "**Usage:** blend mode\n\n"
-              "mode (string) : normal: multiplicative, add: additive, png: premultiplied for png output\n";
+              "mode (string) : normal: multiplicative, add: additive, pre: premultiplied alpha, png: premultiplied for png output\n";
       return false;
     }
 
@@ -2908,6 +2908,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->blend_mode = BLEND_PNG;
     else if (what == "add")
       viewer->blend_mode = BLEND_ADD;
+    else if (what == "pre")
+      viewer->blend_mode = BLEND_PRE;
+    else if (what == "def")
+      viewer->blend_mode = BLEND_DEF;
     else
       viewer->blend_mode = BLEND_NORMAL;
   }

@@ -3111,7 +3111,13 @@ void LavaVu::drawSceneBlended(bool nosort)
 
   switch (viewer->blend_mode)
   {
+  case BLEND_DEF:
+    //Restores OpenGL default blending (without separate mode for alpha channel)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    drawScene();
+    break;
   case BLEND_NORMAL:
+  case BLEND_NONE:
     // Blending setup for interactive display...
     // Normal alpha blending for rgb colour, accumulate opacity in alpha channel with additive blending
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA);
@@ -3130,6 +3136,13 @@ void LavaVu::drawSceneBlended(bool nosort)
     // Clear the depth buffer so second pass is blended or nothing will be drawn
     glClear(GL_DEPTH_BUFFER_BIT);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    drawScene();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    break;
+
+  case BLEND_PRE:
+    //Blending for premultiplied alpha (eg: volume render)
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     drawScene();
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     break;
