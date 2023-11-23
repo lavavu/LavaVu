@@ -174,6 +174,26 @@ Colour FontManager::setFont(Properties& properties, float scaling, bool print3d)
   //"fontsize" property overrides automatic scaling, so get value, with calculated/scaled as default
   fontscale = properties.getFloat("fontsize", fontsize);
 
+  //Minimum font scaling for automatically set 
+  //(If set manually then always use that value, either from global or object props)
+  if (!properties.has("fontscale") && !properties.has("fontsize") &&
+      !properties.hasglobal("fontscale") && !properties.hasglobal("fontsize"))
+  {
+    //Minimum readable vector font size
+    if (print3d)
+    {
+      //Model based minimum scaling when printing in 3d space
+      if (fontscale < 0.1 * context->model_size)
+        fontscale = 0.1 * context->model_size;
+    }
+    else
+    {
+      //Fixed minimum for printing in viewport space
+      if (fontscale < 0.3)
+        fontscale = 0.3;
+    }
+  }
+
   //Colour
   colour = Colour(properties["fontcolour"]);
 
@@ -184,20 +204,6 @@ Colour FontManager::setFont(Properties& properties, float scaling, bool print3d)
   //Mesh vector font is the default
   else
     charset = FONT_VECTOR;
-
-  //Minimum readable vector font size
-  if (print3d)
-  {
-    //Model based minimum scaling when printing in 3d space
-    if (fontscale < 0.1 * context->model_size)
-      fontscale = 0.1 * context->model_size;
-  }
-  else
-  {
-    //Fixed minimum for printing in viewport space
-    if (fontscale < 0.3)
-      fontscale = 0.3;
-  }
 
   return colour;
 }
