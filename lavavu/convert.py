@@ -58,7 +58,7 @@ def default_sample_grid(vrange, res=8):
     print("Sample grid RES:",RES)
     return RES
 
-def points_to_volume(verts, res=8, kdtree=False, normed=False, clamp=None, boundingbox=None):
+def points_to_volume(verts, weights=None, res=8, kdtree=False, normed=True, clamp=None, boundingbox=None):
     """
     Convert object vertices to a volume by interpolating points to a grid
 
@@ -68,7 +68,7 @@ def points_to_volume(verts, res=8, kdtree=False, normed=False, clamp=None, bound
 
     Default is to use numpy.histogramdd method, pass kdtree=True to use scipy.spatial.KDTree
 
-    TODO: support colour data too, converted density field becomes alpha channel
+    TODO: support colour data too, converted density field becomes alpha channel (actually, use weights)
 
     Returns
     -------
@@ -80,11 +80,11 @@ def points_to_volume(verts, res=8, kdtree=False, normed=False, clamp=None, bound
 
     """
     if kdtree:
-        return points_to_volume_tree(verts, res)
+        return points_to_volume_tree(verts, weights, res)
     else:
-        return points_to_volume_histogram(verts, res, normed, clamp, boundingbox)
+        return points_to_volume_histogram(verts, weights, res, normed, clamp, boundingbox)
 
-def points_to_volume_histogram(verts, res=8, normed=False, clamp=None, boundingbox=None):
+def points_to_volume_histogram(verts, weights, res=8, normed=True, clamp=None, boundingbox=None):
     """
     Using numpy.histogramdd to create 3d histogram volume grid
     (Easily the fastest, but less control over output)
@@ -102,12 +102,18 @@ def points_to_volume_histogram(verts, res=8, normed=False, clamp=None, boundingb
         vrange = numpy.array(boundingbox[1]) - numpy.array(boundingbox[0])
     RES = default_sample_grid(vrange, res)
 
+    if weights is not None:
+        weights = weights.ravel()
+        #Normalise (should be done by histogramdd anyway if normed=True)
+        weights = (weights - weights.min()) / (weights.max() - weights.min())
+        #print(verts.shape, weights.shape, weights.min(), weights.max())
+
     #H, edges = numpy.histogramdd(verts, bins=RES)
     if boundingbox is None:
-        H, edges = numpy.histogramdd(verts, bins=RES, normed=normed) #density=True for newer numpy
+        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, normed=normed) #density=True for newer numpy
     else:
         rg = ((vmin[0], vmax[0]), (vmin[1], vmax[1]), (vmin[2], vmax[2])) #provide bounding box as range
-        H, edges = numpy.histogramdd(verts, bins=RES, range=rg, normed=normed) #density=True for newer numpy
+        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, range=rg, normed=normed) #density=True for newer numpy
 
     #Reverse ordering X,Y,Z to Z,Y,X for volume data
     values = H.transpose()
@@ -196,7 +202,7 @@ def points_to_volume_tree(verts, res=8):
     return (values, lmin, lmax)
 
 
-def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=0, pad=None, normed=False, clamp=None):
+def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=0, pad=None, normed=True, clamp=None, weights=None):
     """
     Interpolate points to grid and load into passed volume object
 
@@ -205,16 +211,19 @@ def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=0, pad=None, nor
     points_to_volume()
     """
     lv = vol.parent #Get the viewer from passed object
-    lv.hide(objects) #Hide the converted objects
+    #lv.hide(objects) #Hide the converted objects
 
     #Get vertices from lavavu objects
-    pverts, bb_all = lv.get_all_vertices(objects)
+    if weights:
+        pverts, bb_all, weights = lv.get_all_vertices(objects, weights)
+    else:
+        pverts, bb_all = lv.get_all_vertices(objects)
 
     #blur = False
     #Use bounding box of full model?
     #vmin, vmax, vrange = min_max_range([lv["min"], lv["max"]])
     #bb_all == (vmin, vmax)
-    vdata, vmin, vmax = points_to_volume(pverts, res, kdtree, normed, clamp, bb_all)
+    vdata, vmin, vmax = points_to_volume(pverts, weights, res, kdtree, normed, clamp, bb_all)
 
     if blur > 0:
         if pad == None:
@@ -234,7 +243,7 @@ def points_to_volume_3D(vol, objects, res=8, kdtree=False, blur=0, pad=None, nor
     vol.values(values)
     vol.vertices((vmin, vmax))
 
-def points_to_volume_4D(vol, objects, res=8, kdtree=False, blur=False, normed=False, clamp=None):
+def points_to_volume_4D(vol, objects, res=8, kdtree=False, blur=0, pad=None, normed=True, clamp=None, weights=None):
     """
     Interpolate points to grid at each timestep
 
@@ -247,8 +256,11 @@ def points_to_volume_4D(vol, objects, res=8, kdtree=False, blur=False, normed=Fa
     for step in lv.steps:
         print("TIMESTEP:",step)
         lv.timestep(step)
+        #TODO: timestep data not changing!!!
+        print(lv.step)
+        lv.display((200,150))
         
-        points_to_volume_3D(vol, objects, res, kdtree, blur, normed, clamp)
+        points_to_volume_3D(vol, objects, res, kdtree, blur, pad, normed, clamp, weights)
 
 def colour2rgb(c):
     return [c & 255, (c >> 8) & 255, (c >> 16) & 255]
@@ -804,7 +816,7 @@ def export_any(filepath, source, name=None):
             f.write(gltf[fn])
     """
 
-def read_any(filepath, lv):
+def read_any(filepath, lv, scaling=None):
     """
     Load using trimesh, supports GLTF etc
 
@@ -823,9 +835,20 @@ def read_any(filepath, lv):
             idx = int(idx)
 
         if idx == 0:
-            tris = lv.triangles(name)
+            #Texturing for multiple objects is broken when loaded with triangles() renderer
+            #tris = lv.triangles(name)
+            #Use surface() instead and textures work as expected
+            tris = lv.surface(name)
         else:
             tris.append()
+
+        if scaling:
+            import numpy as np
+            matrix = np.eye(4)
+            matrix[0, 0] = scaling
+            matrix[1, 1] = scaling
+            matrix[2, 2] = scaling
+            geometry.apply_transform(matrix)
 
         tris.vertices(geometry.vertices)
         tris.normals(geometry.vertex_normals)
@@ -841,13 +864,25 @@ def read_any(filepath, lv):
             tris.colours(geometry.visual.vertex_colors)
         #Load single colour material
         elif hasattr(geometry.visual, "material"):
-            #print("HAVE MATERIAL")
-            #print(geometry.visual.material)
-            #print(geometry.visual.material.baseColorFactor)
-            if idx == 0:
-                #Can set as prop, but only works for single el
-                tris["colour"] = geometry.visual.material.baseColorFactor
-            else:
-                tris.colours(geometry.visual.material.baseColorFactor)
+            if hasattr(geometry.visual.material, "baseColorTexture"):
+                #print("HAVE TEXTURE")
+                #print(geometry.visual.material)
+                #if hasattr(geometry.visual, "image"):
+                #print(geometry.visual.image)
+                #print(dir(geometry.visual.material))
+                #print(hasattr(geometry.visual, "material"))
+                #print(geometry.visual.material.baseColorTexture)
+                tris.texture(geometry.visual.material.baseColorTexture)
+            elif hasattr(geometry.visual.material, "baseColorFactor"):
+                #print("HAVE MATERIAL")
+                #print(geometry.visual.material)
+                #print(geometry.visual.material.baseColorFactor)
+                if idx == 0:
+                    #Can set as prop, but only works for single el
+                    tris["colour"] = geometry.visual.material.baseColorFactor
+                else:
+                    tris.colours(geometry.visual.material.baseColorFactor)
+
+        idx += 1 #Inc index?
 
     return tris
