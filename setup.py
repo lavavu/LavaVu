@@ -33,6 +33,7 @@ To release a new verison:
     (may need to reset notebooks to documentation versions)
     (docs repo is at: git@github.com:lavavu/Documentation.git)
     (may need: `cd docs/src; pip install -r requirements.txt`)
+    (lib dependencies for debian/ubuntu: `sudo apt install pandoc emscripten`)
 
     >>> python setup.py check
 
@@ -79,6 +80,7 @@ if sys.argv[-1] == 'check':
     write_version()
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
+    os.system("LV_RELEASE=1 make clean")
     os.system("LV_RELEASE=1 make lavavu/html/emscripten.js lavavu/html/webview.html")
     os.system("cd lavavu; python amalgamate.py; cd ..")
     import webbrowser
