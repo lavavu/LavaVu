@@ -31,8 +31,17 @@ To release a new verison:
     1) Edit the version number above, then run below command (in a fresh checkout!).
     This will rebuild lib and docs in release mode with the new version
     (may need to reset notebooks to documentation versions)
-    (docs repo is at: git@github.com:lavavu/Documentation.git)
-    (may need: `cd docs/src; pip install -r requirements.txt`)
+
+    ```
+    #Get clean checkout and setup nested docs repo
+    git clone git@github.com:lavavu/LavaVu.git
+    cd LavaVu
+    rm -rf docs
+    git clone git@github.com:lavavu/Documentation.git docs
+    git checkout HEAD -- docs
+    cd docs/src
+    pip install -r requirements.txt
+    ```
     (lib dependencies for debian/ubuntu: `sudo apt install pandoc emscripten`)
 
     >>> python setup.py check
