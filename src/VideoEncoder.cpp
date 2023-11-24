@@ -558,7 +558,11 @@ void VideoEncoder::display()
 #endif
 
   /* Calculate PTS for h264 */
+#if LIBAVCODEC_VERSION_MAJOR < 60 //CHECK THIS VERSION
+  picture->pts = video_enc->frame_number; //deprecated
+#else
   picture->pts = video_enc->frame_num;
+#endif
 
   /* write video frames */
   write_video_frame();
