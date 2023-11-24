@@ -1272,7 +1272,7 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
       if (d > 1) std::cout << "TIFF contains " << d << " pages, sub-sampling z " << ds << std::endl;
       do
       {
-        if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
+        if (TIFFReadRGBAImage(tif, width, height, (uint32_t*)imageData, 0))
         {
           //Subsample
           if (count % ds != 0) {count++; continue;}
@@ -2044,7 +2044,7 @@ void LavaVu::open(int width, int height)
 
 void LavaVu::reloadShaders()
 {
-  for (unsigned int type=0; type <= lucMaxType; type++)
+  for (unsigned int type=0; type < lucMaxType; type++)
   {
     if (session.shaders[type])
       session.shaders[type] = NULL;

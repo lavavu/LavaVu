@@ -779,7 +779,7 @@ void ImageLoader::loadTIFF()
     source->allocate();   // Reserve Memory
     if (source->pixels)
     {
-      if (TIFFReadRGBAImage(tif, source->width, source->height, (uint32*)source->pixels, 0))
+      if (TIFFReadRGBAImage(tif, source->width, source->height, (uint32_t*)source->pixels, 0))
       {
         //Succeeded
       }
