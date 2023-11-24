@@ -14,7 +14,7 @@ jobs:
     env:
       CIBW_BUILD_VERBOSITY: 3
       CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
-      CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-*
+      CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-* cp312-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_BEFORE_BUILD_LINUX: apt-get update && apt-get install -y libtiff-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
@@ -37,7 +37,7 @@ jobs:
           
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel==2.12.1
+          python -m pip install cibuildwheel==2.16.2
 
       - name: Build wheels
         run: |
@@ -90,7 +90,7 @@ jobs:
       matrix:
         #os: [ubuntu-latest, macos-latest, windows-latest]
         os: [ubuntu-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up Python
