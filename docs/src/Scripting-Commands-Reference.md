@@ -1086,7 +1086,7 @@
  >   
  > **Usage:** blend mode  
  >   
- > mode (string) : normal: multiplicative, add: additive, png: premultiplied for png output  
+ > mode (string) : normal: multiplicative, add: additive, pre: premultiplied alpha, png: premultiplied for png output  
 
 
 ### props

@@ -174,6 +174,7 @@
 |*heightby*        | string or integer | "heights"      | Index or label of data set to apply to shape heights|
 |*lengthby*        | string or integer | "lengths"      | Index or label of data set to apply to shape lengths|
 |*segments*        | integer    | 32             | Triangulation quality for spheres, number of segments to draw (minimum 4)|
+|*rotation*        | quaternion | [0.0,0.0,0.0,1.0] | Shape rotation about Y axis, applies to all shape objects, [x,y,z,y] or [X,Y,Z]|
 
 ## colourbar
 
@@ -209,7 +210,7 @@
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*zoomstep*        | integer    | -1             | When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep|
 |*margin*          | real       | 0.025          | Margin in pixels (when >= 1) or ratio of viewport width (when < 1.0) around edges of model when to applying camera auto-zoom|
-|*rotate*          | quaternion | [0.0,0.0,0.0,1.0] | Camera rotation quaternion [x,y,z,w]|
+|*rotate*          | quaternion | [0.0,0.0,0.0,1.0] | Camera rotation quaternion [x,y,z,w], if applied to an object rotates the object, can be quaternion or Euler angles [x,y,z] in this case|
 |*xyzrotate*       | real[3]    | [0.0,0.0,0.0]  | Camera rotation as Euler angles [x,y,z] - output only|
 |*translate*       | real[3]    | [0.0,0.0,0.0]  | Camera translation [x,y,z]|
 |*focus*           | real[3]    | [0.0,0.0,0.0]  | Camera focal point [x,y,z]|
@@ -221,6 +222,7 @@
 |*orthographic*    | boolean    | false          | Enable to switch to an orthographic projection instead of the default perspective projection|
 |*coordsystem*     | integer    | 1              | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed|
 |*follow*          | boolean    | false          | Enable to follow the model bounding box centre with camera as it changes|
+|*port*            | real[4]    | [0,0,1.0,1.0]  | Viewport position and dimensions array [x,y,width,height] in normalised coords [0,1]|
 
 ## global
 
