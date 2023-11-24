@@ -464,8 +464,8 @@ class LavaVu(object):
     binpath = property(_LavaVuPython.LavaVu_binpath_get, _LavaVuPython.LavaVu_binpath_set)
     unprocessed = property(_LavaVuPython.LavaVu_unprocessed_get, _LavaVuPython.LavaVu_unprocessed_set)
 
-    def __init__(self, binpath, havecontext=False, omegalib=False):
-        _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))
+    def __init__(self, binpath, havecontext=False):
+        _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext))
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
     destroy = _swig_new_instance_method(_LavaVuPython.LavaVu_destroy)
     resize = _swig_new_instance_method(_LavaVuPython.LavaVu_resize)

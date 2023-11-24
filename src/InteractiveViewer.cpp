@@ -972,7 +972,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (session.omegalib) return false;
     viewer->quitProgram = false;
     bool interactive = true;
     std::string opt = parsed["interactive"];

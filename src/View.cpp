@@ -686,20 +686,17 @@ void View::apply(Properties* objprops)
   }
 
   // Setup view transforms
-  if (!session.omegalib)
-  {
-    session.context.MV = linalg::identity;
-    GL_Error_Check;
+  session.context.MV = linalg::identity;
+  GL_Error_Check;
 
-    // Translate to cancel stereo parallax
-    session.context.translate3(scene_shift, 0.0, 0.0);
-    GL_Error_Check;
+  // Translate to cancel stereo parallax
+  session.context.translate3(scene_shift, 0.0, 0.0);
+  GL_Error_Check;
 
-    // Translate model away from eye by camera zoom/pan translation
-    //debug_print("APPLYING VIEW : trans %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
-    session.context.translate3(model_trans[0], model_trans[1], model_trans[2]);
-    GL_Error_Check;
-  }
+  // Translate model away from eye by camera zoom/pan translation
+  //debug_print("APPLYING VIEW : trans %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
+  session.context.translate3(model_trans[0], model_trans[1], model_trans[2]);
+  GL_Error_Check;
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
   float adjust[3] = {(focal_point[0]-rotate_origin[0]), (focal_point[1]-rotate_origin[1]), (focal_point[2]-rotate_origin[2])};
@@ -769,8 +766,7 @@ void View::apply(Properties* objprops)
   // Translate to align eye with model centre - view focal point
   //session.context.translate3(-rotate_origin[0], -rotate_origin[1], -rotate_origin[2]);
   //if (use_fp) session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  if (!session.omegalib)
-    session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Switch coordinate system if applicable and set default polygon front faces

@@ -21567,51 +21567,6 @@ SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_0(PyObject *self, Py_ssize_t nobjs, 
   PyObject *resultobj = 0;
   std::string arg1 ;
   bool arg2 ;
-  bool arg3 ;
-  bool val2 ;
-  int ecode2 = 0 ;
-  bool val3 ;
-  int ecode3 = 0 ;
-  LavaVu *result = 0 ;
-  
-  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
-  {
-    std::string *ptr = (std::string *)0;
-    int res = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
-    if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_LavaVu" "', argument " "1"" of type '" "std::string""'"); 
-    }
-    arg1 = *ptr;
-    if (SWIG_IsNewObj(res)) delete ptr;
-  }
-  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_LavaVu" "', argument " "2"" of type '" "bool""'");
-  } 
-  arg2 = static_cast< bool >(val2);
-  ecode3 = SWIG_AsVal_bool(swig_obj[2], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_LavaVu" "', argument " "3"" of type '" "bool""'");
-  } 
-  arg3 = static_cast< bool >(val3);
-  {
-    try {
-      result = (LavaVu *)new LavaVu(arg1,arg2,arg3);
-    } catch (const std::runtime_error& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_LavaVu, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
-  PyObject *resultobj = 0;
-  std::string arg1 ;
-  bool arg2 ;
   bool val2 ;
   int ecode2 = 0 ;
   LavaVu *result = 0 ;
@@ -21645,7 +21600,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_2(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::string arg1 ;
   LavaVu *result = 0 ;
@@ -21676,23 +21631,18 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_LavaVu(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[4] = {
+  PyObject *argv[3] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args, "new_LavaVu", 0, 3, argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args, "new_LavaVu", 0, 2, argv))) SWIG_fail;
   --argc;
   if (argc == 1) {
-    PyObject *retobj = _wrap_new_LavaVu__SWIG_2(self, argc, argv);
-    if (!SWIG_Python_TypeErrorOccurred(retobj)) return retobj;
-    SWIG_fail;
-  }
-  if (argc == 2) {
     PyObject *retobj = _wrap_new_LavaVu__SWIG_1(self, argc, argv);
     if (!SWIG_Python_TypeErrorOccurred(retobj)) return retobj;
     SWIG_fail;
   }
-  if (argc == 3) {
+  if (argc == 2) {
     PyObject *retobj = _wrap_new_LavaVu__SWIG_0(self, argc, argv);
     if (!SWIG_Python_TypeErrorOccurred(retobj)) return retobj;
     SWIG_fail;
@@ -21701,7 +21651,6 @@ SWIGINTERN PyObject *_wrap_new_LavaVu(PyObject *self, PyObject *args) {
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'new_LavaVu'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::LavaVu(std::string,bool,bool)\n"
     "    LavaVu::LavaVu(std::string,bool)\n"
     "    LavaVu::LavaVu(std::string)\n");
   return 0;

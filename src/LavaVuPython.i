@@ -147,7 +147,7 @@ public:
   std::string binpath;
   std::vector<std::string> unprocessed;
 
-  LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
+  LavaVu(std::string binpath, bool havecontext=false);
   ~LavaVu();
   void destroy();
   virtual void resize(int new_width, int new_height);

@@ -2000,14 +2000,10 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
 
         #OpenGL context creation options
         havecontext = False
-        omegalib = False
         self.use_moderngl = False
         self.use_moderngl_window = False
         if "provided" in context:
             havecontext = True
-        elif "omegalib" in context:
-            havecontext = True
-            omegalib = True
         elif "moderngl" in context:
             if moderngl is not None:
                 havecontext = True
@@ -2022,7 +2018,7 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
         self.wnd = None
         self.ctx = None
 
-        super(_LavaVuWrapper, self).__init__(binpath, havecontext, omegalib)
+        super(_LavaVuWrapper, self).__init__(binpath, havecontext)
 
         self._thread = threaded
         self._q = []
@@ -2661,7 +2657,7 @@ class Viewer(dict):
             OpenGL context type, *"default"* will create a context and window based on available configurations.
             *"provided"* specifies a user provided context, set this if you have already created and activated the context. 
             *"moderngl"* creates a context in python using the moderngl module (experimental). 
-            *"moderngl."* creates a context and a window in python using the moderngl module (experimental) specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5. *"omegalib"* is for use in multi-display VR mode.
+            *"moderngl."* creates a context and a window in python using the moderngl module (experimental) specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5.
         port : int
             Web server port, open server on specific port for control/interaction
             Viewer will be run in a separate thread, all rendering will be done in this thread
