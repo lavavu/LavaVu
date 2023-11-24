@@ -23,7 +23,7 @@ import shutil
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
-version = "1.8.51"
+version = "1.8.52"
 
 """
 To release a new verison:
@@ -90,7 +90,7 @@ if sys.argv[-1] == 'check':
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
     os.system("LV_RELEASE=1 make clean")
-    os.system("LV_RELEASE=1 make emscripten")
+    os.system("LV_RELEASE=1 make emscripten -j$(nproc)")
     os.system("cd lavavu; python amalgamate.py; cd ..")
     import webbrowser
     webbrowser.open("docs/index.html")
