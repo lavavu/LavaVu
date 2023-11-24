@@ -19,7 +19,8 @@ jobs:
       CIBW_ENVIRONMENT: LV_PACKAGE=lavavu-osmesa LV_OSMESA=1 LV_LIB_DIRS=/usr/local/lib
       CIBW_BEFORE_BUILD_LINUX: dnf config-manager --set-enabled powertools && dnf install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm -y && dnf install --nogpgcheck https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm -y && dnf install -y almalinux-release-devel ffmpeg libtiff-devel python3-mako patchelf unzip ninja-build && dnf builddep -y mesa && dnf remove -y meson && pip3 install meson -U && curl -kLO https://archive.mesa3d.org/mesa-23.1.9.tar.xz && tar xf mesa-23.1.9.tar.xz && rm -f mesa-23.1.9.tar.xz && cd mesa-23.1.9/ && python3 -m mesonbuild.mesonmain build/ --buildtype=release -Dosmesa=true -Dgallium-drivers=swrast -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && ninja -C build/ -j $(nproc) && ninja -C build/ install || true
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
-      CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel} && python patchwheel.py {dest_dir}"
+      CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel}"
+      #CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel} && python patchwheel.py {dest_dir}"
     strategy:
       matrix:
         os: [ubuntu-latest]
