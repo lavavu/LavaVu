@@ -335,29 +335,50 @@ def matplotlib_colourmap(name, samples=16):
     list
         List of colours ready to be loaded by colourmap()
     """
+    if not isinstance(name, str):
+        #Assume passed a Matplotlib colourmap object directly
+        return matplotlib_cmap(name, samples)
     try:
         import matplotlib.pyplot as plt
         cmap = plt.get_cmap(name)
-        if hasattr(cmap, 'colors'):
-            #Reduce length? many MPL maps have 256 samples,
-            #unnecessary since we are already interpolating
-            #Can disable this by setting samples=None
-            data = cmap.colors
-            if len(data) == 256 and samples is not None:
-                subsample = int(256/samples)
-                data = data[0::subsample]
-            return data
-        #Get colour samples when no list provided
-        if samples == None: samples = 16
-        colours = []
-        for i in range(samples):
-            pos = i/float(samples-1)
-            colours.append(cmap(pos))
-        return colours
+        return matplotlib_cmap(cmap, samples)
     except (Exception) as e:
         #Assume single colour value, just return it
         return name
     return []
+
+def matplotlib_cmap(cmap, samples=16):
+    """
+    Import a colourmap from a matplotlib
+
+    Parameters
+    ----------
+    cmap : Matplotlib colormap object
+        The matplotlib colourmap to import
+    samples : int
+        Number of samples to take for LinearSegmentedColormap type
+
+    Returns
+    -------
+    list
+        List of colours ready to be loaded by colourmap()
+    """
+    if hasattr(cmap, 'colors'):
+        #Reduce length? many MPL maps have 256 samples,
+        #unnecessary since we are already interpolating
+        #Can disable this by setting samples=None
+        data = cmap.colors
+        if len(data) == 256 and samples is not None:
+            subsample = int(256/samples)
+            data = data[0::subsample]
+        return data
+    #Get colour samples when no list provided
+    if samples == None: samples = 16
+    colours = []
+    for i in range(samples):
+        pos = i/float(samples-1)
+        colours.append(cmap(pos))
+    return colours
 
 #Wrapper class for a set of properties
 #handles property updating via internal dict
