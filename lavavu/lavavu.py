@@ -4900,7 +4900,11 @@ class DrawData(object):
         #Attempt to return an array with the correct shape
         dims = [0.,0.,0.]
         if "dims" in self._obj.dict:
-            dims = self._obj.dict["dims"][::-1]
+            dims = self._obj.dict["dims"]
+            if isinstance(dims, list) or isinstance(dims, tuple):
+                dims = dims[::-1] #Reversed
+            else:
+                dims = [dims] #Scalar to list
         if self.data.width > 1:
             #print("OBJECT W,H,D: ",self.data.width, self.data.height, self.data.depth)
             #dims = [self.data.depth, self.data.height, self.data.width]
