@@ -81,7 +81,7 @@ if sys.argv[-1] == 'check':
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
     os.system("LV_RELEASE=1 make clean")
-    os.system("LV_RELEASE=1 make lavavu/html/emscripten.js lavavu/html/webview.html")
+    os.system("LV_RELEASE=1 make emscripten")
     os.system("cd lavavu; python amalgamate.py; cd ..")
     import webbrowser
     webbrowser.open("docs/index.html")
