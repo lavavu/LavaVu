@@ -87,6 +87,7 @@ if sys.argv[-1] == 'check':
     os.system("pip install -r requirements.txt")
     os.chdir(wd)
     write_version()
+    os.system("LV_RELEASE=1 make clean")
     os.system("LV_RELEASE=1 make -j$(nproc)")
     os.system("LV_RELEASE=1 make docs -B")
     os.system("LV_RELEASE=1 make clean")
