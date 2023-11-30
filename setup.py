@@ -359,7 +359,6 @@ if __name__ == "__main__":
             defines += [('HAVE_LIBTIFF', 1)]
             libs += ['tiff']
 
-        inc_dirs += ['/usr/include/ffmpeg'] #Required for centos/redhat ffmpeg-devel
         if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
             and check_libraries(['avcodec', 'avformat', 'avutil'],
                 ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',

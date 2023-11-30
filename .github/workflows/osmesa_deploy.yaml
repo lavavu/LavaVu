@@ -14,12 +14,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_SKIP: cp*-win32 *-manylinux_i686 *-musllinux_*
-      CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-* cp312-*
-      CIBW_ENVIRONMENT: LV_PACKAGE=lavavu-osmesa LV_OSMESA=1 LV_LIB_DIRS=/usr/local/lib64
-      CIBW_BEFORE_BUILD_LINUX: dnf config-manager --set-enabled powertools && dnf install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm -y && dnf install --nogpgcheck https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm -y && dnf install -y almalinux-release-devel ffmpeg ffmpeg-devel libtiff-devel python3-mako patchelf unzip ninja-build && dnf builddep -y mesa && dnf remove -y meson && pip3 install meson -U && curl -kLO https://archive.mesa3d.org/mesa-23.1.9.tar.xz && tar xf mesa-23.1.9.tar.xz && rm -f mesa-23.1.9.tar.xz && cd mesa-23.1.9/ && python3 -m mesonbuild.mesonmain build/ --buildtype=release -Dosmesa=true -Dgallium-drivers=swrast -Dvulkan-drivers= -Degl=false -Dgbm=false -Dgles1=false -Dgles2=false && ninja -C build/ -j $(nproc) && ninja -C build/ install || true
+      CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
+      CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
+      CIBW_ENVIRONMENT: LV_PACKAGE=lavavu-osmesa LV_OSMESA=1 LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib LV_INC_DIRS=${HOME}/include
+      CIBW_BEFORE_BUILD_LINUX: cd ~ && curl -O -L https://github.com/lavavu/LavaVu/releases/latest/download/ffmpeg-mini.zip && unzip -o ffmpeg-mini.zip && dnf install -y libtiff-devel mesa-libOSMesa-devel
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
-      CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel}"
+      #CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel}"
       #CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair -w {dest_dir} {wheel} && python patchwheel.py {dest_dir}"
     strategy:
       matrix:

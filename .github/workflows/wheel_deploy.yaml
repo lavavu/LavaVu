@@ -14,10 +14,11 @@ jobs:
     env:
       CIBW_BUILD_VERBOSITY: 3
       CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
-      CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-* cp312-*
+      CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
-      CIBW_BEFORE_BUILD_LINUX: dnf config-manager --set-enabled powertools && dnf install --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm -y && dnf install --nogpgcheck https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-$(rpm -E %rhel).noarch.rpm -y && dnf install -y ffmpeg libtiff-devel
+      CIBW_ENVIRONMENT: LV_LIB_DIRS=${HOME}/lib LV_INC_DIRS=${HOME}/include
+      CIBW_BEFORE_BUILD_LINUX: cd ~ && curl -O -L https://github.com/lavavu/LavaVu/releases/latest/download/ffmpeg-mini.zip && unzip -o ffmpeg-mini.zip && dnf install -y libtiff-devel
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
     strategy:
       matrix:
