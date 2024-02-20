@@ -3626,6 +3626,13 @@ void LavaVu::addTimeStep(int step, std::string properties)
   amodel->setTimeStep(step);
 }
 
+void LavaVu::addViewport(float x, float y, float w, float h, bool replace, std::string properties)
+{
+  if (!amodel) return;
+  amodel->addViewport(x, y, w, h, replace, properties);
+  viewSelect(amodel->views.size()-1);
+}
+
 void LavaVu::setObject(DrawingObject* target, std::string properties)
 {
   if (!amodel || !target) return;

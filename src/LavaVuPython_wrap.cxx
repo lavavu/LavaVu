@@ -24304,6 +24304,83 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_addViewport(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  float arg2 ;
+  float arg3 ;
+  float arg4 ;
+  float arg5 ;
+  bool arg6 ;
+  std::string arg7 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  float val2 ;
+  int ecode2 = 0 ;
+  float val3 ;
+  int ecode3 = 0 ;
+  float val4 ;
+  int ecode4 = 0 ;
+  float val5 ;
+  int ecode5 = 0 ;
+  bool val6 ;
+  int ecode6 = 0 ;
+  PyObject *swig_obj[7] ;
+  
+  if (!SWIG_Python_UnpackTuple(args, "LavaVu_addViewport", 7, 7, swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_addViewport" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  ecode2 = SWIG_AsVal_float(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_addViewport" "', argument " "2"" of type '" "float""'");
+  } 
+  arg2 = static_cast< float >(val2);
+  ecode3 = SWIG_AsVal_float(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_addViewport" "', argument " "3"" of type '" "float""'");
+  } 
+  arg3 = static_cast< float >(val3);
+  ecode4 = SWIG_AsVal_float(swig_obj[3], &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "LavaVu_addViewport" "', argument " "4"" of type '" "float""'");
+  } 
+  arg4 = static_cast< float >(val4);
+  ecode5 = SWIG_AsVal_float(swig_obj[4], &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "LavaVu_addViewport" "', argument " "5"" of type '" "float""'");
+  } 
+  arg5 = static_cast< float >(val5);
+  ecode6 = SWIG_AsVal_bool(swig_obj[5], &val6);
+  if (!SWIG_IsOK(ecode6)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "LavaVu_addViewport" "', argument " "6"" of type '" "bool""'");
+  } 
+  arg6 = static_cast< bool >(val6);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[6], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addViewport" "', argument " "7"" of type '" "std::string""'"); 
+    }
+    arg7 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->addViewport(arg2,arg3,arg4,arg5,arg6,arg7);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_setObject(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -31476,6 +31553,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_getTimeSteps", _wrap_LavaVu_getTimeSteps, METH_O, NULL},
 	 { "LavaVu_addTimeStep", _wrap_LavaVu_addTimeStep, METH_VARARGS, NULL},
 	 { "LavaVu_resetViews", _wrap_LavaVu_resetViews, METH_VARARGS, NULL},
+	 { "LavaVu_addViewport", _wrap_LavaVu_addViewport, METH_VARARGS, NULL},
 	 { "LavaVu_setObject", _wrap_LavaVu_setObject, METH_VARARGS, NULL},
 	 { "LavaVu_createObject", _wrap_LavaVu_createObject, METH_VARARGS, NULL},
 	 { "LavaVu_getObject", _wrap_LavaVu_getObject, METH_VARARGS, NULL},
@@ -31879,6 +31957,7 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "LavaVu_getTimeSteps", _wrap_LavaVu_getTimeSteps, METH_O, NULL},
 	 { "LavaVu_addTimeStep", _wrap_LavaVu_addTimeStep, METH_VARARGS, NULL},
 	 { "LavaVu_resetViews", _wrap_LavaVu_resetViews, METH_VARARGS, NULL},
+	 { "LavaVu_addViewport", _wrap_LavaVu_addViewport, METH_VARARGS, NULL},
 	 { "LavaVu_setObject", _wrap_LavaVu_setObject, METH_VARARGS, NULL},
 	 { "LavaVu_createObject", _wrap_LavaVu_createObject, METH_VARARGS, NULL},
 	 { "LavaVu_getObject", _wrap_LavaVu_getObject, METH_VARARGS, NULL},

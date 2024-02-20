@@ -143,6 +143,7 @@ public:
   bool loadFigure(int fig, bool preserveGlobals=false);
   void storeFigure();
   int addFigure(std::string name="", const std::string& state="");
+  void addViewport(float x, float y, float w, float h, bool replace, std::string properties);
   void addObject(DrawingObject* obj);
   ColourMap* addColourMap(std::string name="", std::string colours="", std::string properties="");
   void updateColourMap(ColourMap* colourMap, std::string colours="", std::string properties="");

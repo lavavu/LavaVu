@@ -498,6 +498,21 @@ int Model::addFigure(std::string name, const std::string& state)
   return figures.size()-1;
 }
 
+void Model::addViewport(float x, float y, float w, float h, bool replace, std::string properties)
+{
+  //Create the view object and add to list
+  View* v = views.back();
+  if (!replace)
+  {
+    v = new View(session, x, y);
+    views.push_back(v);
+  }
+  v->w = w;
+  v->h = h;
+  session.parseSet(v->properties, properties);
+  debug_print("-- Viewport created at %f,%f %f x %f\n", v->x, v->y, v->w, v->h);
+}
+
 void Model::addObject(DrawingObject* obj)
 {
   //Check for duplicate names / objects

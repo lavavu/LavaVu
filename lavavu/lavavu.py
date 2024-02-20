@@ -3287,6 +3287,28 @@ class Viewer(dict):
         #Return wrapper obj
         return obj
 
+    def viewport(self, x=0.0, y=0.0, width=1.0, height=1.0, replace=False, **kwargs):
+        """
+        Add a viewport object
+
+        Parameters
+        ----------
+        x : float
+            x offset as fraction of window size [0,1]
+        y : float
+            y offset as fraction of window size [0,1]
+        width : float
+            width as fraction of window size [0,1]
+        height : float
+            height as fraction of window size [0,1]
+        replace : bool
+            Set to True to replace the active viewport instead of adding a new viewport
+
+        Subsequent kwargs are passed as properties dict
+        """
+        #Adds a new viewport, kwargs passed to properties dict
+        self.app.addViewport(x, y, width, height, replace, _convert_args(kwargs))
+
     def add(self, name=None, **kwargs):
         """
         Add a visualisation object

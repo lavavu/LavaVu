@@ -179,6 +179,7 @@ public:
   void addTimeStep(int step, std::string properties="");
 
   void resetViews(bool autozoom=false);
+  void addViewport(float x, float y, float w, float h, bool replace, std::string properties);
 
   void setObject(DrawingObject* target, std::string properties);
   DrawingObject* createObject(std::string properties);

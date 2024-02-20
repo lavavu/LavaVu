@@ -492,6 +492,7 @@ class LavaVu(object):
     getTimeSteps = _swig_new_instance_method(_LavaVuPython.LavaVu_getTimeSteps)
     addTimeStep = _swig_new_instance_method(_LavaVuPython.LavaVu_addTimeStep)
     resetViews = _swig_new_instance_method(_LavaVuPython.LavaVu_resetViews)
+    addViewport = _swig_new_instance_method(_LavaVuPython.LavaVu_addViewport)
     setObject = _swig_new_instance_method(_LavaVuPython.LavaVu_setObject)
     createObject = _swig_new_instance_method(_LavaVuPython.LavaVu_createObject)
     getObject = _swig_new_instance_method(_LavaVuPython.LavaVu_getObject)
