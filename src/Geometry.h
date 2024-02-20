@@ -318,7 +318,7 @@ public:
   unsigned int height;
   unsigned int depth;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
-  Texture_Ptr texture;
+  Texture_Ptr texture;               //Default texture
   lucGeometryType type;   //Holds the object type
   int step = -1; //Holds the timestep
   unsigned int voffset = 0; //Vertex offset in VBO
@@ -556,6 +556,8 @@ protected:
   std::vector<Geom_Ptr> records;
   std::vector<Geom_Ptr> geom;
   std::vector<bool> hidden;
+  //Additional textures (stored by filename)
+  std::map<std::string, Texture_Ptr> textures;
   unsigned int elements;
   unsigned int drawcount;
   DrawingObject* cached;

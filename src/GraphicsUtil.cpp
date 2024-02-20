@@ -747,11 +747,13 @@ void ImageLoader::loadPNG()
   if (!file)
   {
     debug_print("Cannot open '%s'\n", fn.full.c_str());
+    printf("Cannot open '%s'\n", fn.full.c_str());
     return;
   }
   newSource();
   source->pixels = (GLubyte*)read_png(file, source->channels, source->width, source->height);
   source->allocated = true; //Allocated by read_png()
+  //printf("Loaded, width %d, fn '%s'\n", source->width, fn.full.c_str());
 
   file.close();
 }

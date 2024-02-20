@@ -233,6 +233,9 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
       //printf("Load texture from cached copy on drawing object\n");
       tex = texture;
     }
+    //else if (properties.has("cubemap"))
+    //{
+    //}
     else if (properties.has("texture"))
     {
       //printf("Load texture from property\n");

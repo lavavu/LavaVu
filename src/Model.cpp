@@ -2007,6 +2007,13 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       if (infostream) std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block.get(), step);
+
+      /*/TODO: Has texture? write as values/rgba?
+      //if (g->hasTexture()
+      if (g->texture->loaded)
+      {
+
+      }*/
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {

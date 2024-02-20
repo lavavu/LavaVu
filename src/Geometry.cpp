@@ -1400,16 +1400,34 @@ void Geometry::setState(Geom_Ptr g)
         prop = it.value();
       //std::cout << label << " ==> " << prop << std::endl;
 
-      //Special case: string data -> treat as colourmap!
+      //Special case: string data -> treat as texture
       if (prop.is_string())
       {
-        if (g->draw->textureMap && g->draw->textureMap->texture)
+        std::string texfn = prop;
+        //Support multiple textures, load subsequent from custom props
+        if (textures.find(texfn) == textures.end())
         {
-          prog->setUniformi(label, g->draw->textureMap->texture->texture->unit);
-          //std::cerr << label << " : Colourmap texture available on unit " << g->draw->colourMap->texture->texture->unit << std::endl;
+          //Add a new empty texture container
+          textures[texfn] = std::make_shared<ImageLoader>();
+          textures[texfn]->fn = texfn;
+          //std::cout << "LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
+
+          //NOTE: hasTexture() on geom objects will return False, unless the
+          //drawing object has a texture set too, so need to set ["texture"] = True at least
+        }
+        //else
+          //std::cout << "FOUND ADDITIONAL TEX " << label << " : " << textures[texfn]->empty() << std::endl;
+        auto the_texture = textures[texfn];
+        TextureData* texture_data = draw->useTexture(the_texture);
+        if (texture_data)
+        {
+          if (!texture_data->unit)
+            texture_data->unit = textures.size()+2; //Set the texture unit, starting from 2 (1 reserved for 3d)
+          prog->setUniformi(label, texture_data->unit);
+          //printf("Texture unit set %d \n", texture_data->unit);
         }
         else
-          std::cerr << label << " : No colourmap texture available! " << prop << std::endl;
+          printf("Texture load failed, data is NULL!\n");
       }
       else if (!prop.is_null())
       {
