@@ -33,6 +33,11 @@ public:
   std::vector<TimeStep*> timesteps; //Active model timesteps
   int gap;
 
+  //Animation
+  int frame;
+  std::chrono::time_point<std::chrono::system_clock> start;
+  float time;
+
   //Geometry
   float min[3], max[3], dims[3];
   float *x_coords, *y_coords;  // Saves arrays of x,y points on circle for set segment count

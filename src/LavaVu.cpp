@@ -2474,11 +2474,13 @@ void LavaVu::display(bool redraw)
     viewSelect(selview);
   }
 
+  auto now = std::chrono::system_clock::now();
+  std::chrono::duration<float> diff = now-frametime;
+  session.frame++;
+
   //Calculate FPS
   if (session.global("fps"))
   {
-    auto now = std::chrono::system_clock::now();
-    std::chrono::duration<float> diff = now-frametime;
     framecount++;
     if (diff.count() > 1.0f)
     {
@@ -2490,6 +2492,10 @@ void LavaVu::display(bool redraw)
     ss << "FPS: " << std::setprecision(3) << fps;
     displayText(ss.str(), 1);
   }
+
+  //Get current time since started
+  diff = now-session.start;
+  session.time = (float)diff.count();
 
   if ((viewer->visible && !viewer->imagemode) || message[0] == ':')
   {

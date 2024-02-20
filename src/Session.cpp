@@ -9,6 +9,9 @@ Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1
   // Saves arrays of x,y points on circle for set segment count
   x_coords = NULL;
   y_coords = NULL;
+  frame = 0;
+  time = 0.0;
+  start = std::chrono::system_clock::now();
 }
 
 Session::~Session()

@@ -1441,6 +1441,8 @@ void Geometry::setState(Geom_Ptr g)
   prog->setUniformf("uOpaque", allopaque || g->opaque);
   prog->setUniformf("uFlat", flat);
   //std::cout << i << " OPAQUE: " << allopaque << " || " << g->opaque << std::endl;
+  prog->setUniformi("uFrame", session.frame);
+  prog->setUniformf("uTime", session.time);
 
   if (texture)
     prog->setUniform("uTexture", (int)texture->unit);
