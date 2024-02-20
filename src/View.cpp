@@ -1182,7 +1182,18 @@ void View::drawOverlay()
     Colour colour = session.fonts.setFont(properties, adjust);
     if (colour.a == 0.0) colour = textColour; //Use the user defined font colour if valid, otherwise default print colour
     session.fonts.colour = colour;
-    session.fonts.print(0.5 * (w - session.fonts.printWidth(title.c_str())), h - 3 - session.fonts.printWidth("W"), title.c_str());
+    //Left justify
+    if (title.at(0) == '-')
+      session.fonts.print(session.fonts.printWidth("I"),
+                          h - 3 - session.fonts.printWidth("W"), title.c_str()+1);
+    //Right justify
+    else if (title.at(0) == '+')
+      session.fonts.print(w - session.fonts.printWidth(title.c_str()),
+                          h - 3 - session.fonts.printWidth("W"), title.c_str()+1);
+    //Centred
+    else
+      session.fonts.print(0.5 * (w - session.fonts.printWidth(title.c_str())),
+                          h - 3 - session.fonts.printWidth("W"), title.c_str());
   }
 
   GL_Error_Check;
