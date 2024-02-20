@@ -1903,7 +1903,7 @@
   },
   "title": {
     "default": "",
-    "target": "global",
+    "target": "view",
     "type": "string",
     "desc": "Title to display at top centre of view",
     "strict": true,
