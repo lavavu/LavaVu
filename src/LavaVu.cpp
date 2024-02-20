@@ -2455,6 +2455,8 @@ void LavaVu::display(bool redraw)
 #endif
   {
     //Loop through all viewports and display each
+    //TODO: Using > 1 viewport KILLS the framerate < 10%
+    //Biggest drop is (a) reload, second is (b) viewSelect
     int selview = view;
     for (unsigned int v=0; v<amodel->views.size(); v++)
     {
@@ -2462,16 +2464,23 @@ void LavaVu::display(bool redraw)
       GL_Error_Check;
 
       //Require reload of object data for multiple viewports
-      if (amodel->views.size() > 1)
-        amodel->reloadRedraw(NULL, true);
+      //Only seems to be required for old databases, see: uw1-viewports test
+      //if (!viewer->visible && amodel->views.size() > 1)
+      if (amodel->views.size() > 1 && !aview->is3d)
+      {
+        //amodel->reload(); //(a)
+        //Flag redraw on all objects in passed viewport
+        for (unsigned int i=0; i < aview->objects.size(); i++)
+          amodel->reloadRedraw(aview->objects[i], true);
+      }
 
       // Default non-stereo render
       aview->projection(EYE_CENTRE);
-      drawSceneBlended(v > 0);
+      drawSceneBlended();
     }
 
     if (view != selview)
-    viewSelect(selview);
+      viewSelect(selview); //(b)
   }
 
   auto now = std::chrono::system_clock::now();
