@@ -105,9 +105,12 @@ def download(url, filename=None, overwrite=False, quiet=False):
             user_agent = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.7) Gecko/2009021910 Firefox/3.0.7'
             headers = {'User-Agent':user_agent,}
             request = Request(url, None, headers)
-            response = urlopen(request)
             with open(filename, "wb") as out:
-                out.write(response.read())
+                try:
+                    page = urlopen(request).read()
+                except (http.client.IncompleteRead) as e:
+                    page = e.partial
+                out.write(page)
         except (Exception) as e:
             print(str(e), url)
             raise(e)
