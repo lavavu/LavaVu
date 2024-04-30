@@ -1,9 +1,6 @@
 import os
 import sys
 from setuptools import setup
-from setuptools.command.install import install
-from setuptools.command.develop import develop
-from setuptools.command.egg_info import egg_info
 from setuptools import Extension
 from setuptools import find_packages
 try:
