@@ -3644,7 +3644,19 @@ void LavaVu::addTimeStep(int step, std::string properties)
 void LavaVu::addViewport(float x, float y, float w, float h, bool replace, std::string properties)
 {
   if (!amodel) return;
-  amodel->addViewport(x, y, w, h, replace, properties);
+  //If full screen, clear the viewport list first
+  if (w == 1.0 && h == 1.0)
+  {
+    amodel->clearViewports();
+    replace = false;
+    amodel->addViewport(x, y, w, h, false, properties);
+    //Add all objects to new fullscreen view
+    View* view = amodel->views[0];
+    for (unsigned int i=0; i < amodel->objects.size(); i++)
+      view->addObject(amodel->objects[i]);
+  }
+  else
+    amodel->addViewport(x, y, w, h, replace, properties);
   viewSelect(amodel->views.size()-1);
 }
 

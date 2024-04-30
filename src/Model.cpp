@@ -638,6 +638,13 @@ void Model::clearObjects(bool fixed)
     g->clear(fixed);
 }
 
+void Model::clearViewports()
+{
+  for(unsigned int i=0; i<views.size(); i++)
+    delete views[i];
+  views.clear();
+}
+
 void Model::setup()
 {
   //Adjust the steprange default, should be off if all steps loaded
@@ -835,9 +842,7 @@ void Model::loadWindows()
 void Model::loadViewports()
 {
   //Clear existing views
-  for(unsigned int i=0; i<views.size(); i++)
-    delete views[i];
-  views.clear();
+  clearViewports();
 
   sqlite3_stmt* statement;
   statement = database.select("SELECT id,x,y FROM viewport ORDER BY y,x");

@@ -123,6 +123,7 @@ public:
   void loadLinks();
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
+  void clearViewports();
   int loadTimeSteps(bool scan=false);
   void loadFixed();
   std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
