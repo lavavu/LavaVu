@@ -253,25 +253,6 @@ if __name__ == "__main__":
         else:
             cflags += ['-g', '-O0']
 
-    #Parallel build
-    num_jobs = 1
-    if not 'arm' in platform.machine():
-        try:
-            num_jobs = os.cpu_count()
-        except AttributeError:
-            import multiprocessing
-            num_jobs = multiprocessing.cpu_count()
-
-    if num_jobs > 1:
-        try:
-            from numpy.distutils.ccompiler import CCompiler_compile
-            from setuptools._distutils import ccompiler
-            ccompiler.CCompiler.compile = CCompiler_compile
-            os.environ['NPY_NUM_BUILD_JOBS'] = str(num_jobs)
-            print('Using parallel build, jobs: ', num_jobs)
-        except ImportError:
-            print("Numpy not found, parallel compile not available")
-
     #OS Specific
     if P == 'Windows':
         #Windows - include all dependencies
@@ -333,12 +314,14 @@ if __name__ == "__main__":
         cflags += ['-std=c++0x']
         #Build sqlite3
         #Don't compile when just running 'setup.py egg_info'
-        if len(sys.argv) < 2 or sys.argv[1] == 'egg_info':
-            sqlite3 = 'build/src/sqlite3/sqlite3.o'
+        sqlite3 = 'build/src/sqlite3/sqlite3.o'
+        if len(sys.argv) < 2 or sys.argv[1] == 'egg_info' or os.path.exists(sqlite3):
+            pass
         else:
-            sqlite3 = build_sqlite3(sqlite3_path)
+            #sqlite3 = build_sqlite3(sqlite3_path)
+            build_sqlite3(sqlite3_path)
         inc_dirs += [sqlite3_path]
-        extra_objects = sqlite3
+        extra_objects = [sqlite3]
 
         # Optional external libraries - check if installed
         if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):

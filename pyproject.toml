@@ -46,14 +46,17 @@ Source = "https://github.com/lavavu/LavaVu"
 LavaVu = 'lavavu.__main__:main'
 
 [tool.setuptools]
-packages = ["lavavu"]
-package-dir = {'lavavu' = 'lavavu'}
+include-package-data = false
+#packages = ["lavavu"]
+#package-dir = {'lavavu' = 'lavavu'}
+#exclude = ["html", "shaders"]
+
+[tool.setuptools.packages.find]
+include = ["lavavu*"]
+exclude = ["html*", "shaders*"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-
-#[tool.setuptools.packages.find]
-#where = ['lavavu']
 
 [tool.setuptools.package-data]
 lavavu = ['font.bin', 'dict.json', 'shaders/*', 'html/*', '*.dll']
@@ -62,7 +65,7 @@ lavavu = ['font.bin', 'dict.json', 'shaders/*', 'html/*', '*.dll']
 build-backend = "setuptools.build_meta"
 requires = [
     "wheel",
-    "setuptools>=40.8.0",
+    "setuptools>=61.2",
     "packaging",
     "numpy==1.13.3; python_version=='3.6'",
     "numpy==1.14.5; python_version=='3.7'",
