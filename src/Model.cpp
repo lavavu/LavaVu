@@ -2101,8 +2101,8 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
       src_len = cmp_len;
   }
 
-  if (block->minimum == HUGE_VAL) block->minimum = 0;
-  if (block->maximum == -HUGE_VAL) block->maximum = 0;
+  if (block->minimum == HUGE_VAL || std::isnan(block->minimum)) block->minimum = 0;
+  if (block->maximum == -HUGE_VAL || std::isnan(block->maximum)) block->maximum = 0;
 
   float min[3], max[3];
   for (int c=0; c<3; c++)

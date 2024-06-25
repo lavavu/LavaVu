@@ -142,12 +142,12 @@ std::ostream & operator<<(std::ostream &os, const Range& range)
 bool Range::update(const float& min, const float& max)
 {
   bool modified = false;
-  if (min < minimum)
+  if (min < minimum && !std::isnan(min))
   {
     minimum = min;
     modified = true;
   }
-  if (max > maximum)
+  if (max > maximum && !std::isnan(max))
   {
     maximum = max;
     modified = true;
