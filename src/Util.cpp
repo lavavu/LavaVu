@@ -37,6 +37,9 @@
 #include <string.h>
 #include <math.h>
 #include <sys/stat.h>
+#if __cplusplus >= 201703L
+#include <filesystem>
+#endif
 
 FILE* infostream = NULL;
 
@@ -59,6 +62,9 @@ void abort_program(const char * s, ...)
 
 bool FileExists(const std::string& name)
 {
+#if __cplusplus >= 201703L
+  return std::filesystem::exists(name);
+#else
   FILE *file = fopen(name.c_str(), "r");
   if (file)
   {
@@ -66,6 +72,7 @@ bool FileExists(const std::string& name)
     return true;
   }
   return false;
+#endif
 }
 
 std::string GetBinaryPath(const char* argv0, const char* progname)
