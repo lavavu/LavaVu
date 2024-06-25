@@ -370,7 +370,7 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 #endif
 
   /* allocate the output media context */
-#if LIBAVCODEC_VERSION_MAJOR < 59 //CHECK THIS VERSION
+#if LIBAVCODEC_VERSION_MAJOR < 58 //CHECK THIS VERSION
   //Deprecated api
   oc = avformat_alloc_context();
   /* auto detect the output format from the name. default is mpeg. */
@@ -390,13 +390,15 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 
   if (!oc) abort_program("Memory error");
 
+  //printf("LIBAVCODEC_VERSION_MAJOR=%d\n", LIBAVCODEC_VERSION_MAJOR);
   /* Codec override, use h264 for mp4 if available */
   //Always used if available, unless extension is .mpg, in which case we fall back to mpeg1
   if (filename.find(".mp4") != std::string::npos && avcodec_find_encoder(AV_CODEC_ID_H264))
 //#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(??,??,??)
-#if LIBAVCODEC_VERSION_MAJOR >= 59 //CHECK THIS VERSION
+#if LIBAVCODEC_VERSION_MAJOR >= 58 //CHECK THIS VERSION
     oc->video_codec_id = AV_CODEC_ID_H264;
 #else
+    assert(oc->oformat);
     oc->oformat->video_codec = AV_CODEC_ID_H264;
 #endif
 
