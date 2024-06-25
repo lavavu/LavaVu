@@ -33,7 +33,7 @@ jobs:
       - name: Install prereqs
         run: python -m pip install -r requirements.txt
       - name: Build/install
-        run: LV_OSMESA=1 python setup.py install
+        run: LV_OSMESA=1 python -m pip install .
       - name: Run headless test (linux only)
         if: runner.os == 'Linux'
         run: |
