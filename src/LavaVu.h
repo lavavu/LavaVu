@@ -144,8 +144,6 @@ public:
   void reloadShaders();
 
   void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
-  void readHeightMap(const FilePath& fn);
-  void readHeightMapImage(const FilePath& fn);
   void readOBJ(const FilePath& fn);
   void readRawVolume(const FilePath& fn);
   void readXrwVolume(const FilePath& fn);
