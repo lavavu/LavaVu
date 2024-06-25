@@ -35,6 +35,9 @@
 
 #include "DrawingObject.h"
 #include "Model.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 DrawingObject::DrawingObject(Session& session, std::string name, std::string props, unsigned int id)
   : session(session), dbid(id), properties(session.globals, session.defaults)
@@ -240,6 +243,14 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
     {
       //printf("Load texture from property\n");
       std::string texfn = properties["texture"];
+#if defined(__EMSCRIPTEN__)
+      for (int i=0; i<100; i++)
+      {
+        if (FileExists(texfn)) break;
+        printf("Waiting for texture to download");
+        emscripten_sleep(100);
+      }
+#endif
       if (texfn.length() > 0 && FileExists(texfn))
       {
         bool flip = properties["fliptexture"];
@@ -283,8 +294,10 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 
         if (texfn.length() > 0)
           debug_print("Texture File: %s not found!\n", texfn.c_str());
+#if not defined(__EMSCRIPTEN__)
         //If load failed, skip from now on
         properties.data["texture"] = "";
+#endif
       }
     }
     //else

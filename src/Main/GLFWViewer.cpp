@@ -242,8 +242,8 @@ static void mousescroll_callback(GLFWwindow* window, double xoffset, double yoff
 {
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
 #ifdef __EMSCRIPTEN__
-  //Flip dir in emscripten and discretise
-  yoffset = yoffset > 0 ? -1 : 1;
+  //No flip needed  in emscripten now, but still discretise
+  yoffset = yoffset > 0 ? 2 : -2;
 #endif
   float delta = yoffset / 2.0;
   if (delta != 0)

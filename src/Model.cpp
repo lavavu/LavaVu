@@ -36,6 +36,27 @@
 //Model class
 #include "Model.h"
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/fetch.h>
+
+void downloadSucceeded(emscripten_fetch_t *fetch) {
+  printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
+  // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
+  FILE* f = fopen(fetch->url, "wb");
+  fwrite(fetch->data, 1, fetch->numBytes, f); 
+  fclose(f);
+  emscripten_fetch_close(fetch); // Free data associated with the fetch.
+  //std::cout << "EXISTS? : " << FileExists(fetch->url) << std::endl;
+}
+
+void downloadFailed(emscripten_fetch_t *fetch) {
+  printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
+  emscripten_fetch_close(fetch); // Also free data on failure.
+}
+
+#endif
+
+
 Database::Database() : readonly(true), silent(true), attached(NULL), db(NULL), memory(false)
 {
   prefix[0] = '\0';
@@ -952,6 +973,21 @@ void Model::loadObjects()
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
     DrawingObject* obj = new DrawingObject(session, otitle, props, object_id);
+#if defined(__EMSCRIPTEN__)
+  //Download textures now
+  std::string texfn = obj->properties["texture"];
+  if (texfn.length() > 0)
+  {
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.onsuccess = downloadSucceeded;
+    attr.onsuccess = downloadSucceeded;
+    attr.onerror = downloadFailed;
+    emscripten_fetch(&attr, texfn.c_str());
+  }
+#endif
 
     //Convert old colour/opacity from hard coded fields if provided
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)

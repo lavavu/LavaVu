@@ -186,24 +186,25 @@ $(LIBRARY): $(ALLOBJS) | paths
 	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
 
 #Emscripten build steps...
-#curl -L https://github.com/emscripten-core/emsdk/archive/2.0.14.tar.gz --output emscripten.tar.gz
-#tar -zxf emscripten.tar.gz
-#rm emscripten.tar.gz
-#cd emsdk-2.0.14/
+#(em++/emcc now included in ubuntu but fails when we try and add LIBPNG)
+#curl -L https://github.com/emscripten-core/emsdk/archive/refs/heads/main.zip --output emscripten.zip
+#unzip emscripten.zip
+#rm emscripten.zip
+#cd emsdk-main/
 #./emsdk install latest
 #./emsdk activate latest
 #source emsdk_env.sh
 #cd ../LavaVu
 #make emscripten -j5
-#source ~/emsdk-2.0.14/emsdk_env.sh
 emscripten: DEFINES = -DGLES2 -DHAVE_GLFW -DUSE_FONTS
 emscripten: CXX = em++
 emscripten: CC = emcc
 emscripten: LIBS = -ldl -lpthread -lm -lGL -lglfw
-emscripten: LINKFLAGS = -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s DISABLE_EXCEPTION_CATCHING=0 -s LEGACY_GL_EMULATION=0 -s USE_GLFW=3 -s ALLOW_MEMORY_GROWTH=1 -s FETCH=1 -s EXTRA_EXPORTED_RUNTIME_METHODS=[FS]
+emscripten: LINKFLAGS = -lidbfs.js -s ASYNCIFY -s USE_WEBGL2=1 -s MIN_WEBGL_VERSION=2 -s MAX_WEBGL_VERSION=2 -s DISABLE_EXCEPTION_CATCHING=0 -s LEGACY_GL_EMULATION=0 -s USE_GLFW=3 -s ALLOW_MEMORY_GROWTH=1 -s FETCH=1 -s EXPORTED_RUNTIME_METHODS=[FS]
 #emscripten:  -s MODULARIZE=1 -s 'EXPORT_NAME="createLavaVuModule"' #Would need this to load multiple instances on a page without IFrames
 emscripten: LINKFLAGS += --preload-file lavavu/dict.json@dict.json --preload-file lavavu/shaders@/shaders  --preload-file lavavu/font.bin@font.bin
 EM_FLAGS =
+#--use-port=libpng
 #EM_FLAGS = -pthread
 ifeq ($(CONFIG),debug)
 	#Debugging - better detection of segfaults etc
