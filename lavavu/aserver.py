@@ -11,6 +11,7 @@ import socket
 import asyncio
 import aiohttp
 from aiohttp import web
+import logging
 
 from urllib.parse import unquote
 
@@ -284,6 +285,10 @@ async def _serve(viewer, sock):
     try:
         #Create web application manager
         app = web.Application()
+        #https://github.com/aio-libs/aiohttp/issues/3287
+        #app.logger.manager.disable = 100
+        app.logger.setLevel(logging.CRITICAL)
+
         #Store viewer
         app["viewer"] = viewer
         #Add routes
@@ -347,9 +352,6 @@ if __name__ == '__main__':
     import lavavu
     import asyncio
     lv = lavavu.Viewer()
-
-    import logging
-    logging.getLogger('aiohttp.server').setLevel(logging.CRITICAL)
 
     lv.browser()
     lv.app.loop()
