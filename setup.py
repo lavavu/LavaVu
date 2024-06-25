@@ -2,7 +2,6 @@ import os
 import sys
 from setuptools import setup
 from setuptools import Extension
-from setuptools import find_packages
 try:
     from setuptools import _distutils as distutils
     from setuptools._distutils import sysconfig
@@ -433,9 +432,9 @@ if __name__ == "__main__":
     #Binary package data for wheels
     #Package_data works for wheels(binary) only - so add everything we need for the wheels here
     #(MANIFEST.in contents will be included with sdist only unless include_package_data is enabled)
-    package_data = {'lavavu': ['font.bin', 'dict.json', 'shaders/*', 'html/*']}
-    if P == 'Windows':
-        package_data['lavavu'] += ['*.dll']
+    #package_data = {'lavavu': ['font.bin', 'dict.json', 'shaders/*', 'html/*']}
+    #if P == 'Windows':
+    #    package_data['lavavu'] += ['*.dll']
 
     dist_name = "lavavu"
     #Rename package so can be distributed as an alternative (eg: lavavu-osmesa)
@@ -443,46 +442,8 @@ if __name__ == "__main__":
         dist_name = os.environ['LV_PACKAGE']
 
     setup(name = dist_name,
-          author            = "Owen Kaluza",
-          author_email      = "owen.kaluza@monash.edu",
-          url               = "https://github.com/lavavu/LavaVu",
-          version           = version,
-          license           = "LGPL-3",
-          description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
-          long_description  = 'See https://github.com/lavavu/LavaVu for more info',
-          packages          = ['lavavu'],
-          package_dir       = {'lavavu': 'lavavu'},
-          package_data      = package_data,
-          install_requires  = requirements,
-          platforms         = ['any'],
-          entry_points      = {
-              'gui_scripts': [
-                  'LV = lavavu.__main__:main',
-                  'LavaVu = lavavu.__main__:main'
-              ]
-          },
-          #Use below to include files from MANIFEST.in or specify package_data, not both
-          #include_package_data = True,
-          classifiers = [
-            'Intended Audience :: Developers',
-            'Intended Audience :: Science/Research',
-            'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
-            'Operating System :: POSIX :: Linux',
-            'Operating System :: MacOS',
-            'Operating System :: Microsoft :: Windows',
-            'Environment :: X11 Applications',
-            'Environment :: MacOS X :: Cocoa',
-            'Environment :: Win32 (MS Windows)',
-            'Topic :: Multimedia :: Graphics :: 3D Rendering',
-            'Topic :: Scientific/Engineering :: Visualization',
-            'Development Status :: 5 - Production/Stable',
-            'Programming Language :: C++',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.8',
-            'Framework :: Jupyter',
-            'Framework :: IPython',
-          ],
+          version = version,
           ext_modules = [lv]
           )
+
 

@@ -1,3 +1,63 @@
+[project]
+name = "lavavu"
+version = "1.8.62"
+authors = [
+    {name = "Owen Kaluza", email = "owen@kaluza.id.au"},
+]
+description = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities"
+readme = "README.md"
+license = {file = "LICENSE.md"}
+classifiers = [
+    'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Science/Research',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: MacOS',
+    'Operating System :: Microsoft :: Windows',
+    'Environment :: X11 Applications',
+    'Environment :: MacOS X :: Cocoa',
+    'Environment :: Win32 (MS Windows)',
+    'Topic :: Multimedia :: Graphics :: 3D Rendering',
+    'Topic :: Scientific/Engineering :: Visualization',
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: C++',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3 :: Only',
+    'Framework :: Jupyter',
+    'Framework :: IPython'
+]
+requires-python = ">=3.5"
+dynamic = ["dependencies"]
+#dynamic = ["version", "description", "dependencies"]
+
+[project.urls]
+Documentation = "https://lavavu.github.io"
+Source = "https://github.com/lavavu/LavaVu"
+
+#[project.scripts]
+[project.gui-scripts]
+LavaVu = 'lavavu.__main__:main'
+
+[tool.setuptools]
+packages = ["lavavu"]
+package-dir = {'lavavu' = 'lavavu'}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+#[tool.setuptools.packages.find]
+#where = ['lavavu']
+
+[tool.setuptools.package-data]
+lavavu = ['font.bin', 'dict.json', 'shaders/*', 'html/*', '*.dll']
+
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [
@@ -12,4 +72,8 @@ requires = [
     "numpy==1.24.0; python_version=='3.11'",
     "numpy==1.26.2; python_version=='3.12'",
 ]
+
+[project.entry-points."gui_scripts"]
+LV = 'lavavu.__main__:main'
+LavaVu = 'lavavu.__main__:main'
 
