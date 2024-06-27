@@ -129,7 +129,7 @@ vpath %.cc src
 #When releasing, just build with the clean version from setup.py
 ifneq ($(LV_RELEASE), 1)
 #Otherwise update version using git tag
-TMP := $(shell $(PYTHON) _getversion.py)
+TMP := $(shell $(PYTHON) setup.py version)
 endif
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp)

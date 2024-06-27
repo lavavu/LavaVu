@@ -93,7 +93,7 @@ if sys.argv[-1] == 'check':
     webbrowser.open("docs/index.html")
     sys.exit()
 #Run with "tag" arg to create a release tag
-if sys.argv[-1] == 'release':
+elif sys.argv[-1] == 'release':
     #Commit and push docs
     wd = os.getcwd()
     os.chdir("docs")
@@ -113,13 +113,13 @@ if sys.argv[-1] == 'release':
     sys.exit()
 
 #Run with "publish" arg to upload the release
-if sys.argv[-1] == 'publish':
+elif sys.argv[-1] == 'publish':
     os.system("python setup.py sdist")
     os.system("twine upload dist/lavavu-%s.tar.gz" % version)
     sys.exit()
 
 # Just output the wheel name for current arch + environment
-if sys.argv[-1] == 'wheelname':
+elif sys.argv[-1] == 'wheelname':
     # https://stackoverflow.com/a/60644659/866759
     from setuptools.dist import Distribution
     lavavu = Extension('lavavu', [])
@@ -131,6 +131,26 @@ if sys.argv[-1] == 'wheelname':
     wheel_name = f'{distname}-{tag}.whl'
     print(wheel_name)
     sys.exit()
+
+elif sys.argv[-1] == 'version':
+    #Replaces _getversion.py, 
+    #Get current git tag version
+    git_version = os.popen("git describe --tags --always 2> /dev/null").read()
+    if len(git_version) == 0:
+        #Just report the current release version
+        #Still need to write if file doesn't exist
+        if os.path.exists('src/version.cpp'):
+            print(version)
+            exit()
+    else:
+        #Strip trailing newline
+        version = version.rstrip('\r\n')
+        #Replace first - with .
+        version = version.replace('-', '.', 1)
+
+    #Update version.cpp
+    write_version()
+    exit()
 
 #Get extra lib and include dirs
 inc_dirs = []
