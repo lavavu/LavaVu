@@ -18,7 +18,7 @@ jobs:
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_ENVIRONMENT: LV_LIB_DIRS=${HOME}/lib LV_INC_DIRS=${HOME}/include
-      CIBW_BEFORE_BUILD_LINUX: cd ~ && curl -O -L https://github.com/lavavu/LavaVu/releases/latest/download/ffmpeg-mini.zip && unzip -o ffmpeg-mini.zip && dnf install -y libtiff-devel
+      CIBW_BEFORE_BUILD_LINUX: cd ~ && curl -O -L https://github.com/lavavu/LavaVu/releases/latest/download/ffmpeg-mini.zip && unzip -o ffmpeg-mini.zip && dnf install -y --nogpgcheck libtiff-devel
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
     strategy:
       matrix:
@@ -38,7 +38,7 @@ jobs:
           
       - name: Install cibuildwheel
         run: |
-          python -m pip install cibuildwheel==2.16.2
+          python -m pip install cibuildwheel==2.19.1
 
       - name: Build wheels
         run: |
