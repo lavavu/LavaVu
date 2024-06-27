@@ -94,7 +94,7 @@ jobs:
           mkdir ~/ffmpeg_sources
           cd ~/ffmpeg_sources
           curl -O -L https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
-          tar xjvf nasm-2.15.05.tar.bz2
+          tar xjf nasm-2.15.05.tar.bz2
           cd nasm-2.15.05
           ./autogen.sh
           ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin"
@@ -104,7 +104,7 @@ jobs:
         run: |
           cd ~/ffmpeg_sources
           curl -O -L https://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz
-          tar xzvf yasm-1.3.0.tar.gz
+          tar xzf yasm-1.3.0.tar.gz
           cd yasm-1.3.0
           ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin"
           make -j$(nproc)
@@ -118,22 +118,14 @@ jobs:
           PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-shared
           make -j$(nproc)
           make install
-      - name: Build x265 
-        run: |
-          cd ~/ffmpeg_sources
-          git clone --branch stable --depth 2 https://bitbucket.org/multicoreware/x265_git
-          cd x265_git/build/linux
-          cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$HOME/ffmpeg_build" -DENABLE_SHARED:bool=off ../../source
-          make -j$(nproc)
-          make install
       - name: Build ffmpeg
         run: |
           cd ~/ffmpeg_sources/
           curl -O -L https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-          tar xjvf ffmpeg-snapshot.tar.bz2
+          tar xjf ffmpeg-snapshot.tar.bz2
           cd ffmpeg
           export PATH="$HOME/bin:$PATH"
-          PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure   --prefix="$HOME/ffmpeg_build"   --pkg-config-flags="--static"   --extra-cflags="-I$HOME/ffmpeg_build/include -fPIC -m64"   --extra-ldflags="-L$HOME/ffmpeg_build/lib"   --extra-libs=-lpthread   --extra-libs=-lm   --bindir="$HOME/bin"   --enable-gpl   --enable-libfreetype  --enable-libx264   --enable-libx265   --enable-nonfree --enable-shared --enable-pic --extra-ldexeflags=-pie
+    PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --pkg-config-flags="--static" --extra-cflags="-I$HOME/ffmpeg_build/include -fPIC -m64" --extra-ldflags="-L$HOME/ffmpeg_build/lib" --extra-libs=-lpthread --extra-libs=-lm --bindir="$HOME/bin" --enable-gpl --enable-libfreetype --enable-libx264 --enable-nonfree --enable-shared --enable-pic --extra-ldexeflags=-pie
           make -j$(nproc)
           make install
       - name: Zip
