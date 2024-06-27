@@ -125,7 +125,7 @@ jobs:
           tar xjf ffmpeg-snapshot.tar.bz2
           cd ffmpeg
           export PATH="$HOME/bin:$PATH"
-    PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --pkg-config-flags="--static" --extra-cflags="-I$HOME/ffmpeg_build/include -fPIC -m64" --extra-ldflags="-L$HOME/ffmpeg_build/lib" --extra-libs=-lpthread --extra-libs=-lm --bindir="$HOME/bin" --enable-gpl --enable-libfreetype --enable-libx264 --enable-nonfree --enable-shared --enable-pic --extra-ldexeflags=-pie
+          PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --pkg-config-flags="--static" --extra-cflags="-I$HOME/ffmpeg_build/include -fPIC -m64" --extra-ldflags="-L$HOME/ffmpeg_build/lib" --extra-libs=-lpthread --extra-libs=-lm --bindir="$HOME/bin" --enable-gpl --enable-libfreetype --enable-libx264 --enable-nonfree --enable-shared --enable-pic --extra-ldexeflags=-pie
           make -j$(nproc)
           make install
       - name: Zip
