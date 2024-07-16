@@ -190,6 +190,14 @@ function canvasBoxMouseMove(event, mouse) {
 
   mouse.element.viewer.draw();
 
+  //Instant updates
+  if (mouse.element.viewer.alwaysdraw) {
+    if (mouse.element.viewer.rotating)
+      mouse.element.viewer.command('' + mouse.element.viewer.getRotationString());
+    else
+      mouse.element.viewer.command('' + mouse.element.viewer.getTranslationString());
+  }
+
   return false;
 }
 
@@ -422,6 +430,7 @@ function BoxViewer(canvas) {
 
   //Non-persistant settings
   this.mode = 'Rotate';
+  this.alwaysdraw = false;
   if (!this.gl) return;
 
   //Create the renderers

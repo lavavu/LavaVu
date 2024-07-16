@@ -3899,6 +3899,7 @@ class Viewer(dict):
         if not is_notebook():
             #Open the file in a new browser window
             import webbrowser
+            #TODO: this url doesn't work
             webbrowser.open("/webview.html", new=1, autoraise=True)
         else:
             from IPython.display import display,HTML,IFrame
@@ -3915,6 +3916,26 @@ class Viewer(dict):
               <iframe class="resized" src="{2}" style="width: 100%; height: 100%; border: none;"></iframe>
             </div>""".format(resolution[0], resolution[1], url)
             display(HTML(html))
+
+        """
+        #EXPERIMENTAL EMSCRIPTEN INLINE VERSION
+        html = control._emscriptencode(menu)
+        ID = str(len(self.webglviews))
+        template = control.emscripten_inline
+        #template = template.replace('---ID---', ID)
+        #template = template.replace('---INIT---', 'initPage(\'{0}\', {1});'.format(ID, "true" if menu else "false"))
+        #template = template.replace('---CONTENT---', control.hiddenhtml)
+        #template = template.replace('---WIDTH---', str(resolution[0]))
+        #template = template.replace('---HEIGHT---', str(resolution[1]))
+        html = template.replace('---SCRIPTS---', html)
+        self.webglviews.append(ID)
+
+        #Display inline in cell
+        #from IPython.display import IFrame
+        #display(IFrame(filename, width=resolution[0], height=resolution[1]))
+        from IPython.display import display,HTML
+        display(HTML(html))
+        """
 
     def webgl(self, filename=None, resolution=(640,480), browser=False, menu=True, **kwargs):
         """        

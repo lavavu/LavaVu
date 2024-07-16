@@ -220,6 +220,13 @@ def _connectcode(target):
     else:
         return ""
 
+def _emscriptencode(menu=False, lighttheme=True):
+    """
+    Returns WebGL base code for an interactive visualisation window
+    """
+    jslibs = [[], ['emscripten.js', 'LavaVu.js']]
+    return _webglcode('', ['emscripten.css'], jslibs, menu=menu, lighttheme=lighttheme)
+
 def _getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
     return _filestohtml(files, tag="style")

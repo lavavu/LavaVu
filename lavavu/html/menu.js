@@ -320,6 +320,7 @@ function createMenu(viewer, onchange, webglmode, global) {
     gui.add({"Export GLDB" : function() {window.commands.push('export');}}, 'Export GLDB');
   } else if (viewer.canvas) {
     //Server render
+    gui.add(viewer, "alwaysdraw");
     var url = viewer.canvas.imgtarget.baseurl;
     if (url)
       gui.add({"Popup Viewer" : function() {window.open(url, "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=1024,height=768");}}, 'Popup Viewer');
