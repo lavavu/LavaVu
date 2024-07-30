@@ -1462,6 +1462,11 @@ void Geometry::setState(Geom_Ptr g)
   prog->setUniformi("uFrame", session.frame);
   prog->setUniformf("uTime", session.time);
 
+  //Viewport size uniform
+  float viewport[4];
+  glGetFloatv(GL_VIEWPORT, viewport);
+  prog->setUniform4f("uViewport", viewport);
+
   if (texture)
     prog->setUniform("uTexture", (int)texture->unit);
 

@@ -458,8 +458,6 @@ void Volumes::render(Geom_Ptr g)
   Shader_Ptr prog = session.shaders[lucVolumeType];
 
   //Uniform variables
-  float viewport[4];
-  glGetFloatv(GL_VIEWPORT, viewport);
   TextureData* voltexture = g->draw->useTexture(g->texture);
   if (!voltexture) 
   {
@@ -468,7 +466,6 @@ void Volumes::render(Geom_Ptr g)
   }
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
   prog->setUniform3f("uResolution", res);
-  prog->setUniform4f("uViewport", viewport);
 
   //User settings
   ColourMap* cmap = g->draw->colourMap;
