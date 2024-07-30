@@ -1901,7 +1901,7 @@ class ColourMap(dict):
             Convert to greyscale
         """
         if data is not None:
-            if isinstance(data, str) and re.match('^[\w_]+$', data) is not None:
+            if isinstance(data, str) and re.match(r'^[\w_]+$', data) is not None:
                 #Single word of alphanumeric characters, if not a built-in map, try matplotlib
                 if data not in self.parent.defaultcolourmaps():
                     newdata = matplotlib_colourmap(data)
