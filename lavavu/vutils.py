@@ -81,15 +81,10 @@ def download(url, filename=None, overwrite=False, quiet=False):
     filename : str
         Actual filename written to local filesystem
     """
-    #Python 3 moved modules
-    try:
-        from urllib.request import urlopen, URLError, HTTPError, Request
-        from urllib.parse import urlparse
-        from urllib.parse import quote
-    except ImportError:
-        from urllib2 import urlopen, URLError, HTTPError, Request
-        from urllib import quote
-        from urlparse import urlparse
+    from urllib.request import urlopen, URLError, HTTPError, Request
+    from urllib.parse import urlparse
+    from urllib.parse import quote
+    import http.client
 
     if filename is None:
         filename = url[url.rfind("/")+1:]
