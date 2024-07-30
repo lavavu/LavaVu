@@ -585,6 +585,8 @@ bool LavaVu::parseChar(unsigned char key)
     return parseCommands("help");
   case KEY_F2:
     return parseCommands("antialias");
+  case KEY_F3:
+    return parseCommands("shaders");
   case KEY_TAB:
     //Tab-completion from history
     for (int l=history.size()-1; l>=0; l--)
@@ -2890,7 +2892,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     printMessage("Reloading shaders");
     reloadShaders();
-    return true;
   }
   else if (parsed.exists("blend"))
   {
