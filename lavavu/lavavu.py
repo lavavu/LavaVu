@@ -5278,7 +5278,7 @@ class Video(object):
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.stop()
         if exc_value == None:
-            print('Recording complete, filename: ', self.filename)
+            #print('Recording complete, filename: ', self.filename)
             self.play()
         else:
             print('Recording failed: ', exc_value)
