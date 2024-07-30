@@ -3639,7 +3639,7 @@ void LavaVu::clearTexture(DrawingObject* target)
     std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
-void LavaVu::setTexture(DrawingObject* target, std::string texpath, bool flip, int filter, bool bgr)
+void LavaVu::setTexture(DrawingObject* target, std::string texpath, bool flip, int filter, bool bgr, std::string label)
 {
   //GL_Check_Thread(viewer->render_thread);
   if (!amodel || !target) return;
@@ -3649,33 +3649,33 @@ void LavaVu::setTexture(DrawingObject* target, std::string texpath, bool flip, i
     Texture_Ptr texture = std::make_shared<ImageLoader>(texpath, flip);
     texture->filter = filter;
     texture->bgr = bgr;
-    container->setTexture(target, texture);
+    container->setTexture(target, texture, label);
     reloadObject(target);
   }
   else
     std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
-void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
+void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr, std::string label)
 {
   if (!amodel || !target) return;
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
-    container->loadTexture(target, array, width, height, channels, flip, filter, bgr);
+    container->loadTexture(target, array, width, height, channels, flip, filter, bgr, label);
     reloadObject(target);
   }
   else
     std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
-void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr)
+void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, int filter, bool bgr, std::string label)
 {
   if (!amodel || !target) return;
   Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
-    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, filter, bgr);
+    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, filter, bgr, label);
     reloadObject(target);
   }
   else

@@ -485,6 +485,7 @@ public:
   {
     if (texture->loaded || texture->source || !texture->fn.empty()) return true;
     if (draw->texture) return true;
+    if (draw->textures.size() > 0) return true;
     if (draw->properties.has("texture"))
     {
       std::string tex = draw->properties["texture"];
@@ -556,8 +557,6 @@ protected:
   std::vector<Geom_Ptr> records;
   std::vector<Geom_Ptr> geom;
   std::vector<bool> hidden;
-  //Additional textures (stored by filename)
-  std::map<std::string, Texture_Ptr> textures;
   unsigned int elements;
   unsigned int drawcount;
   DrawingObject* cached;
@@ -640,9 +639,9 @@ public:
   void objectBounds(DrawingObject* draw, float* min, float* max, bool allsteps=false);
   void move(Geometry* other);
   void toImage(unsigned int idx);
-  void setTexture(DrawingObject* draw, Texture_Ptr tex);
+  void setTexture(DrawingObject* draw, Texture_Ptr tex, std::string label="");
   void clearTexture(DrawingObject* draw);
-  void loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, int filter=2, bool bgr=false);
+  void loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, int filter=2, bool bgr=false, std::string label="");
   Quaternion vectorRotation(Vec3d rvector);
   void drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, bool scale3d, float scale, float radius0, float radius1, float head_scale, int segment_count=24, Colour* colour=NULL);
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24, Colour* colour=NULL);

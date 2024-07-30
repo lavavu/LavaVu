@@ -73,6 +73,9 @@ public:
   Properties properties;
   //Default texture
   Texture_Ptr texture;
+  //Additional textures (stored by label / uniform name)
+  std::map<std::string, Texture_Ptr> textures;
+  std::map<std::string, GLuint> texture_units;
 
   DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();

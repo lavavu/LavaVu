@@ -1405,24 +1405,39 @@ void Geometry::setState(Geom_Ptr g)
       {
         std::string texfn = prop;
         //Support multiple textures, load subsequent from custom props
-        if (textures.find(texfn) == textures.end())
+        if (draw->textures.find(label) == draw->textures.end() || draw->textures[label]->fn.full != texfn)
         {
           //Add a new empty texture container
-          textures[texfn] = std::make_shared<ImageLoader>();
-          textures[texfn]->fn = texfn;
+          draw->textures[label] = std::make_shared<ImageLoader>();
+          //Default to the object flip setting
+          bool flip = draw->properties["fliptexture"];
+          //Allow override by setting "flip" or "noflip" in uniform name
+          if (label.find("flip") != std::string::npos)
+          {
+            flip = true;
+            if (label.find("noflip") != std::string::npos)
+              flip = false;
+          }
+          draw->textures[label]->flip = flip;
+          draw->textures[label]->fn = texfn;
           //std::cout << "LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
-
-          //NOTE: hasTexture() on geom objects will return False, unless the
-          //drawing object has a texture set too, so need to set ["texture"] = True at least
         }
-        //else
-          //std::cout << "FOUND ADDITIONAL TEX " << label << " : " << textures[texfn]->empty() << std::endl;
-        auto the_texture = textures[texfn];
+
+        auto the_texture = draw->textures[label];
         TextureData* texture_data = draw->useTexture(the_texture);
         if (texture_data)
         {
           if (!texture_data->unit)
-            texture_data->unit = textures.size()+2; //Set the texture unit, starting from 2 (1 reserved for 3d)
+          {
+            if (draw->texture_units.find(label) == draw->texture_units.end())
+            {
+              //Set the texture unit, starting from 2 (1 reserved for 3d)
+              texture_data->unit = draw->texture_units.size()+2;  //Set the texture unit, starting from 2 (1 reserved for 3d)
+              draw->texture_units[label] = texture_data->unit; //Associate this texture unit with this uniform name
+            }
+            else
+              texture_data->unit = draw->texture_units[label];
+          }
           prog->setUniformi(label, texture_data->unit);
           //printf("Texture unit set %d \n", texture_data->unit);
         }
@@ -2432,13 +2447,22 @@ void Geometry::toImage(unsigned int idx)
   image.write(path);
 }
 
-void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
+void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex, std::string label)
 {
-  Geom_Ptr geomdata = getObjectStore(draw);
-  if (geomdata)
+  if (label.length() == 0)
   {
-    //printf("(%s) Set texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), tex.get());
-    geomdata->texture = tex;
+    Geom_Ptr geomdata = getObjectStore(draw);
+    if (geomdata)
+    {
+      //printf("(%s) Set texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), tex.get());
+      geomdata->texture = tex;
+    }
+  }
+  else
+  {
+    //Custom texture load by uniform name label
+    //std::cout << "LOAD TEXTURE " << tex->fn.full << " BY LABEL " << label << " ON " << draw->name() << std::endl;
+    draw->textures[label] = tex;
   }
 }
 
@@ -2454,17 +2478,34 @@ void Geometry::clearTexture(DrawingObject* draw)
     geomdata->texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
 }
 
-void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr)
+void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr, std::string label)
 {
-  Geom_Ptr geomdata = getObjectStore(draw);
-  if (geomdata)
+  if (label.length() == 0)
   {
-    //printf("(%s) Load texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), geomdata->texture.get());
-    //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
-    //NOTE: must only load the data here, can't make OpenGL calls as can be called async
-    geomdata->texture->filter = filter;
-    geomdata->texture->bgr = bgr;
-    geomdata->texture->loadData(data, width, height, channels, flip);
+    Geom_Ptr geomdata = getObjectStore(draw);
+    if (geomdata)
+    {
+      //printf("(%s) Load texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), geomdata->texture.get());
+      //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
+      //NOTE: must only load the data here, can't make OpenGL calls as can be called async
+      //
+      geomdata->texture->filter = filter;
+      geomdata->texture->bgr = bgr;
+      geomdata->texture->loadData(data, width, height, channels, flip);
+    }
+  }
+  else
+  {
+    //Custom texture load by uniform name label
+    if (draw->textures.find(label) != draw->textures.end())
+    {
+      //std::cout << "LOAD TEXTURE BY LABEL" << label << " : " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
+      draw->textures[label]->filter = filter;
+      draw->textures[label]->bgr = bgr;
+      draw->textures[label]->loadData(data, width, height, channels, flip);
+    }
+    else
+      std::cout << "LOAD TEXTURE, LABEL NOT FOUND: " << label << std::endl;
   }
 }
 

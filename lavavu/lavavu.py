@@ -1102,7 +1102,7 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucLuminanceData, width, height, depth)
 
-    def texture(self, data=None, flip=True, filter=2, bgr=False):
+    def texture(self, data=None, flip=True, filter=2, bgr=False, label=""):
         """
         Load or clear texture data for object
 
@@ -1116,6 +1116,10 @@ class Object(dict):
             either (height, width, channels) for RGB(A) image
             or (height, width) for single channel grayscale image
             Pass a string to load a texture from given filename
+        label : string
+            Optional label to load a custom texture by name of uniform used
+            If provided, will attempt to find the texture by this label and replace its data
+            If not provided, will use the default/primary texture for the object
         flip : boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
@@ -1129,7 +1133,7 @@ class Object(dict):
             self.parent.app.clearTexture(self.ref)
             return
         if isinstance(data, str):
-            self.parent.app.setTexture(self.ref, data, flip, filter, bgr)
+            self.parent.app.setTexture(self.ref, data, flip, filter, bgr, label)
             return
 
         data = _convert(data)
@@ -1145,9 +1149,9 @@ class Object(dict):
         if data.dtype == numpy.float32:
             data = _convert(data, numpy.uint8)
         if data.dtype == numpy.uint32:
-            self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, filter, bgr)
+            self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, filter, bgr, label)
         elif data.dtype == numpy.uint8:
-            self.parent.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, filter, bgr)
+            self.parent.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, filter, bgr, label)
 
     def labels(self, data):
         """
