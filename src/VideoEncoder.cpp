@@ -66,7 +66,7 @@ void VideoEncoder::copyframe(unsigned char* array, int len)
 //Default video encoder is image frame-by-frame output to folder
 void VideoEncoder::open(unsigned int w, unsigned int h)
 {
-  std::cout << "Video encoding disabled, writing JPEG frames to ./" << filename << std::endl;
+  if (infostream) std::cerr << "Video encoding disabled, writing JPEG frames to ./" << filename << std::endl;
   frame = 0;
   width = w;
   height = h;
@@ -95,7 +95,7 @@ void VideoEncoder::display()
   frame++;
   std::stringstream ss;
   ss << filename << "/frame_" << std::setfill('0') << std::setw(5) << frame << ".jpg";
-  std::cout << ss.str() << std::endl;
+  if (infostream) std::cerr << ss.str() << std::endl;
   buffer->write(ss.str());
 }
 
@@ -195,7 +195,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
    of which frame timestamps are represented. for fixed-fps content,
    timebase should be 1/framerate and timestamp increments should be
    identically 1. */
-  std::cout << "Attempting to set framerate to " << fps << " fps " << std::endl;
+  if (infostream) std::cerr << "Attempting to set framerate to " << fps << " fps " << std::endl;
   AVRational tb;
   tb.num = 1;
   tb.den = fps;
@@ -258,6 +258,7 @@ void VideoEncoder::open_video()
   av_dict_set(&opts, "vprofile", "main", 0);
   av_dict_set(&opts, "preset", "fast",0);
   av_dict_set(&opts, "tune", "film",0);
+  if (!infostream) av_log_set_level(AV_LOG_QUIET);
   if (avcodec_open2(c, codec, &opts) < 0) abort_program("could not open codec");
 #else
   if (avcodec_open(c, codec) < 0) abort_program("could not open codec");
@@ -337,7 +338,7 @@ void VideoEncoder::write_video_frame()
   }
 
   //if (ret != 0) abort_program("Error while writing video frame\n");
-  std::cout << " frame " << frame_count << std::endl;
+  if (infostream) std::cerr << " frame " << frame_count << std::endl;
   frame_count++;
 }
 
