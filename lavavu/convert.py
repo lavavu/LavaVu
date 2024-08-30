@@ -110,10 +110,10 @@ def points_to_volume_histogram(verts, weights, res=8, normed=True, clamp=None, b
 
     #H, edges = numpy.histogramdd(verts, bins=RES)
     if boundingbox is None:
-        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, normed=normed) #density=True for newer numpy
+        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, density=normed) #density=True for newer numpy
     else:
         rg = ((vmin[0], vmax[0]), (vmin[1], vmax[1]), (vmin[2], vmax[2])) #provide bounding box as range
-        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, range=rg, normed=normed) #density=True for newer numpy
+        H, edges = numpy.histogramdd(verts, weights=weights, bins=RES, range=rg, density=normed) #density=True for newer numpy
 
     #Reverse ordering X,Y,Z to Z,Y,X for volume data
     values = H.transpose()
