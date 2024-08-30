@@ -166,6 +166,37 @@ def _convert(data, dtype=None):
 
     return data
 
+def is_documented_by(original):
+    def wrapper(target):
+        target.__doc__ = original.__doc__
+        return target
+    return wrapper
+
+def _brightness_contrast_saturation(target, brightness=0.5, contrast=0.5, saturation=0.5):
+    """
+    Set brightness, contrast and saturation in the range [0,1]
+    Zero is minimum level
+    0.5 is default, normal setting
+    1 is maximum level
+
+    Parameters
+    ----------
+    brightness : float
+        Brightness level from 0 to 1, converts to lavavu brightness in range [-1,1]
+        0 is full black, 0.5 is normal and 1.0 is full white
+    contrast : float
+        Contrast level from 0 to 1, converts to lavavu contrast in range [0,2]
+        0 is grey, 0.5 is normal and 1.0 is maximum contrast
+    saturation : float
+        Saturation level from 0 to 1, converts to lavavu saturation in range [0,2]
+        0 is greyscale, 0.5 is normal and 1.0 is maximum over-saturation
+    """
+    #Brightness in shader is [-1,1] where 0 is default
+    target["brightness"] = brightness * 2.0 - 1.0
+    #Contrast and saturation range from [0,2] where 1 is default
+    target["contrast"] = contrast * 2.0
+    target["saturation"] = saturation * 2.0
+
 def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     """
     Generate a 2d grid of vertices
@@ -1596,6 +1627,10 @@ class Object(dict):
             If set, convert colourmap/value data to rgba before export
         """
         self.parent.export_mesh(filepath, [self], rgba)
+
+    @is_documented_by(_brightness_contrast_saturation)
+    def brightness_contrast_saturation(self, brightness=0, contrast=0, saturation=0):
+        return _brightness_contrast_saturation(self)
 
 #Wrapper dict+list of objects
 class _Objects(dict):
@@ -4655,6 +4690,59 @@ class Viewer(dict):
                 obj.bakecolour()
             self.render()
         convert.export_any(filepath, objects)
+
+    @is_documented_by(_brightness_contrast_saturation)
+    def brightness_contrast_saturation(self, brightness=0, contrast=0, saturation=0):
+        return _brightness_contrast_saturation(self, brightness, contrast, saturation)
+
+    def set_properties(self, objects=None, **kwargs):
+        """
+        Set properties on viewer or on a set of objects by name
+
+        Parameters
+        ----------
+        objects : list
+            List of objects or object names, if not provided the properties will be applied globally to the Viewer itself
+        **kwargs :
+            key=value property names and values to set
+        """
+        if objects is None:
+            for key in kwargs:
+                self[key] = kwargs[key]
+        else:
+            for o in objects:
+                if isinstance(o, str):
+                    obj = self.objects[o]
+                else:
+                    obj = o
+                for key in kwargs:
+                    obj[key] = kwargs[key]
+
+    def set_uniforms(self, objects=None, **kwargs):
+        """
+        Set uniform variables on a set of objects by name or all objects
+        Uniforms are parameters sent directly to the shader program and can have any
+        valid GLSL variable name, it just needs to match the declaration in the shader
+
+        Parameters
+        ----------
+        objects : list
+            List of objects or object names, if not provided the full object list will be iterated
+        **kwargs :
+            key=value uniform names and values to set
+        """
+        if objects == None: objects = self.objects.list
+        if not isinstance(objects, list):
+            objects = [objects]
+        for o in objects:
+            if isinstance(o, str):
+                obj = self.objects[o]
+            else:
+                obj = o
+            uniforms = obj['uniforms']
+            for key in kwargs:
+                uniforms[key] = kwargs[key]
+            obj['uniforms'] = uniforms
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
