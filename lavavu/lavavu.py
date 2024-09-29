@@ -3695,6 +3695,56 @@ class Viewer(dict):
         else:
             return c.tolist()
 
+    def texture(self, label, data=None, flip=True, filter=2, bgr=False):
+        """
+        Load or clear global/shared texture data
+
+        Parameters
+        ----------
+        label : string
+            Label to load a custom texture by name of uniform used
+            Will attempt to find the texture by this label and replace its data
+        data : list or array or string
+            (If data is not provided, the object's texture data will be cleared)
+            Pass a list or numpy uint32 or uint8 array
+            texture data is loaded as raw image data
+            shape of array must be 2d or 3d,
+            either (height, width, channels) for RGB(A) image
+            or (height, width) for single channel grayscale image
+            Pass a string to load a texture from given filename
+        flip : boolean
+            flip the texture vertically after loading
+            (default is enabled as usually required for OpenGL but can be disabled)
+        filter : int
+            type of filtering, 0=None/nearest, 1=linear, 2=mipmap linear
+        bgr : boolean
+            rgb data is in BGR/BGRA format instead of RGB/RGBA
+        """
+        if data is None:
+            #Clear texture
+            self.app.clearTexture(None, label)
+            return
+        if isinstance(data, str):
+            self.app.setTexture(None, data, flip, filter, bgr, label)
+            return
+
+        data = _convert(data)
+        if len(data.shape) < 2:
+            raise ValueError(data.shape + " : Must pass a 2D or 3D data set")
+        if len(data.shape) < 3:
+            height, width = data.shape
+            channels = 1
+        else:
+            height, width, channels = data.shape
+
+        #Convert floating point data
+        if data.dtype == numpy.float32:
+            data = _convert(data, numpy.uint8)
+        if data.dtype == numpy.uint32:
+            self.app.textureUInt(None, data.ravel(), width, height, channels, flip, filter, bgr, label)
+        elif data.dtype == numpy.uint8:
+            self.app.textureUChar(None, data.ravel(), width, height, channels, flip, filter, bgr, label)
+
     def clear(self, objects=True, colourmaps=True):
         """
         Clears all data from the visualisation

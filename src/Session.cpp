@@ -31,6 +31,8 @@ void Session::destroy()
   if (y_coords != NULL) delete[] y_coords;
   x_coords = NULL;
   y_coords = NULL;
+
+  textures.clear();
 }
 
 std::string Session::counterFilename()
@@ -343,3 +345,16 @@ void Session::cacheCircleCoords(int segment_count)
   }
 }
 
+void Session::loadTexture(std::string label, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr)
+{
+  //Custom texture load by uniform name label
+  //Add a new emtextures[label]y texture container if not found
+  if (textures.find(label) == textures.end())
+    textures[label] = std::make_shared<ImageLoader>();
+
+  //std::cout << "LOAD SHARED TEXTURE " << label << " : " << width << " x " << height << " x " << channels << " BGR " << bgr << std::endl;
+  textures[label]->flip = flip;
+  textures[label]->filter = filter;
+  textures[label]->bgr = bgr;
+  textures[label]->loadData(data, width, height, channels, flip);
+}

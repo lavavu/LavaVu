@@ -1405,44 +1405,69 @@ void Geometry::setState(Geom_Ptr g)
       {
         std::string texfn = prop;
         //Support multiple textures, load subsequent from custom props
+        //std::cout << label << " = " << prop << std::endl;
+        //std::cout << "SEARCH LOCAL..." << std::endl;
+        Texture_Ptr the_texture = nullptr;
         if (draw->textures.find(label) == draw->textures.end() || draw->textures[label]->fn.full != texfn)
         {
-          //Add a new empty texture container
-          draw->textures[label] = std::make_shared<ImageLoader>();
-          //Default to the object flip setting
-          bool flip = draw->properties["fliptexture"];
-          //Allow override by setting "flip" or "noflip" in uniform name
-          if (label.find("flip") != std::string::npos)
+          //Search in global textures
+          //std::cout << "NOT FOUND, SEARCH SHARED..." << std::endl;
+          if (session.textures.find(label) != session.textures.end())
           {
-            flip = true;
-            if (label.find("noflip") != std::string::npos)
-              flip = false;
+            //std::cout << "USING SHARED TEXTURE " << label << " : " << texfn << std::endl;
+            //Save a copy in draw->textures so hasTexture returns true
+            the_texture = draw->textures[label] = session.textures[label];
           }
-          draw->textures[label]->flip = flip;
-          draw->textures[label]->fn = texfn;
-          //std::cout << "LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
-        }
-
-        auto the_texture = draw->textures[label];
-        TextureData* texture_data = draw->useTexture(the_texture);
-        if (texture_data)
-        {
-          if (!texture_data->unit)
+          else if (FileExists(texfn))
           {
-            if (draw->texture_units.find(label) == draw->texture_units.end())
+            //std::cout << "NOT FOUND, CREATE/LOAD FROM FILE..." << std::endl;
+            //Add a new empty texture container
+            draw->textures[label] = std::make_shared<ImageLoader>();
+            //Default to the object flip setting
+            bool flip = draw->properties["fliptexture"];
+            //Allow override by setting "flip" or "noflip" in uniform name
+            if (label.find("flip") != std::string::npos)
             {
-              //Set the texture unit, starting from 2 (1 reserved for 3d)
-              texture_data->unit = draw->texture_units.size()+2;  //Set the texture unit, starting from 2 (1 reserved for 3d)
-              draw->texture_units[label] = texture_data->unit; //Associate this texture unit with this uniform name
+              flip = true;
+              if (label.find("noflip") != std::string::npos)
+                flip = false;
             }
-            else
-              texture_data->unit = draw->texture_units[label];
+            draw->textures[label]->flip = flip;
+            draw->textures[label]->fn = texfn;
+            //std::cout << "LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
+            the_texture = draw->textures[label];
           }
-          prog->setUniformi(label, texture_data->unit);
-          //printf("Texture unit set %d \n", texture_data->unit);
         }
         else
-          printf("Texture load failed, data is NULL!\n");
+        {
+          //std::cout << "FOUND LOCAL." << std::endl;
+          the_texture = draw->textures[label];
+        }
+
+        if (the_texture)
+        {
+          TextureData* texture_data = draw->useTexture(the_texture);
+          if (texture_data)
+          {
+            if (!texture_data->unit)
+            {
+              if (draw->texture_units.find(label) == draw->texture_units.end())
+              {
+                //Set the texture unit, starting from 2 (1 reserved for 3d)
+                texture_data->unit = draw->texture_units.size()+2;  //Set the texture unit, starting from 2 (1 reserved for 3d)
+                draw->texture_units[label] = texture_data->unit; //Associate this texture unit with this uniform name
+              }
+              else
+                texture_data->unit = draw->texture_units[label];
+            }
+            prog->setUniformi(label, texture_data->unit);
+            //printf("Texture unit set %d \n", texture_data->unit);
+          }
+          else
+            std::cout << "Texture load failed, data is NULL! " << label << " = " << prop << std::endl;
+        }
+        else
+          std::cout << "Texture load failed, not found. " << label << " = " << prop << std::endl;
       }
       else if (!prop.is_null())
       {
@@ -2466,10 +2491,16 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex, std::string labe
   }
 }
 
-void Geometry::clearTexture(DrawingObject* draw)
+void Geometry::clearTexture(DrawingObject* draw, std::string label)
 {
   //Must be called on render thread as calls glDeleteTexures
-  if (draw->texture)
+  //Custom texture load by uniform name label
+  if (draw->textures.find(label) != draw->textures.end())
+  {
+    draw->textures.erase(label);
+    session.textures.erase(label);
+  }
+  else if (draw->texture)
     draw->texture = nullptr;
   if (draw->properties.has("texture"))
     draw->properties.data.erase("texture");
@@ -2496,16 +2527,29 @@ void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLu
   }
   else
   {
+    Texture_Ptr pt;
     //Custom texture load by uniform name label
-    if (draw->textures.find(label) != draw->textures.end())
+    //Add a new empty texture container if not found
+    if (!draw)
     {
-      //std::cout << "LOAD TEXTURE BY LABEL" << label << " : " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
-      draw->textures[label]->filter = filter;
-      draw->textures[label]->bgr = bgr;
-      draw->textures[label]->loadData(data, width, height, channels, flip);
+      if (session.textures.find(label) == session.textures.end())
+        pt = std::make_shared<ImageLoader>();
+      else
+        pt = session.textures[label];
     }
     else
-      std::cout << "LOAD TEXTURE, LABEL NOT FOUND: " << label << std::endl;
+    {
+      if (draw->textures.find(label) == draw->textures.end())
+        pt = std::make_shared<ImageLoader>();
+      else
+        pt = draw->textures[label];
+    }
+
+    //std::cout << "LOAD TEXTURE BY LABEL" << label << " : " << width << " x " << height << " x " << channels << " BGR " << bgr << " ON " << draw->name() << std::endl;
+    pt->flip = flip;
+    pt->filter = filter;
+    pt->bgr = bgr;
+    pt->loadData(data, width, height, channels, flip);
   }
 }
 

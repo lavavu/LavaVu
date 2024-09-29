@@ -72,6 +72,9 @@ public:
   std::mt19937 eng0, eng1;
   std::uniform_real_distribution<float> dist;
 
+  //Global textures (stored by label / uniform name)
+  std::map<std::string, Texture_Ptr> textures;
+
   Session();
   ~Session();
   void destroy();
@@ -83,6 +86,7 @@ public:
   json& global(const std::string& key);
   bool has(const std::string& key);
   void cacheCircleCoords(int segment_count);
+  void loadTexture(std::string label, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr);
 
   float random() {return dist(eng0);}
   float random_d() {return dist(eng1);}
