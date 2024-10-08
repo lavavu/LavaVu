@@ -2319,29 +2319,29 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
                 if _LavaVuWrapper._ctx:
                     self.ctx = _LavaVuWrapper._ctx
                 else:
-                    self.ctx = moderngl.create_standalone_context(require=330)
+                    import platform
+                    if platform.system() == 'Linux':
+                        self.ctx = moderngl.create_context(standalone=True, require=330, backend='egl')
+                    else:
+                        self.ctx = moderngl.create_standalone_context(require=330)
+                    #print(self.ctx.info)
                     _LavaVuWrapper._ctx = self.ctx
 
             if self.use_moderngl_window and self.ctx:
                 # Activate the context
                 moderngl_window.activate_context(ctx=self.ctx)
-                if self.use_moderngl_window == 'window':
-                    # Configure with default window class / settings
-                    from moderngl_window.conf import settings
-                    settings.WINDOW['gl_version'] = (3, 3)
-                    settings.WINDOW['samples'] = 4
-                    if self.resolution:
-                        settings.WINDOW['size'] = self.resolution
-                    # Creates the window instance and activates its context
-                    self.wnd = moderngl_window.create_window_from_settings()
-                else:
-                    # Configure to use provided window class
-                    window_str = 'moderngl_window.context.' + self.use_moderngl_window + '.Window'
-                    window_cls = moderngl_window.get_window_cls(window_str)
-                    if self.resolution:
-                        self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True, size=self.resolution)
-                    else:
-                        self.wnd = window_cls(title="LavaVu", gl_version=(3, 3), samples=4, vsync=True, cursor=True)
+
+                # Configure with default window class / settings
+                from moderngl_window.conf import settings
+                settings.WINDOW['gl_version'] = (3, 3)
+                if self.use_moderngl_window != 'window':
+                    #Use specified class
+                    settings.WINDOW['class'] = f'moderngl_window.context.{self.use_moderngl_window}.Window'
+                settings.WINDOW['samples'] = 4
+                if self.resolution:
+                    settings.WINDOW['size'] = self.resolution
+                # Creates the window instance and activates its context
+                self.wnd = moderngl_window.create_window_from_settings()
 
                 # register event methods
                 self.wnd.resize_func = self.resized
