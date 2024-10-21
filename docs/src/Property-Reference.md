@@ -46,7 +46,7 @@
 |*fixed*           | boolean    | false          | Set to true to make all data fixed, not time varying, for this object|
 |*renderer*        | string     | ""             | Create a custom renderer using label provided instead of using the default renderers, type of renderer created based on the "geometry" property|
 |*shaders*         | object     | []             | Custom shaders for rendering object, either filenames or source strings, provide either [fragment], [vertex, fragment] or [geometry, vertex, fragment]|
-|*uniforms*        | object     | []             | Custom shader uniforms for rendering objects, list of uniform names, will be copied from property data|
+|*uniforms*        | object     | {}             | Custom shader uniforms for rendering objects, dict of uniform names/values, will be copied from property data|
 |*steprange*       | boolean    | true           | Calculate dynamic range values per step rather than over full time range|
 |*lit*             | boolean    | true           | Apply lighting to object|
 |*cullface*        | boolean    | false          | Cull back facing polygons of object surfaces|
