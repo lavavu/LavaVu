@@ -214,10 +214,10 @@
     ]
   },
   "uniforms": {
-    "default": [],
+    "default": {},
     "target": "object",
     "type": "object",
-    "desc": "Custom shader uniforms for rendering objects, list of uniform names, will be copied from property data",
+    "desc": "Custom shader uniforms for rendering objects, dict of uniform names/values, will be copied from property data",
     "strict": true,
     "redraw": 0,
     "control": [

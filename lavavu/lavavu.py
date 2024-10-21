@@ -4790,6 +4790,7 @@ class Viewer(dict):
             else:
                 obj = o
             uniforms = obj['uniforms']
+            if len(uniforms) == 0: uniforms = {}
             for key in kwargs:
                 uniforms[key] = kwargs[key]
             obj['uniforms'] = uniforms
