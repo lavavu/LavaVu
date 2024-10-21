@@ -86,12 +86,17 @@ function WindowInteractor(id, uid, port) {
   } else {
 
     //Several possible modes to try
-    //JupyterHub URL
-    var regex = /\/user\/[a-z0-9-]+\//i;
+    //Modern JupyterHub lab URL
+    var regex = /\/lab\//;
     var parsed = regex.exec(loc.href);
     if (parsed && parsed.length > 0) {
-      var base = parsed[0];
-      connect(loc.href.substring(0,parsed.index) + base + "proxy/" + port);
+      connect(loc.href.substring(0,parsed.index) + "/proxy/" + port);
+    }
+    //Old JupyterHub URL
+    regex = /\/user\/[a-z0-9-]+\//i;
+    parsed = regex.exec(loc.href);
+    if (parsed && parsed.length > 0) {
+      connect(loc.href.substring(0,parsed.index) + parsed[0] + "proxy/" + port);
     }
 
     if (loc.protocol != 'file:') {
