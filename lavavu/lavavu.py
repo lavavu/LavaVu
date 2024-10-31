@@ -5252,44 +5252,40 @@ def player(filename, width=None, height=None, params="", nocache=True):
     """
 
     if is_notebook():
-        from IPython.display import display,HTML
-        #try:
-        #    #Newer IPython versions have a Video display function
-        #    from IPython.display import Video
-        #    display(Video(filename))
-        #except (ImportError) as e:
+        from IPython.display import display,HTML,Video
         extra_params = params
         if width and height:
             extra_params += ' width=' + str(width) + ' height=' + str(height) 
-        html = """
-        <video controls loop {params}>
-          <source src="{fn1}">
-          <source src="{fn2}">
-          <source src="http://localhost:{port}/{fn1}">
-        Sorry, your browser doesn't support embedded videos, 
-        </video><br>
-        """
-        #Jupyterlab adds it's own timestamp but notebook doesn't
-        #don't know a way to detect jupyterlab, so provide source url with and without
-        #Browser should load the first working url
 
-        #Get path relative to cwd
         #(this works in notebook/lab but not voila)
         #import pathlib
         #path = pathlib.Path(filename)
         #filename = str(path.relative_to(os.getcwd()))
+        def get_fn(filename):
+            import os
+            nbpath = os.getenv('JPY_SESSION_NAME')
+            if nbpath is not None:
+                import os.path
+                relpath = os.path.relpath(os.getcwd(), start=nbpath)
+                return relpath + '/' + filename
+            return filename
 
-        global server_ports
         import uuid
         uid = uuid.uuid1()
-        #Append a UUID based on host ID and current time
-        filename_ts = filename
+        filename_rel = get_fn(filename)
         if nocache:
-            filename_ts += "?" + str(uid)
-        html = HTML(html.format(params=extra_params, fn1=filename_ts, fn2=filename, port=server_ports[-1] if len(server_ports) else 8080))
-        display(html)
+            filename_rel += "?" + str(uid)
+        
+        display(Video(filename, embed=True, width=width, height=height))
+        #display(HTML(f"""
+        #<video controls loop {extra_params}>
+        #  <source src="{filename_rel}">
+        #Sorry, your browser doesn't support embedded videos 
+        #</video><br>
+        #"""))
+
         #Add download link
-        display(HTML('<a href="{fn}">Download Video</a>'.format(fn=filename)))
+        display(HTML('<a href="{fn}" download>Download Video</a>'.format(fn=filename)))
 
 #Class for managing video animation recording
 class Video(object):
