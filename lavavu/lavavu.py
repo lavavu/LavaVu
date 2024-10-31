@@ -5232,7 +5232,7 @@ class DrawData(object):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
-def player(filename, width=None, height=None, params="", nocache=True):
+def player(filename, width=None, height=None, params=""):
     """
     Shows a video inline within an ipython notebook.
     If IPython is not running, just returns
@@ -5247,8 +5247,6 @@ def player(filename, width=None, height=None, params="", nocache=True):
         Fixed height of player window, otherwise will use video resolution
     params : str
         Any other parameters to add to the <video> tag, eg: "autoplay"
-    nocache : bool
-        Add a timestamp to the filename url to prevent caching
     """
 
     if is_notebook():
@@ -5257,10 +5255,6 @@ def player(filename, width=None, height=None, params="", nocache=True):
         if width and height:
             extra_params += ' width=' + str(width) + ' height=' + str(height) 
 
-        #(this works in notebook/lab but not voila)
-        #import pathlib
-        #path = pathlib.Path(filename)
-        #filename = str(path.relative_to(os.getcwd()))
         def get_fn(filename):
             import os
             nbpath = os.getenv('JPY_SESSION_NAME')
@@ -5273,10 +5267,8 @@ def player(filename, width=None, height=None, params="", nocache=True):
         import uuid
         uid = uuid.uuid1()
         filename_rel = get_fn(filename)
-        if nocache:
-            filename_rel += "?" + str(uid)
         
-        display(Video(filename, embed=True, width=width, height=height))
+        display(Video(filename, width=width, height=height))
         #display(HTML(f"""
         #<video controls loop {extra_params}>
         #  <source src="{filename_rel}">
