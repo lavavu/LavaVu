@@ -109,17 +109,10 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 {
   AVCodecContext *c;
   AVStream *st;
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(53,10,1)
   st = avformat_new_stream(oc, NULL);
-#else
-  st = av_new_stream(oc, 0);
-#endif
   if (!st) abort_program("Could not alloc stream");
 
   c = video_enc = avcodec_alloc_context3(avcodec_find_encoder(codec_id));
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,64,0)
-  st->codec = c;
-#endif
   c->codec_id = codec_id;
   c->codec_type = AVMEDIA_TYPE_VIDEO;
 
@@ -252,7 +245,6 @@ void VideoEncoder::open_video()
   if (!codec) abort_program("codec not found");
 
   /* open the codec */
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(53,6,1)
   /* This is supposed to be the way to do it but doesn't work... */
   AVDictionary *opts = NULL;
   av_dict_set(&opts, "vprofile", "main", 0);
@@ -260,9 +252,6 @@ void VideoEncoder::open_video()
   av_dict_set(&opts, "tune", "film",0);
   if (!infostream) av_log_set_level(AV_LOG_QUIET);
   if (avcodec_open2(c, codec, &opts) < 0) abort_program("could not open codec");
-#else
-  if (avcodec_open(c, codec) < 0) abort_program("could not open codec");
-#endif
 
   video_outbuf = NULL;
 
@@ -278,63 +267,54 @@ void VideoEncoder::open_video()
   picture = alloc_picture(c->pix_fmt);
   if (!picture) abort_program("Could not allocate picture");
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,64,0)
   /* copy the stream parameters to the muxer */
   if (avcodec_parameters_from_context(video_st->codecpar, video_enc) < 0)
     abort_program("Could not copy the stream parameters\n");
-#endif
 
   /* Only supporting YUV420P now */
   assert(c->pix_fmt == AV_PIX_FMT_YUV420P);
 }
 
-void VideoEncoder::write_video_frame()
+void VideoEncoder::write_video_frame(AVFrame *frame)
 {
   int ret = 0;
   AVCodecContext *c = video_enc;
   AVPacket pkt;
   //https://github.com/FFmpeg/FFmpeg/commit/f7db77bd8785d1715d3e7ed7e69bd1cc991f2d07
   memset(&pkt, 0, sizeof(pkt));
-  pkt.pts                  = AV_NOPTS_VALUE;
-  pkt.dts                  = AV_NOPTS_VALUE;
-  pkt.pos                  = -1;
+  pkt.pts = AV_NOPTS_VALUE;
+  pkt.dts = AV_NOPTS_VALUE;
+  pkt.pos = -1;
 
   /* encode the image */
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(54,0,0)
-  int got_packet = 0;
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,64,0)
-  ret = avcodec_send_frame(c, picture);
+  ret = avcodec_send_frame(c, frame);
   assert(ret >= 0);
-  ret = avcodec_receive_packet(c, &pkt);
-  if (!ret) got_packet = 1;
-  //if (ret == 0) got_packet = 1;
-  assert(ret == 0 || ret == AVERROR(EAGAIN));
-#else
-  pkt.size = video_outbuf_size;
-  pkt.data = video_outbuf;
-  ret = avcodec_encode_video2(c, &pkt, picture, &got_packet);
-#endif
-  if (got_packet)
+
+  while (ret >= 0)
   {
-    if (pkt.pts != AV_NOPTS_VALUE)
-      pkt.pts = av_rescale_q(pkt.pts, c->time_base, video_st->time_base);
-    if (pkt.dts != AV_NOPTS_VALUE)
-      pkt.dts = av_rescale_q(pkt.dts, c->time_base, video_st->time_base);
-#else
-  ret = avcodec_encode_video(c, video_outbuf, video_outbuf_size, picture);
-  /* if zero size, it means the image was buffered */
-  if (ret > 0)
-  {
-    if (c->coded_frame->pts != AV_NOPTS_VALUE)
-      pkt.pts= av_rescale_q(c->coded_frame->pts, c->time_base, video_st->time_base);
-    if (c->coded_frame->key_frame)
-      pkt.flags |= AV_PKT_FLAG_KEY;
+    ret = avcodec_receive_packet(c, &pkt);
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+      break;
+    else if (ret < 0)
+    {
+      fprintf(stderr, "Error encoding a frame: %s\n", av_err2str(ret));
+      exit(1);
+    }
+
+    /* rescale output packet timestamp values from codec to stream timebase */
+    av_packet_rescale_ts(&pkt, c->time_base, video_st->time_base);
     pkt.stream_index = video_st->index;
-    pkt.data = video_outbuf;
-    pkt.size = ret;
-#endif
-    /* write the compressed frame in the media file */
+
+    /* Write the compressed frame to the media file. */
     ret = av_interleaved_write_frame(oc, &pkt);
+    /* pkt is now blank (av_interleaved_write_frame() takes ownership of
+     * its contents and resets pkt), so that no unreferencing is necessary.
+     * This would be different if one used av_write_frame(). */
+    if (ret < 0)
+    {
+      fprintf(stderr, "Error while writing output packet: %s\n", av_err2str(ret));
+      exit(1);
+    }
   }
 
   //if (ret != 0) abort_program("Error while writing video frame\n");
@@ -364,15 +344,6 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 #endif
 
   /* allocate the output media context */
-#if LIBAVCODEC_VERSION_MAJOR < 58 //CHECK THIS VERSION
-  //Deprecated api
-  oc = avformat_alloc_context();
-  /* auto detect the output format from the name. default is mpeg. */
-  const AVOutputFormat *fmt = av_guess_format(NULL, filename.c_str(), NULL);
-  if (!fmt) abort_program("Could not find suitable output format");
-
-  //oc->oformat = fmt;
-#else
   //Current api: https://ffmpeg.org/doxygen/trunk/muxing_8c-example.html#a68
   avformat_alloc_output_context2(&oc, NULL, NULL, filename.c_str());
   if (!oc)
@@ -380,7 +351,6 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
     printf("Could not deduce output format from file extension: using MPEG.\n");
     avformat_alloc_output_context2(&oc, NULL, "mpeg", filename.c_str());
   }
-#endif
 
   if (!oc) abort_program("Memory error");
 
@@ -412,10 +382,6 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
   ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_enc->pix_fmt, 0, 0, 0, 0);
 #endif
 
-#if LIBAVFORMAT_VERSION_MAJOR <= 52
-  av_set_parameters(oc, NULL);
-#endif
-
   av_dump_format(oc, 0, filename.c_str(), 1);
 
   /* now that all the parameters are set, we can open the audio and
@@ -428,26 +394,16 @@ void VideoEncoder::open(unsigned int w, unsigned int h)
 
   /* write the stream header, if any */
   /* also sets the output parameters (none). */
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(53,2,0)
   int res = avformat_write_header(oc, NULL);
-#else
-  int res = av_write_header(oc);
-#endif
   if (res != 0) abort_program("AV header write failed %d\n", res);
 }
 
 void VideoEncoder::close()
 {
-  /* OK: Moved this comment to here, writing extra frames or
-     we seem to skip the last few...
-   * No more frame to compress. The codec has a latency of a few
-     frames if using B frames, so we get the last frames by
-     passing the same picture again */
-  for (int i=0; i<20; i++)
-  {
-    picture->pts++;
-    write_video_frame();
-  }
+  // Flush/drain at end, avoids manually writing extra frames, see link below
+  //https://github.com/Motion-Project/motion/issues/492
+  //Enter draining mode by passing NULL frame and write remaining frames
+  write_video_frame(NULL);
 
   /* write the trailer, if any.  the trailer must be written
    * before you close the CodecContexts open when you wrote the
@@ -564,7 +520,7 @@ void VideoEncoder::display()
 #endif
 
   /* write video frames */
-  write_video_frame();
+  write_video_frame(picture);
 }
 
 #endif //HAVE_LIBAVCODEC

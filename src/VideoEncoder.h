@@ -145,7 +145,7 @@ protected:
   AVStream* add_video_stream(enum AVCodecID codec_id);
   AVFrame* alloc_picture(enum AVPixelFormat pix_fmt);
   void open_video();
-  void write_video_frame();
+  void write_video_frame(AVFrame *frame);
 #else
   int frame = 0;
 #endif //HAVE_LIBAVCODEC
