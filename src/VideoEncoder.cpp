@@ -342,13 +342,6 @@ void VideoEncoder::write_video_frame()
   frame_count++;
 }
 
-void VideoEncoder::close_video()
-{
-  avcodec_close(video_enc);
-  av_frame_free(&picture);
-  av_free(video_outbuf);
-}
-
 /**************************************************************/
 /* media file output */
 
@@ -464,7 +457,10 @@ void VideoEncoder::close()
 
   /* close each codec */
   if (video_st)
-    close_video();
+  {
+    av_frame_free(&picture);
+    av_free(video_outbuf);
+  }
 
   if (video_enc)
     avcodec_free_context(&video_enc);
