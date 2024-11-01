@@ -1629,7 +1629,7 @@ class Object(dict):
         self.parent.export_mesh(filepath, [self], rgba)
 
     @is_documented_by(_brightness_contrast_saturation)
-    def brightness_contrast_saturation(self, brightness=0, contrast=0, saturation=0):
+    def brightness_contrast_saturation(self, brightness=None, contrast=None, saturation=None):
         return _brightness_contrast_saturation(self)
 
 #Wrapper dict+list of objects
@@ -4742,7 +4742,7 @@ class Viewer(dict):
         convert.export_any(filepath, objects)
 
     @is_documented_by(_brightness_contrast_saturation)
-    def brightness_contrast_saturation(self, brightness=0, contrast=0, saturation=0):
+    def brightness_contrast_saturation(self, brightness=None, contrast=None, saturation=None):
         return _brightness_contrast_saturation(self, brightness, contrast, saturation)
 
     def set_properties(self, objects=None, **kwargs):
