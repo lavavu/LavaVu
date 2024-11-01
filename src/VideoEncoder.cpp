@@ -278,6 +278,7 @@ void VideoEncoder::open_video()
 void VideoEncoder::write_video_frame(AVFrame *frame)
 {
   int ret = 0;
+  char a[AV_ERROR_MAX_STRING_SIZE] = {0};
   AVCodecContext *c = video_enc;
   AVPacket pkt;
   //https://github.com/FFmpeg/FFmpeg/commit/f7db77bd8785d1715d3e7ed7e69bd1cc991f2d07
@@ -297,7 +298,7 @@ void VideoEncoder::write_video_frame(AVFrame *frame)
       break;
     else if (ret < 0)
     {
-      fprintf(stderr, "Error encoding a frame: %s\n", av_err2str(ret));
+      fprintf(stderr, "Error encoding a frame: %s\n", av_make_error_string(a, AV_ERROR_MAX_STRING_SIZE, ret));
       exit(1);
     }
 
@@ -312,7 +313,7 @@ void VideoEncoder::write_video_frame(AVFrame *frame)
      * This would be different if one used av_write_frame(). */
     if (ret < 0)
     {
-      fprintf(stderr, "Error while writing output packet: %s\n", av_err2str(ret));
+      fprintf(stderr, "Error while writing output packet: %s\n", av_make_error_string(a, AV_ERROR_MAX_STRING_SIZE, ret));
       exit(1);
     }
   }
