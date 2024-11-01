@@ -3196,6 +3196,12 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality, int 
   return filename;
 }
 
+void LavaVu::pauseVideo()
+{
+  if (encoder)
+    encoder->render = !encoder->render;
+}
+
 void LavaVu::writeSteps(bool images, int start, int end)
 {
   GL_Check_Thread(viewer->render_thread);

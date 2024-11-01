@@ -166,6 +166,7 @@ public:
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0, int quality=1);
   std::string encodeVideo(std::string filename="", int fps=30, int quality=1, int width=0, int height=0);
+  void pauseVideo();
   void defaultModel();
   ColourMap* addColourMap(std::string name, std::string colours="", std::string properties="");
   void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");

@@ -23815,6 +23815,35 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_pauseVideo(PyObject *self, PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  (void)self;
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_pauseVideo" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      (arg1)->pauseVideo();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_defaultModel(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -32449,6 +32478,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_web", _wrap_LavaVu_web, METH_VARARGS, NULL},
 	 { "LavaVu_video", _wrap_LavaVu_video, METH_VARARGS, NULL},
 	 { "LavaVu_encodeVideo", _wrap_LavaVu_encodeVideo, METH_VARARGS, NULL},
+	 { "LavaVu_pauseVideo", _wrap_LavaVu_pauseVideo, METH_O, NULL},
 	 { "LavaVu_defaultModel", _wrap_LavaVu_defaultModel, METH_O, NULL},
 	 { "LavaVu_addColourMap", _wrap_LavaVu_addColourMap, METH_VARARGS, NULL},
 	 { "LavaVu_updateColourMap", _wrap_LavaVu_updateColourMap, METH_VARARGS, NULL},
@@ -32853,6 +32883,7 @@ static PyMethodDef SwigMethods_proxydocs[] = {
 	 { "LavaVu_web", _wrap_LavaVu_web, METH_VARARGS, NULL},
 	 { "LavaVu_video", _wrap_LavaVu_video, METH_VARARGS, NULL},
 	 { "LavaVu_encodeVideo", _wrap_LavaVu_encodeVideo, METH_VARARGS, NULL},
+	 { "LavaVu_pauseVideo", _wrap_LavaVu_pauseVideo, METH_O, NULL},
 	 { "LavaVu_defaultModel", _wrap_LavaVu_defaultModel, METH_O, NULL},
 	 { "LavaVu_addColourMap", _wrap_LavaVu_addColourMap, METH_VARARGS, NULL},
 	 { "LavaVu_updateColourMap", _wrap_LavaVu_updateColourMap, METH_VARARGS, NULL},

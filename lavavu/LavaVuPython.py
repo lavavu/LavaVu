@@ -481,6 +481,7 @@ class LavaVu(object):
     web = _swig_new_instance_method(_LavaVuPython.LavaVu_web)
     video = _swig_new_instance_method(_LavaVuPython.LavaVu_video)
     encodeVideo = _swig_new_instance_method(_LavaVuPython.LavaVu_encodeVideo)
+    pauseVideo = _swig_new_instance_method(_LavaVuPython.LavaVu_pauseVideo)
     defaultModel = _swig_new_instance_method(_LavaVuPython.LavaVu_defaultModel)
     addColourMap = _swig_new_instance_method(_LavaVuPython.LavaVu_addColourMap)
     updateColourMap = _swig_new_instance_method(_LavaVuPython.LavaVu_updateColourMap)

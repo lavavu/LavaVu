@@ -5348,6 +5348,15 @@ class Video(object):
             for f in glob.glob(self.filename + "/frame_*.jpg"):
                 os.remove(f)
 
+    def pause(self):
+        """
+        Pause/resume recording, no rendered frames will be added to the video while paused
+        """
+        if self.encoder:
+            self.encoder.render = not self.encoder.render
+        else:
+            self.viewer.app.pauseVideo()
+
     def stop(self):
         """
         Stop recording, final frames will be written and file closed, ready to play. 
