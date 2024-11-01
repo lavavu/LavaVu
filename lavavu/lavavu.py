@@ -172,7 +172,7 @@ def is_documented_by(original):
         return target
     return wrapper
 
-def _brightness_contrast_saturation(target, brightness=0.5, contrast=0.5, saturation=0.5):
+def _brightness_contrast_saturation(target, brightness=None, contrast=None, saturation=None, normalise=True):
     """
     Set brightness, contrast and saturation in the range [0,1]
     Zero is minimum level
@@ -192,10 +192,10 @@ def _brightness_contrast_saturation(target, brightness=0.5, contrast=0.5, satura
         0 is greyscale, 0.5 is normal and 1.0 is maximum over-saturation
     """
     #Brightness in shader is [-1,1] where 0 is default
-    target["brightness"] = brightness * 2.0 - 1.0
+    target["brightness"] = None if brightness is None else brightness * 2.0 - 1.0
     #Contrast and saturation range from [0,2] where 1 is default
-    target["contrast"] = contrast * 2.0
-    target["saturation"] = saturation * 2.0
+    target["contrast"] = None if contrast is None else contrast * 2.0
+    target["saturation"] = None if saturation is None else saturation * 2.0
 
 def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     """
