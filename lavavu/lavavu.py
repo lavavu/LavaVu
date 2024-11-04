@@ -5274,7 +5274,7 @@ def player(filename, params="controls autoplay loop", **kwargs):
         display(Video(url=filename, html_attributes=f"id='{vid}' " + params, **kwargs))
 
         #Add download link
-        display(HTML(f'<a id="link_{vid})" href="{filename}" download>Download Video</a>'))
+        display(HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
 
         # Fallback - replace url on gadi and similar jupyterhub installs with 
         # fixed working directory that doesn't match notebook dir
