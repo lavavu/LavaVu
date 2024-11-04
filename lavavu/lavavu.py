@@ -5292,7 +5292,7 @@ def player(filename, params="controls autoplay loop", **kwargs):
             console.log("Replaced video url: " + fixed);
             el.src = fixed;
             //Also fix download link
-            document.getElementById('link_{vid}').src = fixed;
+            document.getElementById('link_{vid}').href = fixed;
           }}
         }});
         """))
