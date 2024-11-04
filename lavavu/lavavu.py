@@ -4194,7 +4194,7 @@ class Viewer(dict):
 
         try:
             fn = self.app.video(filename, fps, resolution[0], resolution[1], start, end, quality, **kwargs)
-            player(fn)
+            player(fn, **kwargs)
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass
@@ -5232,7 +5232,7 @@ class DrawData(object):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
-def player(filename, width=None, height=None, params=""):
+def player(filename, params="controls autoplay loop", **kwargs):
     """
     Shows a video inline within an ipython notebook.
     If IPython is not running, just returns
@@ -5241,43 +5241,62 @@ def player(filename, width=None, height=None, params=""):
     ----------
     filename : str
         Path and name of the file to play
-    width : int
-        Fixed width of player window, otherwise will use video resolution
-    height : int
-        Fixed height of player window, otherwise will use video resolution
     params : str
-        Any other parameters to add to the <video> tag, eg: "autoplay"
+        Additional html attributes for the video control, see:
+        https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video
+    **kwargs : 
+        width=W,height=H will set fixed size of player window
+        See further player arguments at
+        https://ipython.readthedocs.io/en/latest/api/generated/IPython.display.html#IPython.display.Video
     """
 
     if is_notebook():
-        from IPython.display import display,HTML,Video
-        extra_params = params
-        if width and height:
-            extra_params += ' width=' + str(width) + ' height=' + str(height) 
+        from IPython.display import display,HTML,Video,Javascript
+        import uuid
+        vid = 'video_' + str(uuid.uuid4())[:8]
 
+        '''
         def get_fn(filename):
             import os
+            #This is unreliable, path incorrect on NCI
             nbpath = os.getenv('JPY_SESSION_NAME')
             if nbpath is not None:
                 import os.path
-                relpath = os.path.relpath(os.getcwd(), start=nbpath)
+                relpath = os.path.relpath(os.getcwd(), start=os.path.dirname(nbpath))
                 return relpath + '/' + filename
             return filename
+        ''';
 
         import uuid
         uid = uuid.uuid1()
-        filename_rel = get_fn(filename)
         
-        display(Video(filename, width=width, height=height))
-        #display(HTML(f"""
-        #<video controls loop {extra_params}>
-        #  <source src="{filename_rel}">
-        #Sorry, your browser doesn't support embedded videos 
-        #</video><br>
-        #"""))
+        #Embed player
+        display(Video(url=filename, html_attributes=f"id='{vid}' " + params, **kwargs))
 
         #Add download link
-        display(HTML('<a href="{fn}" download>Download Video</a>'.format(fn=filename)))
+        display(HTML(f'<a id="link_{vid})" href="{filename}" download>Download Video</a>'))
+
+        # Fallback - replace url on gadi and similar jupyterhub installs with 
+        # fixed working directory that doesn't match notebook dir
+        # check the video tag url and remove subpath on 404 error
+        display(Javascript(f"""
+        let el = document.getElementById('{vid}');
+        let url = el.src;
+        fetch(url, {{method: 'HEAD'}}).then(response=>{{
+          if(response.status == 404) {{
+            console.log("Bad video url: " + url);
+            let toppath = "/files/home/"
+            let baseurl = url.substring(0, url.indexOf(toppath)+toppath.length);
+            let endurl = url.substring(url.indexOf("{filename}"));
+            let fixed = baseurl + endurl;
+            console.log("Replaced video url: " + fixed);
+            el.src = fixed;
+            //Also fix download link
+            document.getElementById('link_{vid}').src = fixed;
+          }}
+        }});
+        """))
+        
 
 #Class for managing video animation recording
 class Video(object):
