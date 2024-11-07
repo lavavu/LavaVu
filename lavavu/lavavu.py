@@ -4357,8 +4357,10 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution : tuple(int,int)
-            Frame size in pixels: width, height. Defaults to the viewer default output resolution, usually (640,480)
+        resolution : int, tuple(int,int)
+            Frame size in pixels: width, height.
+            Defaults to half the viewer default output resolution with a minimum width of 640 pixels
+            If a single integer is passed, will use as the width while maintaining output aspect ratio
         menu : boolean
             Adds a menu to the top right allowing control of vis parameters, defaults to on
         """
@@ -4425,7 +4427,6 @@ class Viewer(dict):
 
         #Return
         return vdat
-
 
     def getview(self):
         """

@@ -481,8 +481,20 @@ class Window(_Container):
         self.align = align
         self.wrapper = wrapper
         self.fullscreen = fullscreen
-        if resolution is not None:
-            viewer.output_resolution = resolution
+        if resolution is None:
+            #Default to largest of 640x480 or output res / 2
+            resolution = [0,0]
+            resolution[0] = max(viewer.output_resolution[0]//2, 640)
+            resolution[1] = int(resolution[0] * viewer.output_resolution[1]/viewer.output_resolution[0])
+        elif isinstance(resolution, int):
+            #Passed interger - interpert as width
+            resolution = [resolution,0]
+
+        if resolution[1] == 0:
+            #Width only, set height based on output aspect ratio
+            resolution[1] = int(resolution[0] * viewer.output_resolution[1]/viewer.output_resolution[0])
+
+        viewer.output_resolution = resolution
 
     def html(self):
         #print(self.viewer["resolution"], self.viewer.output_resolution)
