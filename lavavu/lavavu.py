@@ -5272,7 +5272,8 @@ def player(filename, params="controls autoplay loop", **kwargs):
         uid = uuid.uuid1()
         
         #Embed player
-        display(Video(url=os.path.relpath(filename), html_attributes=f"id='{vid}' " + params, **kwargs))
+        filename = os.path.relpath(filename)
+        display(Video(url=filename, html_attributes=f"id='{vid}' " + params, **kwargs))
 
         #Add download link
         display(HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
