@@ -14,7 +14,8 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 """
 
 __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image', 'Video',
-           'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp',
+           'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5',
+           'lerp', 'vector_magnitude', 'vector_normalise', 'vector_align',
            'player', 'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
@@ -4433,7 +4434,7 @@ class Viewer(dict):
         #Return
         return vdat
 
-    def lookat(pos, lookat=None, up=None):
+    def lookat(self, pos, at=None, up=None):
         """
         Set the camera with a position coord and lookat coord
 
@@ -4448,21 +4449,21 @@ class Viewer(dict):
         """
 
         # Use the origin from viewer if no target provided
-        if lookat is None:
-            lookat = self["focus"]
+        if at is None:
+            at = self["focus"]
         else:
-            self["focus"] = lookat
+            self["focus"] = at
 
         # Default to Y-axis up vector
         if up is None:
-            up = np.array([0, 1, 0])
+            up = numpy.array([0, 1, 0])
 
         # Calculate the rotation matrix
-        heading = np.array(pos) - np.array(lookat)
-        zd = normalise(heading)
-        xd = normalise(np.cross(up, zd))
-        yd = normalise(np.cross(zd, xd))
-        q = quat.from_rotation_matrix(np.array([xd, yd, zd]))
+        heading = numpy.array(pos) - numpy.array(at)
+        zd = vector_normalise(heading)
+        xd = vector_normalise(numpy.cross(up, zd))
+        yd = vector_normalise(numpy.cross(zd, xd))
+        q = quat.from_rotation_matrix(numpy.array([xd, yd, zd]))
         q = q.normalized()
 
         # Apply the rotation
@@ -4470,29 +4471,29 @@ class Viewer(dict):
 
         # Translate back by heading vector length in Z
         # (model origin in lavavu takes care of lookat offset)
-        tr = [0, 0, -magnitude(np.array(pos) - np.array(lookat))]
+        tr = [0, 0, -vector_magnitude(numpy.array(pos) - numpy.array(at))]
 
         # Apply translation
         self.translation(tr)
 
-    def lerpto(self, pos, L):
+    def camlerpto(self, pos, L):
         # Lerp using current camera orientation as start point
         pos0 = self.camera(quiet=True)
-        return self.lerp(pos0, pos)
+        return self.camlerp(pos0, pos)
 
-    def lerp(self, pos0, pos1, L):
+    def camlerp(self, pos0, pos1, L):
         """
         Linearly Interpolate between two camera positions/orientations and
         set the camera to the resulting position/orientation
         """
         final = {}
         for key in ["translate", "rotate", "focus"]:
-            val0 = np.array(pos0[key])
-            val1 = np.array(pos1[key])
+            val0 = numpy.array(pos0[key])
+            val1 = numpy.array(pos1[key])
             res = val0 + (val1 - val0) * L
             if len(res) > 3:
                 # Normalise quaternion
-                res = res / np.linalg.norm(res)
+                res = res / numpy.linalg.norm(res)
             final[key] = res.tolist()
 
         self.camera(final)
@@ -4510,7 +4511,7 @@ class Viewer(dict):
             if stop and i > stop:
                 break
             L = i / (steps - 1)
-            self.lerp(pos0, pos1, L)
+            self.camlerp(pos0, pos1, L)
             if callback is not None:
                 callback(self, i, steps)
             self.render()
@@ -5932,6 +5933,56 @@ def lerp(first, second, mu):
         diff = second[i] - first[i]
         final[i] += diff * mu
     return final
+
+def vector_magnitude(vec):
+    return numpy.linalg.norm(vec)
+
+def vector_normalise(vec):
+    norm = numpy.linalg.norm(vec)
+    if norm == 0:
+        vn = vec
+    else:
+        vn = vec / norm
+    return vn
+
+def vector_align(v1, v2, lvformat=True):
+    """
+    Get a rotation quaterion to align vectors v1 with v2
+
+    Parameters
+    ----------
+    v1 : list/numpy.ndarray
+         First 3 component vector
+    v2 : list/numpy.ndarray
+         Second 3 component vector to align the first to
+
+    Returns
+    -------
+    list: quaternion to rotate v1 to v2 (in lavavu format)
+    """
+
+    # Check for parallel or opposite
+    v1 = vector_normalise(numpy.array(v1))
+    v2 = vector_normalise(numpy.array(v2))
+    epsilon = numpy.finfo(numpy.float32).eps
+    one_minus_eps = 1.0 - epsilon
+    if numpy.dot(v1, v2) > one_minus_eps:  #  1.0
+        # No rotation
+        return [0, 0, 0, 1]
+    elif numpy.dot(v1, v2) < -one_minus_eps:  # -1.0
+        # 180 rotation about Y
+        return [0, 1, 0, 1]
+    xyz = numpy.cross(v1, v2)
+    l1 = numpy.linalg.norm(v1)
+    l2 = numpy.linalg.norm(v2)
+    w = math.sqrt((l1 * l1) * (l2 * l2)) + numpy.dot(v1, v2)
+    qr = quat.quaternion(w, xyz[0], xyz[1], xyz[2])
+    qr = qr.normalized()
+    # Return in LavaVu quaternion format
+    if lvformat:
+        return [qr.x, qr.y, qr.z, qr.w]
+    else:
+        return qr
 
 if __name__ == '__main__':
     #Run doctests - only works on numpy 1.14+ due to changes in array printing
