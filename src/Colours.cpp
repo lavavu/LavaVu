@@ -375,6 +375,8 @@ void Colour::fromX11Colour(std::string x11colour)
     return fromRGBA(210, 105, 30);
   if (x11colour == "firebrick")
     return fromRGBA(178, 34, 34);
+  if (x11colour == "crimson")
+    return fromRGBA(220, 20, 60);
   if (x11colour == "brown")
     return fromRGBA(165, 42, 42);
   if (x11colour == "darksalmon")
@@ -1073,6 +1075,8 @@ void Colour::fromX11Colour(std::string x11colour)
     return fromRGBA(139, 0, 0);
   if (x11colour == "lightgreen")
     return fromRGBA(144, 238, 144);
+  if (x11colour == "teal")
+    return fromRGBA(0, 127, 127);
   if (x11colour.substr(0, 4) == "grey" ||
       x11colour.substr(0, 4) == "gray")
   {
