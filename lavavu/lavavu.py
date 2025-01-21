@@ -5268,9 +5268,6 @@ def player(filename, params="controls autoplay loop", **kwargs):
             return filename
         ''';
 
-        import uuid
-        uid = uuid.uuid1()
-        
         #Embed player
         filename = os.path.relpath(filename)
         display(Video(url=filename, html_attributes=f"id='{vid}' " + params, **kwargs))
