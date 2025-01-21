@@ -421,6 +421,9 @@ void Volumes::update()
     //Setup gradient texture from colourmap
     ColourMap* cmap = geom[i]->draw->colourMap;
     if (cmap) cmap->loadTexture();
+
+    auto tex = geom[i]->texture;
+    tex->filter = current->properties["texturefilter"];
   }
 
   //Restore padding
