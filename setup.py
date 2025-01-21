@@ -427,11 +427,6 @@ if __name__ == "__main__":
                     extra_objects=extra_objects,
                     sources = srcs)
 
-    #For some reason, jupyter_server_proxy requirement breaks conda build
-    requirements = ['numpy>=1.11', 'aiohttp', 'jupyter_server_proxy']
-    if 'CONDA_BUILD' in os.environ:
-        del requirements[-1]
-
     #Binary package data for wheels
     #Package_data works for wheels(binary) only - so add everything we need for the wheels here
     #(MANIFEST.in contents will be included with sdist only unless include_package_data is enabled)

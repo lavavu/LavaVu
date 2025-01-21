@@ -50,6 +50,7 @@ from collections import deque
 import time
 import weakref
 import asyncio
+import quaternion as quat
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -4432,6 +4433,88 @@ class Viewer(dict):
         #Return
         return vdat
 
+    def lookat(pos, lookat=None, up=None):
+        """
+        Set the camera with a position coord and lookat coord
+
+        Parameters
+        ----------
+        pos : list/numpy.ndarray
+            Camera position in world coords
+        lookat : list/numpy.ndarray
+            Look at position in world coords, defaults to model origin
+        up : list/numpy.ndarray
+            Up vector, defaults to Y axis [0,1,0]
+        """
+
+        # Use the origin from viewer if no target provided
+        if lookat is None:
+            lookat = self["focus"]
+        else:
+            self["focus"] = lookat
+
+        # Default to Y-axis up vector
+        if up is None:
+            up = np.array([0, 1, 0])
+
+        # Calculate the rotation matrix
+        heading = np.array(pos) - np.array(lookat)
+        zd = normalise(heading)
+        xd = normalise(np.cross(up, zd))
+        yd = normalise(np.cross(zd, xd))
+        q = quat.from_rotation_matrix(np.array([xd, yd, zd]))
+        q = q.normalized()
+
+        # Apply the rotation
+        self.rotation(q.x, q.y, q.z, q.w)
+
+        # Translate back by heading vector length in Z
+        # (model origin in lavavu takes care of lookat offset)
+        tr = [0, 0, -magnitude(np.array(pos) - np.array(lookat))]
+
+        # Apply translation
+        self.translation(tr)
+
+    def lerpto(self, pos, L):
+        # Lerp using current camera orientation as start point
+        pos0 = self.camera(quiet=True)
+        return self.lerp(pos0, pos)
+
+    def lerp(self, pos0, pos1, L):
+        """
+        Linearly Interpolate between two camera positions/orientations and
+        set the camera to the resulting position/orientation
+        """
+        final = {}
+        for key in ["translate", "rotate", "focus"]:
+            val0 = np.array(pos0[key])
+            val1 = np.array(pos1[key])
+            res = val0 + (val1 - val0) * L
+            if len(res) > 3:
+                # Normalise quaternion
+                res = res / np.linalg.norm(res)
+            final[key] = res.tolist()
+
+        self.camera(final)
+
+    def flyto(self, pos, steps, stop=False, callback=None):
+        # Fly using current camera orientation as start point
+        pos0 = self.camera(quiet=True)
+        return self.fly(pos0, pos, steps, stop, callback)
+
+    def fly(self, pos0, pos1, steps, stop=False, callback=None):
+        self.camera(pos0)
+        self.render()
+
+        for i in range(steps):
+            if stop and i > stop:
+                break
+            L = i / (steps - 1)
+            self.lerp(pos0, pos1, L)
+            if callback is not None:
+                callback(self, i, steps)
+            self.render()
+
     def getview(self):
         """
         Get current view settings
@@ -5858,4 +5941,5 @@ if __name__ == '__main__':
     else:
         import doctest
         doctest.testmod()
+
 
