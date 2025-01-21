@@ -4378,7 +4378,7 @@ class Viewer(dict):
         #Issue redisplay to active viewer
         self.control.redisplay()
 
-    def camera(self, data=None):
+    def camera(self, data=None, quiet=False):
         """
         Get/set the current camera viewpoint
 
@@ -4389,6 +4389,8 @@ class Viewer(dict):
         ----------
         data : dict
             Camera view to apply if any
+        quiet : bool
+            Skip print and calling "camera" script command which produces noisy terminal output
 
         Returns
         -------
@@ -4399,7 +4401,8 @@ class Viewer(dict):
         me = getname(self)
         if not me: me = "lv"
         #Also print in terminal for debugging
-        self.commands("camera")
+        if not quiet and not data:
+            self.commands("camera")
         #Get: export from first view
         vdat = {}
         if len(self.state["views"]) and self.state["views"][0]:
@@ -4417,8 +4420,9 @@ class Viewer(dict):
 
             copyview(vdat, self.state["views"][0])
 
-            print(me + ".translation(" + str(vdat["translate"])[1:-1] + ")")
-            print(me + ".rotation(" + str(vdat["xyzrotate"])[1:-1] + ")")
+            if not quiet and not data:
+                print(me + ".translation(" + str(vdat["translate"])[1:-1] + ")")
+                print(me + ".rotation(" + str(vdat["xyzrotate"])[1:-1] + ")")
 
             #Set
             if data is not None:
