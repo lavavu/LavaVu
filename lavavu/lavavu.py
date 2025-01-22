@@ -2327,8 +2327,9 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
                     if platform.system() == 'Linux':
                         self.ctx = moderngl.create_context(standalone=True, require=330, backend='egl')
                     else:
-                        self.ctx = moderngl.create_standalone_context(require=330)
-                    #print(self.ctx.info)
+                        standalone = not self.use_moderngl_window
+                        self.ctx = moderngl.create_standalone_context(standalone=standalone, require=330)
+                    print(self.ctx.info)
                     _LavaVuWrapper._ctx = self.ctx
 
             if self.use_moderngl_window and self.ctx:
