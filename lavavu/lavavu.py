@@ -2054,13 +2054,15 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
     #Shared context
     _ctx = None
 
-    def __init__(self, threaded, runargs, resolution=None, binpath=None, context="default"):
+    def __init__(self, threaded, runargs, resolution=None, binpath=None, context=None):
         self.args = runargs
         self._closing = False
         self.resolution = resolution
         self._loop = None
 
         #OpenGL context creation options
+        if context is None:
+            context = os.environ.get("LV_CONTEXT", "default")
         havecontext = False
         self.use_moderngl = False
         self.use_moderngl_window = False
@@ -2702,7 +2704,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, threads=False, **kwargs):
+    def __init__(self, *args, resolution=None, binpath=None, context=None, port=8080, threads=False, **kwargs):
         """
         Create and init viewer instance
 
