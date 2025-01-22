@@ -9,20 +9,30 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 out vec4 vColour;
 out vec2 vTexCoord;
+flat out vec4 vFlatColour;
+
 void main(void)
 {
   gl_Position = uPMatrix * uMVMatrix * aVertexPosition;
   vColour = aVertexColour;
   vTexCoord = aVertexTexCoord;
+  vFlatColour = aVertexColour;
 }
 )";
 
 const char *fragmentShader = R"(
 in vec4 vColour;
-in vec2 vTexCoord;
+
+flat in vec4 vFlatColour;
+uniform bool uFlat;
+out vec4 outColour;
+
 void main(void)
 {
-  gl_FragColor = vColour;
+  if (uFlat)
+    outColour = vFlatColour;
+  else
+    outColour = vColour;
 }
 )";
 
