@@ -41,10 +41,6 @@ jobs:
       - name: Set macOS deployment target
         run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d '.' -f 1-2)" >> $GITHUB_ENV
 
-      - name: Checks
-        run: |
-          pkg-config --cflags --libs libavcodec
-
       - name: Build wheels
         run: |
           python -m cibuildwheel --output-dir wheelhouse
