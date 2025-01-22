@@ -20,12 +20,7 @@ in float vPointSize;
 in vec3 vPosEye;
 in float vPointType;
 
-#ifdef WEBGL
-#define outColour gl_FragColor
-#define texture(a,b) texture2D(a,b)
-#else
 out vec4 outColour;
-#endif
 
 void calcColour(vec3 colour, float alpha)
 {

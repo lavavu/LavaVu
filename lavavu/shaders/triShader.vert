@@ -2,9 +2,7 @@ in vec3 aVertexPosition;
 in vec3 aVertexNormal;
 in vec4 aVertexColour;
 in vec2 aVertexTexCoord;
-#ifndef WEBGL
 flat out vec4 vFlatColour;
-#endif
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
@@ -34,9 +32,7 @@ void main(void)
     vColour = aVertexColour;
 
   vTexCoord = aVertexTexCoord;
-#ifndef WEBGL
   vFlatColour = vColour;
-#endif
   vVertex = aVertexPosition;
 
   //Head light, lightPos=(0,0,0) - vPosEye

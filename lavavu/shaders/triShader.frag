@@ -22,25 +22,10 @@ uniform vec3 uClipMax;
 uniform bool uOpaque;
 uniform vec4 uLight;
 
-#ifdef WEBGL
-#define outColour gl_FragColor
-#define texture(a,b) texture2D(a,b)
-
-//Before OpenGL 3+ we need our own isnan function
-bool isnan3(vec3 val)
-{
-  if (!(val.x < 0.0 || 0.0 < val.x || val.x == 0.0)) return true;
-  if (!(val.y < 0.0 || 0.0 < val.y || val.y == 0.0)) return true;
-  if (!(val.z < 0.0 || 0.0 < val.z || val.z == 0.0)) return true;
-  return false;
-}
-
-#else
 #define isnan3(v) any(isnan(v))
 flat in vec4 vFlatColour;
 uniform bool uFlat;
 out vec4 outColour;
-#endif
 
 uniform bool uCalcNormal;
 
@@ -69,10 +54,8 @@ void main(void)
   if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   vec4 fColour = vColour;
-#ifndef WEBGL
   if (uFlat)
     fColour = vFlatColour;
-#endif
   float alpha = fColour.a;
   if (uTextured && vTexCoord.x > -1.0) //Null texcoord (-1,-1)
   {

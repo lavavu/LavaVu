@@ -9,11 +9,7 @@ uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform bool uOpaque;
 
-#ifdef WEBGL
-#define outColour gl_FragColor
-#else
 out vec4 outColour;
-#endif
 
 void main(void)
 {
