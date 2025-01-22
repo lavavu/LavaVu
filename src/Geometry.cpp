@@ -1204,7 +1204,6 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
   {
     //Init from property
     json shaders = draw->properties["shaders"];
-    debug_print("Loading shaders from property, length %u\n", shaders.size());
     if (shaders.size() == 1)
     {
       std::string f = shaders[0];
@@ -1214,6 +1213,7 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     {
       std::string v = shaders[0];
       std::string f = shaders[1];
+      std::cout << "\n----------\nVERTEX SHADER\n----------\n" << v << "\n----------\nnFRAGMENT SHADER\n----------\n" << f << std::endl;
       draw->shader = std::make_shared<Shader>(v, f);
     }
     else if (shaders.size() == 3)
@@ -1222,10 +1222,6 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
       std::string g = shaders[1];
       std::string f = shaders[2];
       draw->shader = std::make_shared<Shader>(v, g, f);
-    }
-    else
-    {
-      debug_print("Invalid shaders property1\n");
     }
 
     //Get uniforms/attribs
@@ -1242,7 +1238,6 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
 Shader_Ptr Geometry::getShader(lucGeometryType type)
 {
   //Get the base type for default shader
-  debug_print("Getting default shader for %d\n", (int)type);
   lucGeometryType btype;
   switch (type)
   {
