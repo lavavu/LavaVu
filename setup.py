@@ -414,13 +414,8 @@ if __name__ == "__main__":
                 ldflags.append('-Wl,-rpath,'+l)
             #On silicon, homebrew has moved and libs can't be found
             if platform.processor() == 'arm':
-                os.system('ls -l /opt/homebrew')
-                os.system('ls -l /opt/homebrew/lib')
-                os.system('ls -l /opt/homebrew/include')
-                os.system('pkg-config --libs libavcodec')
-
-            lib_dirs += ['/opt/homebrew/lib']
-            inc_dirs += ['/opt/homebrew/include']
+                lib_dirs += ['/opt/homebrew/lib']
+                inc_dirs += ['/opt/homebrew/include']
 
         #Other posix libs
         libs += ['dl', 'pthread', 'm']

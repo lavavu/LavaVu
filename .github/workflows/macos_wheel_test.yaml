@@ -9,13 +9,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_BUILD: cp311-* cp312-*
+      CIBW_BUILD: cp312-*
+      #CIBW_BUILD: cp311-* cp312-*
       #CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       #CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_ENVIRONMENT: LV_LIB_DIRS=${HOME}/lib LV_INC_DIRS=${HOME}/include
       CIBW_BEFORE_BUILD_LINUX: cd ~ && curl -O -L https://github.com/lavavu/LavaVu/releases/latest/download/ffmpeg-mini.zip && unzip -o ffmpeg-mini.zip && dnf install -y --nogpgcheck libtiff-devel
-      CIBW_BEFORE_BUILD_MACOS: brew install ffmpeg
+      CIBW_BEFORE_BUILD_MACOS: brew install ffmpeg && ln -s /opt/homebrew/lib /usr/local/lib && ln -s /opt/homebrew/include /usr/local/include
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
     strategy:
       matrix:
@@ -39,6 +40,10 @@ jobs:
       # https://github.com/pypa/cibuildwheel/issues/563
       - name: Set macOS deployment target
         run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d '.' -f 1-2)" >> $GITHUB_ENV
+
+      - name: Checks
+        run: |
+          pkg-config --cflags --libs libavcodec
 
       - name: Build wheels
         run: |
