@@ -19,8 +19,10 @@ jobs:
       CIBW_BEFORE_BUILD_MACOS: brew install ffmpeg && sudo ln -s /opt/homebrew/lib /usr/local/lib && sudo ln -s /opt/homebrew/include /usr/local/include
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
       CIBW_TEST_COMMAND: >
+          pip install moderngl && 
           git clone --depth 1 https://github.com/lavavu/Testing &&
           cd Testing &&
+          export LV_CONTEXT=moderngl &&
           export LV_ECHO_FAIL=1 &&
           export LV_ARGS="-v" &&
           python runall.py 
