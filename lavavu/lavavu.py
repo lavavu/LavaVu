@@ -2330,7 +2330,10 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
                         self.ctx = moderngl.create_context(standalone=True, require=330)
                     _LavaVuWrapper._ctx = self.ctx
 
+            sys.stderr.write(self.ctx.info)
+
             if self.use_moderngl_window and self.ctx:
+                sys.stderr.write("USE MODERNGL WINDOW")
                 # Activate the context
                 moderngl_window.activate_context(ctx=self.ctx)
 

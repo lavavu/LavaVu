@@ -1213,7 +1213,6 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     {
       std::string v = shaders[0];
       std::string f = shaders[1];
-      std::cout << "\n----------\nVERTEX SHADER\n----------\n" << v << "\n----------\nnFRAGMENT SHADER\n----------\n" << f << std::endl;
       draw->shader = std::make_shared<Shader>(v, f);
     }
     else if (shaders.size() == 3)
