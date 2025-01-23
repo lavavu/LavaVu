@@ -9,9 +9,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_BUILD: cp312-*
+      #CIBW_BUILD: cp312-*
       #CIBW_BUILD: cp311-* cp312-*
-      #CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
+      CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-*
       #CIBW_TEST_COMMAND: python3 -m doctest -v lavavu/lavavu.py
       #CIBW_REPAIR_WHEEL_COMMAND_MACOS: delocate-listdeps {wheel} && delocate-wheel -v -w {dest_dir} {wheel}
       CIBW_ENVIRONMENT: LV_LIB_DIRS=${HOME}/lib LV_INC_DIRS=${HOME}/include
@@ -31,8 +31,7 @@ jobs:
       matrix:
         # MacOS 13 runner is x86_64, 14 is arm64
         # (https://cibuildwheel.pypa.io/en/stable/faq/#how)
-        #os: [macos-13, macos-14]
-        os: [macos-14]
+        os: [macos-13, macos-14]
 
     steps:
       - uses: actions/checkout@v4
