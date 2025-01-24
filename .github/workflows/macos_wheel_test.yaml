@@ -57,7 +57,6 @@ jobs:
 
       - uses: melusina-org/setup-macports@v1
         if: runner.os == 'macOS'
-        run: port version
 
       # https://github.com/pypa/cibuildwheel/issues/563
       #- name: Set macOS deployment target
