@@ -2743,6 +2743,7 @@ class Viewer(dict):
         self._thread = None
         self._collections = {}
         self.validate = True #Property validation flag
+        self.recording = None
 
         #Exit handler to clean up threads
         #(__del__ does not always seem to get called on termination)
