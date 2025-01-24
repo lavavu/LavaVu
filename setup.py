@@ -344,30 +344,34 @@ if __name__ == "__main__":
         extra_objects = [sqlite3]
 
         # Optional external libraries - check if installed
-        if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
-            defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
-            libs += ['png', 'z']
-        else:
+        if 'LV_MIN_DEPS' in os.environ:
             srcs += ['src/png/lodepng.cpp']
-            if find_library('z') and check_libraries(['z'], ['zlib.h']):
-                defines += [('USE_ZLIB', '1')]
-                libs += ['z']
+            srcs += ['src/miniz/miniz.c']
+        else:
+            if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
+                defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
+                libs += ['png', 'z']
             else:
-                srcs += ['src/miniz/miniz.c']
+                srcs += ['src/png/lodepng.cpp']
+                if find_library('z') and check_libraries(['z'], ['zlib.h']):
+                    defines += [('USE_ZLIB', '1')]
+                    libs += ['z']
+                else:
+                    srcs += ['src/miniz/miniz.c']
 
-        if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
-            defines += [('HAVE_LIBTIFF', 1)]
-            libs += ['tiff']
+            if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
+                defines += [('HAVE_LIBTIFF', 1)]
+                libs += ['tiff']
 
-        if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
-            and check_libraries(['avcodec', 'avformat', 'avutil'],
-                ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
-                 'libavutil/imgutils.h'])):
-            defines += [('HAVE_LIBAVCODEC', 1)]
-            libs += ['avcodec', 'avformat', 'avutil']
-            if find_library('swscale') and check_libraries(['swscale'], ['libswscale/swscale.h']):
-                defines += [('HAVE_SWSCALE', 1)]
-                libs += ['swscale']
+            if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
+                and check_libraries(['avcodec', 'avformat', 'avutil'],
+                    ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
+                     'libavutil/imgutils.h'])):
+                defines += [('HAVE_LIBAVCODEC', 1)]
+                libs += ['avcodec', 'avformat', 'avutil']
+                if find_library('swscale') and check_libraries(['swscale'], ['libswscale/swscale.h']):
+                    defines += [('HAVE_SWSCALE', 1)]
+                    libs += ['swscale']
 
         if P == 'Linux':
             #Linux GLFW, X11, EGL or OSMesa
