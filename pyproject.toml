@@ -74,6 +74,7 @@ requires = [
     "numpy==2.0.0; python_version=='3.10'",
     "numpy==2.0.0; python_version=='3.11'",
     "numpy==2.0.0; python_version=='3.12'",
+    "numpy==2.1.0; python_version=='3.13'",
 ]
 
 [project.entry-points."gui_scripts"]
