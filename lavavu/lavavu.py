@@ -75,6 +75,11 @@ try:
 except (ImportError) as e:
     moderngl_window = None
 
+try:
+    import av
+except (ImportError) as e:
+    av = None
+
 #import swig module
 import LavaVuPython
 version = LavaVuPython.version
@@ -3824,6 +3829,9 @@ class Viewer(dict):
         Render a new frame, explicit display update
         """
         self.app.render()
+        #Video recording?
+        if self.recording:
+            self.recording.frame()
 
     def init(self):
         """        
@@ -4131,7 +4139,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", fps=30, quality=1, resolution=(0,0), **kwargs):
+    def video(self, filename="", resolution=(0,0), fps=30, quality=0, encoder="h264", player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -4148,25 +4156,36 @@ class Viewer(dict):
         ----------
         filename : str
             Name of the file to save, if not provided a default will be used
+        resolution : list or tuple
+            Video resolution in pixels [x,y]
         fps : int
             Frames to output per second of video
         quality : int
-            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            Encoding quality, 1=low, 2=medium, 3=high, higher quality reduces
             encoding artifacts at cost of larger file size
-        resolution : list or tuple
-            Video resolution in pixels [x,y]
+            If omitted will use default settings, can fine tune settings in kwargs
+        encoder : str
+            Name of encoder to use, eg: "h264" (default), "mpeg"
+        player : dict
+            Args to pass to the player when the video is finished, eg:
+            {"width" : 800, "height", 400, "params": "controls autoplay"}
+        options : dict
+            Args to pass to the encoder, eg: see 
+            https://trac.ffmpeg.org/wiki/Encode/H.264
         **kwargs :
-            Any additional keyword args will be passed to lavavu.player()
+            Any additional keyword args will also be passed as options to the encoder
 
         Returns
         -------
         recorder : Video(object)
             Context manager object that controls the video recording
         """
-        return Video(self, filename, resolution, fps, quality, **kwargs)
+        return Video(self, filename, resolution, fps, quality, encoder, player, options, **kwargs)
 
     def video_steps(self, filename="", start=0, end=0, fps=10, quality=1, resolution=(0,0), **kwargs):
         """
+        TODO: Fix to use pyAV
+
         Record a video of the model by looping through all time steps
 
         Shows the generated video inline within an ipython notebook.
@@ -5391,6 +5410,8 @@ class Video(object):
     """
     The Video class provides an interface to record animations
 
+    This now uses pyav avoiding the need to build LavaVu with ffmpeg support
+
     Example
     -------
 
@@ -5402,7 +5423,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=1, **kwargs):
+    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=0, encoder="h264", player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5422,79 +5443,111 @@ class Video(object):
         fps : int
             Frames to output per second of video
         quality : int
-            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            Encoding quality, 1=low, 2=medium, 3=high, higher quality reduces
             encoding artifacts at cost of larger file size
+            If omitted will use default settings, can fine tune settings in kwargs
         resolution : list or tuple
             Video resolution in pixels [x,y]
+        encoder : str
+            Name of encoder to use, eg: "h264" (default), "mpeg"
+        player : dict
+            Args to pass to the player when the video is finished, eg:
+            {"width" : 800, "height", 400, "params": "controls autoplay"}
+        options : dict
+            Args to pass to the encoder, eg: see 
+            https://trac.ffmpeg.org/wiki/Encode/H.264
         **kwargs :
-            Any additional keyword args will be passed to lavavu.player()
+            Any additional keyword args will also be passed as options to the encoder
         """
+        if av is None:
+            print("Video output not supported without pyAV - pip install pyav")
+            return
         self.resolution = resolution
+        if self.resolution[0] == 0:
+            self.resolution = viewer.width
+        if self.resolution[1] == 0:
+            self.resolution = viewer.height
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
         self.filename = filename
-        self.kwargs = kwargs
-        if not viewer:
-            self.encoder = LavaVuPython.VideoEncoder(filename, framerate, quality);
-        else:
-            self.encoder = None
+        if len(self.filename) == 0:
+            self.filename = "lavavu.mp4"
+        self.player = player
+        if self.player is None:
+            #Default player is half output resolution
+            self.player = {"width": self.resolution[0] // 2, "height": self.resolution[1] // 2}
+        self.encoder = encoder
+        self.options = options
+        #Also include extra args
+        options.update(kwargs)
+        self.container = None
 
     def start(self):
         """
         Start recording, all rendered frames will be added to the video
         """
-        if self.encoder:
-            if self.resolution[0] <= 0: self.resolution[0] = 1280
-            if self.resolution[1] <= 0: self.resolution[1] = 720
-            self.encoder.open(self.resolution[0], self.resolution[1])
-        else:
-            self.filename = self.viewer.app.encodeVideo(self.filename, self.framerate, self.quality, self.resolution[0], self.resolution[1])
-        #Clear existing image frames
-        if os.path.isdir(self.filename):
-            for f in glob.glob(self.filename + "/frame_*.jpg"):
-                os.remove(f)
+        #https://trac.ffmpeg.org/wiki/Encode/H.264
+        #options={'b:a': '192000'}, 'maxrate': '192000', 'minrate': '192000'}
+        #The range of the CRF scale is 0–51, where 0 is lossless (for 8 bit only, for 10 bit use -qp 0), 23 is the default, and 51 is worst quality possible
+        #Compression level, lower = high quality
+        #See also: https://github.com/PyAV-Org/PyAV/blob/main/tests/test_encode.py
+        if self.quality == 1:
+            self.options['qmin'] = '8'
+            self.options['qmax'] = '41'
+            self.options['crf'] = '40'
+        elif self.quality == 2:
+            self.options['qmin'] = '2'
+            self.options['qmax'] = '31'
+            self.options['crf'] = '23'
+        elif self.quality == 3:
+            self.options['qmin'] = '1'
+            self.options['qmax'] = '4'
+            self.options['crf'] = '10'
+
+        print(self.options)
+        self.container = av.open(self.filename, mode="w")
+        self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=self.options)
+        self.stream.width = self.resolution[0]
+        self.stream.height = self.resolution[1]
+        self.stream.pix_fmt = "yuv420p"
+        self.viewer.recording = self
+
+    def frame(self):
+        """
+        Write a frame, called when viewer.render() is called
+        while a recording is in progress
+        """
+        img = self.viewer.rawimage(resolution=self.resolution, channels=3)
+        frame = av.VideoFrame.from_ndarray(img.data, format="rgb24")
+        for packet in self.stream.encode(frame):
+            self.container.mux(packet)
 
     def pause(self):
         """
         Pause/resume recording, no rendered frames will be added to the video while paused
         """
-        if self.encoder:
-            self.encoder.render = not self.encoder.render
+        if self.viewer.recording:
+            self.viewer.recording = None
         else:
-            self.viewer.app.pauseVideo()
+            self.viewer.recording = self
 
     def stop(self):
         """
         Stop recording, final frames will be written and file closed, ready to play. 
         No further frames will be added to the video
         """
-        if self.encoder:
-            self.encoder.close()
-            self.filename = self.encoder.filename
-        else:
-            self.viewer.app.encodeVideo()
-        #Check if encoded video is a directory (not built with video encoding support)
-        #if so attempt to encode with ffmpeg
-        if os.path.isdir(self.filename):
-            log = ""
-            ffmpeg_exe = 'ffmpeg'
-            try:
-                outfn = '{0}.mp4'.format(self.filename)
-                cmd = ffmpeg_exe + ' -r {1} -i "{0}/frame_%05d.jpg" -c:v libx264 -vf fps={1} -movflags +faststart -pix_fmt yuv420p -y "{2}"'.format(self.filename, self.framerate, outfn)
-                log += "No built in video encoding, attempting to build movie from frames with ffmpeg:\n"
-                log += cmd
-
-                import subprocess
-                #os.system(cmd)
-                subprocess.check_call(cmd, shell=True)
-                self.filename = outfn
-            except (Exception) as e:
-                print("Video encoding failed: ", str(e), "\nlog:\n", log)
+        # Flush stream
+        for packet in self.stream.encode():
+            self.container.mux(packet)
+        # Close the file
+        self.container.close()
+        self.container = None
+        self.stream = None
 
     def write(self, image):
         """
-        Add a frame to the video (when writing custom video frames rather than rendering them within lavavu)
+        Add a frame to the video
 
         Parameters
         ----------
@@ -5502,7 +5555,7 @@ class Video(object):
             Pass a list or numpy uint8 array of rgba values or an Image object
             values are loaded as 8 bit unsigned integer values
         """
-        if self.encoder:
+        if self.container:
             if isinstance(image, Image):
                 image = image.data
             else:
@@ -5510,13 +5563,18 @@ class Video(object):
             if image.size == self.resolution[0] * self.resolution[1] * 4:
                 image = image.reshape(self.resolution[0], self.resolution[1], 4)
                 image = image[::,::,:3] #Remove alpha channel
-            self.encoder.copyframe(image.ravel())
+            #self.encoder.copyframe(image.ravel())
+
+            frame = av.VideoFrame.from_ndarray(image, format="rgb24")
+            for packet in self.stream.encode(frame):
+                self.container.mux(packet)
 
     def play(self):
         """
         Show the video in an inline player if in an interative notebook
         """
-        player(self.filename, **self.kwargs)
+        print(self.player)
+        player(self.filename, **self.player)
 
     def __enter__(self):
         self.start()
