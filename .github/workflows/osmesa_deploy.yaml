@@ -4,9 +4,11 @@ on:
   workflow_dispatch:
   #push
   # Runs when a (published) GitHub Release is created
-  release:
-    types:
-      - published
+  # THIS IS DISABLED FOR NOW - IN FUTURE WILL PROVIDE LINUX EGL MESA VERSION WHICH
+  # SHOULD ALLOW OFFSCREEN SOFTWARE RENDERING VIA EGL, WHILST STILL SUPPORTING OTHER EGL CONTEXTS
+  #release:
+  #  types:
+  #    - published
 
 jobs:
   build_wheels:

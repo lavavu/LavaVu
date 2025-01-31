@@ -1,7 +1,8 @@
 name: WheelDeployTest
 
 on:
-  push
+  workflow_dispatch:
+  #push
 
 jobs:
   build_wheels:
