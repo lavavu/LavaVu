@@ -5411,7 +5411,7 @@ class Video(object):
     """
     The Video class provides an interface to record animations
 
-    This now uses pyav avoiding the need to build LavaVu with ffmpeg support
+    This now uses pyAV avoiding the need to build LavaVu with ffmpeg support
 
     Example
     -------
@@ -5461,7 +5461,7 @@ class Video(object):
             Any additional keyword args will also be passed as options to the encoder
         """
         if av is None:
-            print("Video output not supported without pyAV - pip install pyav")
+            raise(ImportError("Video output not supported without pyAV - pip install av"))
             return
         self.resolution = resolution
         if self.resolution[0] == 0:
@@ -5489,30 +5489,60 @@ class Video(object):
         Start recording, all rendered frames will be added to the video
         """
         #https://trac.ffmpeg.org/wiki/Encode/H.264
-        #options={'b:a': '192000'}, 'maxrate': '192000', 'minrate': '192000'}
-        #The range of the CRF scale is 0–51, where 0 is lossless (for 8 bit only, for 10 bit use -qp 0), 23 is the default, and 51 is worst quality possible
+        # The range of the CRF scale is 0–51, where 0 is lossless (for 8 bit only, for 10 bit use -qp 0), 
+        # 23 is the default, and 51 is worst quality possible
         #Compression level, lower = high quality
         #See also: https://github.com/PyAV-Org/PyAV/blob/main/tests/test_encode.py
-        if self.quality == 1:
-            self.options['qmin'] = '8'
-            self.options['qmax'] = '41'
-            self.options['crf'] = '40'
-        elif self.quality == 2:
-            self.options['qmin'] = '2'
-            self.options['qmax'] = '31'
-            self.options['crf'] = '23'
-        elif self.quality == 3:
-            self.options['qmin'] = '1'
-            self.options['qmax'] = '4'
-            self.options['crf'] = '10'
+        options = {}
+        if self.encoder == 'h264' or self.encoder == 'libx265':
+            #Only have default options for h264/265 for now
+            if self.quality == 1:
+                options['qmin'] = '30' #'20' #'8'
+                options['qmax'] = '35' #'41'
+                options['crf'] = '30' #'40'
+            elif self.quality == 2:
+                options['qmin'] = '25' #'2'
+                options['qmax'] = '30' #'31'
+                options['crf'] = '20' #'23'
+            elif self.quality == 3:
+                options['qmin'] = '20' #'1'
+                options['qmax'] = '25' #'4'
+                options['crf'] = '10' #'10'
 
-        print(self.options)
+            #Default preset, tune for h264
+            options["preset"] = 'veryfast' #'veryfast' 'medium' 'slow'
+            options["tune"] = 'animation' #'film'
+
+            #Settings from our original c++ encoder
+            #self.options['i_quant_factor'] = '0.71'
+            #self.options['qcompress'] = '0.6'
+            #self.options['max_qdiff'] = '4'
+            #self.options['refs'] = '3'
+
+        #Merge user options, allowing override of above settings
+        options.update(self.options)
+
+        #print(options)
         self.container = av.open(self.filename, mode="w")
-        self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=self.options)
+        self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=options)
         self.stream.width = self.resolution[0]
         self.stream.height = self.resolution[1]
         self.stream.pix_fmt = "yuv420p"
         self.viewer.recording = self
+
+        stream = self.stream
+        #print(stream)
+        #print(stream.codec)
+        #print(stream.codec_context)
+        #print(stream.profiles)
+        #print(stream.profile)
+        #print(stream.options)
+        #Need to set profile here or it isn't applied
+        #(Default to main)
+        stream.profile = 'Main' #Baseline / High
+        cc = stream.codec_context
+        #print(cc.options)
+        #print(cc.profile)
 
     def frame(self):
         """
