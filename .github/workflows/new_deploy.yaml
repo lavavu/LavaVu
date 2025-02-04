@@ -16,6 +16,9 @@ jobs:
         LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib
         LV_INC_DIRS=${HOME}/include
         LV_MIN_DEPS=1
+        LV_CONTEXT=moderngl
+        LV_ECHO_FAIL=1
+        LV_ARGS="-v"
       CIBW_BEFORE_BUILD_LINUX: >
         rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
         dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
@@ -24,9 +27,6 @@ jobs:
         pip install moderngl &&
         git clone --depth 1 https://github.com/lavavu/Testing &&
         cd Testing &&
-        export LV_CONTEXT=moderngl &&
-        export LV_ECHO_FAIL=1 &&
-        export LV_ARGS="-v" &&
         python runall.py
 
     strategy:
