@@ -18,16 +18,14 @@ jobs:
         LV_MIN_DEPS=1
         LV_ECHO_FAIL=1
         LV_ARGS="-v"
-      CIBW_ENVIRONMENT_LINUX: >
-        LV_CONTEXT=osmesa
-      CIBW_ENVIRONMENT_MACOS: >
         LV_CONTEXT=moderngl
+      CIBW_BEFORE_BUILD_MACOS: >
+        python -m pip install moderngl
       CIBW_BEFORE_BUILD_LINUX: >
         rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
         dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
       CIBW_TEST_COMMAND: >
-        python -m pip install moderngl &&
         git clone --depth 1 https://github.com/lavavu/Testing &&
         cd Testing &&
         python runall.py
