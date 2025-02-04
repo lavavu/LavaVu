@@ -65,6 +65,7 @@ lavavu = ['font.bin', 'dict.json', 'shaders/*', 'html/*', '*.dll']
 build-backend = "setuptools.build_meta"
 requires = [
     "wheel",
+    "build",
     "setuptools>=61.2",
     "packaging",
     "numpy==1.13.3; python_version=='3.6'",
