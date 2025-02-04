@@ -98,7 +98,7 @@ if platform.system() == 'Linux':
 
         if context == 'osmesa':
             #OSMesa fallback, CPU only, multicore
-            from lavavu.osmesa import LavaVuPython
+            from osmesa import LavaVuPython
 
 #Default module if none already loaded
 try:
