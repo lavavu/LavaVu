@@ -19,17 +19,17 @@ jobs:
         LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib
         LV_INC_DIRS=${HOME}/include
         LV_MIN_DEPS=1
+        LV_CONTEXT=moderngl
+        LV_ECHO_FAIL=1
+        LV_ARGS="-v"
       CIBW_BEFORE_BUILD_LINUX: >
         rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
         dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
       CIBW_TEST_COMMAND: >
-        pip install moderngl &&
+        python -m pip install moderngl &&
         git clone --depth 1 https://github.com/lavavu/Testing &&
         cd Testing &&
-        export LV_CONTEXT=moderngl &&
-        export LV_ECHO_FAIL=1 &&
-        export LV_ARGS="-v" &&
         python runall.py
 
     strategy:
@@ -69,8 +69,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install build
+        run: python -m pip install setuptools build
+
       - name: Build sdist
-        run: python setup.py sdist
+        run: python -m build . --sdist
 
       - uses: actions/upload-artifact@v4
         with:
