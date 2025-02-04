@@ -32,7 +32,7 @@ jobs:
         export LV_CONTEXT=osmesa &&
         git clone --depth 1 https://github.com/lavavu/Testing &&
         cd Testing &&
-        python runall.p
+        python runall.py
 
     strategy:
       matrix:
