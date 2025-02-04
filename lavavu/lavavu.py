@@ -90,9 +90,9 @@ if platform.system() == 'Linux':
             try:
                 #Try EGL via moderngl, will use headless GPU if available
                 testctx = moderngl.create_context(standalone=True, require=330, backend='egl')
-                os.environ['LV_CONTEXT'] = context = 'moderngl'
-            except:
-                os.environ['LV_CONTEXT'] = context = 'osmesa'
+                context = 'moderngl'
+            except Exception as e:
+                context = 'osmesa'
 
         if context == 'osmesa':
             #OSMesa fallback, CPU only, multicore
@@ -103,6 +103,8 @@ try:
     LavaVuPython
 except:
     import LavaVuPython
+
+os.environ['LV_CONTEXT'] = context
 
 version = LavaVuPython.version
 server_ports = []
@@ -2354,6 +2356,7 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
                         self.ctx = moderngl.create_context(standalone=True, require=330, backend='egl')
                     else:
                         self.ctx = moderngl.create_context(standalone=True, require=330)
+                    #print(self.ctx.info)
                     _LavaVuWrapper._ctx = self.ctx
 
             if self.use_moderngl_window and self.ctx:
@@ -2807,7 +2810,7 @@ class Viewer(dict):
         if not binpath:
             binpath = os.path.abspath(os.path.dirname(__file__))
         try:
-            self.app = _LavaVuWrapper(threads, self.args(*args, **kwargs), resolution, binpath, context)
+            self.app = _LavaVuWrapper(threads, self.args(*args, **kwargs), resolution, binpath, self.context)
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
