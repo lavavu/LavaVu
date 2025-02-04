@@ -84,8 +84,10 @@ except (ImportError) as e:
 #import swig module
 if platform.system() == 'Linux':
     #Default context requires DISPLAY set for X11
-    context = os.environ.get("LV_CONTEXT", "default")
-    if context != 'default' or not 'DISPLAY' in os.environ or len(os.environ['DISPLAY'].strip()) == 0:
+    context = os.environ.get("LV_CONTEXT", "").strip()
+    display = os.environ.get("DISPLAY", "").strip()
+    if len(context) == 0: context = 'default'
+    if context != 'default' or len(display) == 0:
         if context != 'osmesa':
             try:
                 #Try EGL via moderngl, will use headless GPU if available
