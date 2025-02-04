@@ -66,6 +66,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install build
+        run: python -m pip install setuptools build
+
       - name: Build sdist
         run: python -m build . --sdist
 
