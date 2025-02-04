@@ -1,4 +1,4 @@
-name: OSMesa
+name: Multi-build
 
 on:
   workflow_dispatch:
@@ -6,22 +6,19 @@ on:
 
 jobs:
   build_wheels:
-    name: Build lavavu-osmesa wheels on ${{ matrix.os }}
+    name: Build lavavu wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 3
-      CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
+      CIBW_SKIP: *-musllinux_* *-manylinux_i686
       #CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*
       CIBW_BUILD: cp312-*
       CIBW_ENVIRONMENT: >
-        LV_PACKAGE=lavavu-egl
-        LV_EGL=1 
         LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib 
         LV_INC_DIRS=${HOME}/include
       CIBW_BEFORE_BUILD_LINUX: >
-        cd ~ &&
-        dnf install -y libtiff-devel mesa-libEGL-devel && echo {package} &&
-        sed -i 's/name = "lavavu"/name = "lavavu-egl"/g' {package}/pyproject.toml
+        rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
+        dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package} &&
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
     strategy:
       matrix:
