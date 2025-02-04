@@ -2,7 +2,7 @@ name: Multi-build
 
 on:
   workflow_dispatch:
-  #push:
+  push:
 
 jobs:
   build_wheels:
@@ -16,9 +16,12 @@ jobs:
         LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib
         LV_INC_DIRS=${HOME}/include
         LV_MIN_DEPS=1
-        LV_CONTEXT=moderngl
         LV_ECHO_FAIL=1
         LV_ARGS="-v"
+      CIBW_ENVIRONMENT_LINUX: >
+        LV_CONTEXT=osmesa
+      CIBW_ENVIRONMENT_MACOS: >
+        LV_CONTEXT=moderngl
       CIBW_BEFORE_BUILD_LINUX: >
         rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
         dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
