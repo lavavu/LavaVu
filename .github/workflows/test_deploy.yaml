@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build test wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 1 #3
