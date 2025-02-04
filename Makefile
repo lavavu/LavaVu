@@ -171,6 +171,7 @@ $(OPATH)/compiler_flags: force | paths
 paths:
 	@mkdir -p $(OPATH)
 	@mkdir -p $(PREFIX)
+	@mkdir -p $(PREFIX)/osmesa
 	@mkdir -p $(HTMLPATH)
 	@mkdir -p $(PREFIX)/shaders
 
@@ -256,6 +257,7 @@ endif
 .PHONY: swig
 swig : $(INC) src/LavaVuPython.i | paths
 	swig -v -Wextra -python -py3 -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
+	cd $(PREFIX)/osmesa; ln -sf ../LavaVuPython.py; touch __init__.py
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	-rm -f $(PREFIX)/_LavaVuPython.*
