@@ -82,9 +82,9 @@ except (ImportError) as e:
     av = None
 
 #import swig module
+context = os.environ.get("LV_CONTEXT", "").strip()
 if platform.system() == 'Linux':
     #Default context requires DISPLAY set for X11
-    context = os.environ.get("LV_CONTEXT", "").strip()
     display = os.environ.get("DISPLAY", "").strip()
     if len(context) == 0: context = 'default'
     if context != 'default' or len(display) == 0:
