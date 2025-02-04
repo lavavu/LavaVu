@@ -336,7 +336,11 @@ if __name__ == "__main__":
         #Build sqlite3
         #Don't compile when just running 'setup.py egg_info'
         sqlite3 = 'build/src/sqlite3/sqlite3.o'
-        if len(sys.argv) < 2 or sys.argv[1] == 'egg_info' or os.path.exists(sqlite3):
+        if (len(sys.argv) < 2 or 
+            sys.argv[1] == 'egg_info' or 
+            sys.argv[1] == 'sdist' or 
+            os.path.exists(sqlite3)
+            ):
             pass
         else:
             #sqlite3 = build_sqlite3(sqlite3_path)
