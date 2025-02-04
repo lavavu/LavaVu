@@ -4,12 +4,7 @@ in vec2 vTexCoord;
 uniform bool uTextured;
 uniform sampler2D uTexture;
 
-#ifdef WEBGL
-#define outColour gl_FragColor
-#define texture(a,b) texture2D(a,b)
-#else
 out vec4 outColour;
-#endif
 
 void main(void)
 {

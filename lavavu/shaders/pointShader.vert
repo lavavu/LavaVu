@@ -7,11 +7,7 @@ uniform mat4 uPMatrix;
 
 out vec4 vColour;
 
-#ifdef WEBGL
-const int uPointDist = 1;   // Scale by distance
-#else
 uniform int uPointDist;   // Scale by distance
-#endif
 
 in float aSize;
 in float aPointType;

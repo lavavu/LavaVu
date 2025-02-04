@@ -6,17 +6,10 @@
  * https://www.gnu.org/licenses/lgpl.html
  * (volume shader from sharevol https://github.com/OKaluza/sharevol)
  */
-#ifdef WEBGL
-uniform sampler2D uVolume;
-#define NO_DEPTH_WRITE
-#define outColour gl_FragColor
-#define texture(a,b) texture2D(a,b)
-#else
 //Included dynamically before compile in WebGL mode...
 const int maxSamples = 2048;
 uniform sampler3D uVolume;
 out vec4 outColour;
-#endif
 
 const float depthT = 0.99; //Transmissivity threshold below which depth write applied
 
@@ -63,63 +56,7 @@ vec3 bbMax;
 float interpolate_tricubic_fast(vec3 coord);
 #endif
 
-#ifdef WEBGL
-
-vec2 islices = vec2(1.0 / slices.x, 1.0 / slices.y);
-float maxslice = slices.x * slices.y - 1.0;
-//Clamp to a bit before halfway for the edge voxels
-vec2 cmin = vec2(0.55/(slices.x*slices.y), 0.55/(slices.x*slices.y));
-vec2 cmax = vec2(1.0, 1.0) - cmin;
-
-float sample(vec3 pos)
-{
-  //Get z slice index and position between two slices
-  float Z = pos.z * maxslice;
-  float slice = floor(Z); //Index of first slice
-  Z = fract(Z);
-  //Edge case at z min (possible with tricubic filtering)
-  if (int(slice) < 0)
-  {
-    slice = 0.0;
-    Z = 0.0;
-  }
-  //Edge case at z max
-  else if (int(slice) > int(maxslice)-1)
-  {
-    slice = maxslice-1.0;
-    Z = 1.0;
-  }
-  //Only start interpolation with next Z slice 1/3 from edges at first & last z slice
-  //(this approximates how 3d texture volume is sampled at edges with linear filtering
-  // due to edge sample being included in weighted average twice)
-  // - min z slice
-  else if (int(slice) == 0)
-  {
-    Z = max(0.0, (Z-0.33) * 1.5);
-  }
-  // - max z slice
-  else if (int(slice) == int(maxslice)-1)
-  {
-    Z = min(1.0, Z*1.5);
-  }
-
-  //X & Y coords of sample scaled to slice size
-  //(Clamp range at borders to prevent bleeding between tiles due to linear filtering)
-  vec2 sampleOffset = clamp(pos.xy, cmin, cmax) * islices;
-  //Offsets in 2D texture of given slice indices
-  //(add offsets to scaled position within slice to get sample positions)
-  float A = slice * islices.x;
-  float B = (slice+1.0) * islices.x;
-  vec2 z1offset = vec2(fract(A), floor(A) / slices.y) + sampleOffset;
-  vec2 z2offset = vec2(fract(B), floor(B) / slices.y) + sampleOffset;
-
-  //Interpolate the final value by position between slices [0,1]
-  return mix(texture2D(uVolume, z1offset).x, texture2D(uVolume, z2offset).x, Z);
-}
-
-#else
 #define sample(pos) (texture(uVolume, pos).x)
-#endif
 
 float tex3D(vec3 pos)
 {

@@ -252,6 +252,7 @@ if __name__ == "__main__":
     ldflags = []
     rt_lib_dirs = []
     extra_objects = []
+    extensions = []
     try:
         import numpy
     except:
@@ -335,7 +336,11 @@ if __name__ == "__main__":
         #Build sqlite3
         #Don't compile when just running 'setup.py egg_info'
         sqlite3 = 'build/src/sqlite3/sqlite3.o'
-        if len(sys.argv) < 2 or sys.argv[1] == 'egg_info' or os.path.exists(sqlite3):
+        if (len(sys.argv) < 2 or 
+            sys.argv[1] == 'egg_info' or 
+            sys.argv[1] == 'sdist' or 
+            os.path.exists(sqlite3)
+            ):
             pass
         else:
             #sqlite3 = build_sqlite3(sqlite3_path)
@@ -344,45 +349,69 @@ if __name__ == "__main__":
         extra_objects = [sqlite3]
 
         # Optional external libraries - check if installed
-        if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
-            defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
-            libs += ['png', 'z']
-        else:
+        if 'LV_MIN_DEPS' in os.environ:
             srcs += ['src/png/lodepng.cpp']
-            if find_library('z') and check_libraries(['z'], ['zlib.h']):
-                defines += [('USE_ZLIB', '1')]
-                libs += ['z']
+            srcs += ['src/miniz/miniz.c']
+        else:
+            if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
+                defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
+                libs += ['png', 'z']
             else:
-                srcs += ['src/miniz/miniz.c']
+                srcs += ['src/png/lodepng.cpp']
+                if find_library('z') and check_libraries(['z'], ['zlib.h']):
+                    defines += [('USE_ZLIB', '1')]
+                    libs += ['z']
+                else:
+                    srcs += ['src/miniz/miniz.c']
 
-        if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
-            defines += [('HAVE_LIBTIFF', 1)]
-            libs += ['tiff']
+            if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
+                defines += [('HAVE_LIBTIFF', 1)]
+                libs += ['tiff']
 
-        if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
-            and check_libraries(['avcodec', 'avformat', 'avutil'],
-                ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
-                 'libavutil/imgutils.h'])):
-            defines += [('HAVE_LIBAVCODEC', 1)]
-            libs += ['avcodec', 'avformat', 'avutil']
-            if find_library('swscale') and check_libraries(['swscale'], ['libswscale/swscale.h']):
-                defines += [('HAVE_SWSCALE', 1)]
-                libs += ['swscale']
+            if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
+                and check_libraries(['avcodec', 'avformat', 'avutil'],
+                    ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
+                     'libavutil/imgutils.h'])):
+                defines += [('HAVE_LIBAVCODEC', 1)]
+                libs += ['avcodec', 'avformat', 'avutil']
+                if find_library('swscale') and check_libraries(['swscale'], ['libswscale/swscale.h']):
+                    defines += [('HAVE_SWSCALE', 1)]
+                    libs += ['swscale']
 
         if P == 'Linux':
             #Linux GLFW, X11, EGL or OSMesa
-            #To force EGL or OSMesa, set LV_EGL=1 or LV_OSMESA=1
-            if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
-            and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
+            #EGL and OSMesa are built as optional extra modules
+            '''
+            if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
                 #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
-                defines += [('HAVE_EGL', '1')]
-                libs += ['OpenGL', 'EGL']
-            elif ("LV_OSMESA" in os.environ and find_library('OSMesa')
-            and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
-                #OSMesa for software rendered offscreen OpenGL
-                defines += [('HAVE_OSMESA', '1')]
-                libs += ['OSMesa']
-            elif ("LV_GLFW" in os.environ and find_library('glfw')
+                ex = Extension('lavavu.egl._LavaVuPython',
+                                define_macros = defines + [('HAVE_EGL', '1')],
+                                include_dirs = inc_dirs,
+                                libraries = libs + ['OpenGL', 'EGL'],
+                                library_dirs = lib_dirs,
+                                runtime_library_dirs = rt_lib_dirs,
+                                extra_compile_args = cflags,
+                                extra_link_args = ldflags,
+                                extra_objects=extra_objects,
+                                sources = srcs)
+                extensions.append(ex)
+            ''';
+            if find_library('OSMesa') and check_libraries(['OSMesa'], ['GL/osmesa.h']):
+                #OSMesa for software rendered offscreen OpenGL, build as additional extension
+                ex = Extension('lavavu.osmesa._LavaVuPython',
+                                define_macros = defines + [('HAVE_OSMESA', '1')],
+                                include_dirs = inc_dirs,
+                                libraries = libs + ['OSMesa'],
+                                library_dirs = lib_dirs,
+                                runtime_library_dirs = rt_lib_dirs,
+                                extra_compile_args = cflags,
+                                extra_link_args = ldflags,
+                                extra_objects=extra_objects,
+                                sources = srcs)
+                extensions.append(ex)
+
+            #Main extension - use X11 or GLFW
+            if ("LV_GLFW" in os.environ and find_library('glfw')
             and check_libraries(['glfw'], ['GLFW/glfw3.h'])):
                 #Use GLFW
                 defines += [('HAVE_GLFW', '1')]
@@ -412,6 +441,10 @@ if __name__ == "__main__":
             #Runtime library dirs doesn't work on mac, so set rpath manually
             for l in lib_dirs:
                 ldflags.append('-Wl,-rpath,'+l)
+            #On silicon, homebrew has moved and libs can't be found
+            if platform.processor() == 'arm':
+                lib_dirs += ['/opt/homebrew/lib']
+                inc_dirs += ['/opt/homebrew/include']
 
         #Other posix libs
         libs += ['dl', 'pthread', 'm']
@@ -426,6 +459,7 @@ if __name__ == "__main__":
                     extra_link_args = ldflags,
                     extra_objects=extra_objects,
                     sources = srcs)
+    extensions.append(lv)
 
     #Binary package data for wheels
     #Package_data works for wheels(binary) only - so add everything we need for the wheels here
@@ -441,7 +475,7 @@ if __name__ == "__main__":
 
     setup(name = dist_name,
           version = version,
-          ext_modules = [lv]
+          ext_modules = extensions
           )
 
 

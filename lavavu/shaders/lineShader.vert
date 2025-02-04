@@ -3,9 +3,7 @@ in vec4 aVertexColour;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
-#ifndef WEBGL
 uniform int uPointDist;   // Scale by distance
-#endif
 
 uniform vec4 uColour;
 uniform float uOpacity;
