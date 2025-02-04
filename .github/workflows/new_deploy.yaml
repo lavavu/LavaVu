@@ -24,7 +24,7 @@ jobs:
         dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
       CIBW_TEST_COMMAND: >
-        pip install moderngl numpy &&
+        python -m pip install --user moderngl numpy &&
         git clone --depth 1 https://github.com/lavavu/Testing &&
         cd Testing &&
         python runall.py
