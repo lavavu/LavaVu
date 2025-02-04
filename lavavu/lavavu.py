@@ -52,6 +52,7 @@ import time
 import weakref
 import asyncio
 import quaternion as quat
+import platform
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -81,7 +82,28 @@ except (ImportError) as e:
     av = None
 
 #import swig module
-import LavaVuPython
+if platform.system() == 'Linux':
+    #Default context requires DISPLAY set for X11
+    context = os.environ.get("LV_CONTEXT", "default")
+    if context != 'default' or not 'DISPLAY' in os.environ or len(os.environ['DISPLAY'].strip()) == 0:
+        if context != 'osmesa':
+            try:
+                #Try EGL via moderngl, will use headless GPU if available
+                testctx = moderngl.create_context(standalone=True, require=330, backend='egl')
+                os.environ['LV_CONTEXT'] = context = 'moderngl'
+            except:
+                os.environ['LV_CONTEXT'] = context = 'osmesa'
+
+        if context == 'osmesa':
+            #OSMesa fallback, CPU only, multicore
+            from lavavu.osmesa import LavaVuPython
+
+#Default module if none already loaded
+try:
+    LavaVuPython
+except:
+    import LavaVuPython
+
 version = LavaVuPython.version
 server_ports = []
 
@@ -2328,7 +2350,6 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
                 if _LavaVuWrapper._ctx:
                     self.ctx = _LavaVuWrapper._ctx
                 else:
-                    import platform
                     if platform.system() == 'Linux':
                         self.ctx = moderngl.create_context(standalone=True, require=330, backend='egl')
                     else:
@@ -2708,7 +2729,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, resolution=None, binpath=None, context=None, port=8080, threads=False, **kwargs):
+    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, threads=False, **kwargs):
         """
         Create and init viewer instance
 
@@ -2724,6 +2745,7 @@ class Viewer(dict):
         context : str
             OpenGL context type, *"default"* will create a context and window based on available configurations.
             *"provided"* specifies a user provided context, set this if you have already created and activated the context. 
+            *"osmesa"* if built with the osmesa module, will use the self-contained software renderer to render without a window or GPU, needs to be set in LV_CONTEXT to work
             *"moderngl"* creates a context in python using the moderngl module (experimental). 
             *"moderngl."* creates a context and a window in python using the moderngl module (experimental) specify class after separator, eg: moderngl.headless, moderngl.pyglet, moderngl.pyqt5.
         port : int
@@ -2744,6 +2766,7 @@ class Viewer(dict):
         self._collections = {}
         self.validate = True #Property validation flag
         self.recording = None
+        self.context = os.environ.get('LV_CONTEXT', context)
 
         #Exit handler to clean up threads
         #(__del__ does not always seem to get called on termination)
