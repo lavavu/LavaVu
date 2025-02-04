@@ -18,7 +18,7 @@ jobs:
         LV_INC_DIRS=${HOME}/include
       CIBW_BEFORE_BUILD_LINUX: >
         rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux &&
-        dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package} &&
+        dnf install -y libtiff-devel mesa-libOSMesa-devel && echo {package}
       CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
     strategy:
       matrix:
