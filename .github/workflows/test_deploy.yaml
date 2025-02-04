@@ -1,8 +1,8 @@
-name: Multi-build
+name: Wheel-build-test
 
 on:
   workflow_dispatch:
-  push:
+  #push:
 
 jobs:
   build_wheels:
