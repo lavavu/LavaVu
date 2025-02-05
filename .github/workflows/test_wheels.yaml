@@ -32,4 +32,5 @@ jobs:
           LV_ARGS: -v
         run: >
           pip install moderngl &&
+          cd Testing &&
           python runall.py
