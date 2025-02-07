@@ -11,7 +11,8 @@ Documentation available here [LavaVu Documentation](https://lavavu.github.io/Doc
 
 ![examplevis](http://owen.kaluza.id.au/Slides/2017-08-15/combined.png)
 
-LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
+LavaVu development is supported by [ACCESS-NRI](https://www.access-nri.org.au/).
+Prior development was funded by the Monash Immersive Visualisation Plaform at [Monash eResearch](https://www.monash.edu/researchinfrastructure/eresearch) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
 
 The acronym stands for: lightweight, automatable  visualisation and analysis viewing utility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It was also chosen to be unique enough to find the repository with google.
 
@@ -23,11 +24,10 @@ Rendering features include correctly and efficiently rendering large numbers of 
 Control is via python and a set of simple verbose scripting commands along with mouse/keyboard interaction.
 GUI components can be generated for use from a web browser via the python "control" module and a built in web server.
 
+Widgets for interactive use in the Jupyter notebook environment allow use for remote visualisation, eg: on supercomputing environments.
+
 A native data format called GLDB is used to store and visualisations in a compact single file, using SQLite for storage and fast loading. A small number of other data formats are supported for import (OBJ surfaces, TIFF stacks etc). 
 Further data import formats are supported with python scripts, with the numpy interface allowing rapid loading and manipulation of data.
-
-A CAVE2 virtual reality mode is provided by utilising Omegalib (http://github.com/uic-evl/omegalib) to allow use in Virtual Reality and Immersive Visualisation facilities, such as the CAVE2 at Monash, see (https://github.com/mivp/LavaVR).
-Side-by-side and quad buffer stereoscopic 3D support is also provided for other 3D displays.
 
 ### This repository ###
 
