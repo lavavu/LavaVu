@@ -1,5 +1,4 @@
 # - Creates a release on matching tag push
-# - builds latest minimal ffmpeg for wheels
 # - builds new emscripten wasm
 # - uploads release assets
 # - updates lavavu.github.io repo
@@ -15,7 +14,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    needs: ffmpeg #Required to prevent the subsequent deploy jobs running until this job finishes
     steps:
       - uses: mymindstorm/setup-emsdk@v7
 
@@ -80,79 +78,5 @@ jobs:
           git commit -m "Update LavaVu emscripten release"
           git tag ${{ steps.get_version.outputs.VERSION }}
           git push origin --tags
-
-  ffmpeg:
-    # https://trac.ffmpeg.org/wiki/CompilationGuide/Centos
-    runs-on: ubuntu-latest
-    container: quay.io/pypa/manylinux_2_28_x86_64
-    steps:
-      - name: Install deps
-        run: |
-          dnf install -y autoconf automake bzip2 bzip2-devel cmake freetype-devel gcc gcc-c++ git libtool make pkgconfig zlib-devel zip
-      - name: Build nasm 
-        run: |
-          mkdir ~/ffmpeg_sources
-          cd ~/ffmpeg_sources
-          curl -O -L https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.bz2
-          tar xjf nasm-2.15.05.tar.bz2
-          cd nasm-2.15.05
-          ./autogen.sh
-          ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin"
-          make -j$(nproc)
-          make install
-      - name: Build yasm 
-        run: |
-          cd ~/ffmpeg_sources
-          curl -O -L https://www.tortall.net/projects/yasm/releases/yasm-1.3.0.tar.gz
-          tar xzf yasm-1.3.0.tar.gz
-          cd yasm-1.3.0
-          ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin"
-          make -j$(nproc)
-          make install
-      - name: Build x264 
-        run: |
-          cd ~/ffmpeg_sources
-          git clone --branch stable --depth 1 https://code.videolan.org/videolan/x264.git
-          cd x264
-          export PATH="$HOME/bin:$PATH"
-          PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --bindir="$HOME/bin" --enable-shared
-          make -j$(nproc)
-          make install
-      - name: Build ffmpeg
-        run: |
-          cd ~/ffmpeg_sources/
-          curl -O -L https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-          tar xjf ffmpeg-snapshot.tar.bz2
-          cd ffmpeg
-          export PATH="$HOME/bin:$PATH"
-          PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --pkg-config-flags="--static" --extra-cflags="-I$HOME/ffmpeg_build/include -fPIC -m64" --extra-ldflags="-L$HOME/ffmpeg_build/lib" --extra-libs=-lpthread --extra-libs=-lm --bindir="$HOME/bin" --enable-gpl --enable-libfreetype --enable-libx264 --enable-nonfree --enable-shared --enable-pic --extra-ldexeflags=-pie
-          make -j$(nproc)
-          make install
-      - name: Zip
-        run: |
-          cd ~/ffmpeg_build/; rm -rf lib/*.a; zip --symlinks -r /ffmpeg-mini lib/* include/*
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ffmpeg-mini
-          path: /ffmpeg-mini.zip
-
-  ffmpeg-upload:
-    runs-on: ubuntu-latest
-    needs: [build, ffmpeg]
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ffmpeg-mini
-
-      - name: Upload ffmpeg build to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ffmpeg-mini.zip
-          asset_name: ffmpeg-mini.zip
-          tag: ${{ github.ref }}
 
 
