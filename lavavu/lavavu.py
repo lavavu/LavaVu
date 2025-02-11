@@ -4501,7 +4501,7 @@ class Viewer(dict):
         if at is None:
             at = self["focus"]
         else:
-            self["focus"] = at
+            self.focus(*at)
 
         # Default to Y-axis up vector
         if up is None:
