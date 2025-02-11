@@ -4211,7 +4211,7 @@ class Viewer(dict):
         """
         return Video(self, filename, resolution, fps, quality, encoder, player, options, **kwargs)
 
-    def video_steps(self, filename="", start=0, end=0, fps=10, quality=1, resolution=(0,0), **kwargs):
+    def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
         """
         TODO: Fix to use pyAV
 
@@ -4232,20 +4232,26 @@ class Viewer(dict):
             First timestep to record, if not specified will use first available
         end : int
             Last timestep to record, if not specified will use last available
+        resolution : list or tuple
+            Video resolution in pixels [x,y]
         fps : int
             Frames to output per second of video
         quality : int
-            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            Encoding quality, 1=low, 2=medium(default), 3=high, higher quality reduces
             encoding artifacts at cost of larger file size
-        resolution : list or tuple
-            Video resolution in pixels [x,y]
         **kwargs :
-            Any additional keyword args will be passed to lavavu.player()
+            Any additional keyword args will also be passed as options to the encoder
         """
 
         try:
-            fn = self.app.video(filename, fps, resolution[0], resolution[1], start, end, quality, **kwargs)
-            player(fn, **kwargs)
+            steps = self.steps
+            if end == 0: end = len(steps)
+            steps = steps[start:end]
+            from tqdm.notebook import tqdm
+            with Video(self, filename, resolution, fps, quality, encoder, player, options, **kwargs):
+                for s in tqdm(steps, desc='Rendering loop'):
+                    self.timestep(s)
+                    self.render()
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass
@@ -5452,7 +5458,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer=None, filename="", resolution=(0,0), framerate=30, quality=0, encoder="h264", player=None, options={}, **kwargs):
+    def __init__(self, viewer, filename="", resolution=(0,0), framerate=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5472,7 +5478,7 @@ class Video(object):
         fps : int
             Frames to output per second of video
         quality : int
-            Encoding quality, 1=low, 2=medium, 3=high, higher quality reduces
+            Encoding quality, 1=low, 2=medium(default), 3=high, higher quality reduces
             encoding artifacts at cost of larger file size
             If omitted will use default settings, can fine tune settings in kwargs
         resolution : list or tuple
@@ -5491,11 +5497,11 @@ class Video(object):
         if av is None:
             raise(ImportError("Video output not supported without pyAV - pip install av"))
             return
-        self.resolution = resolution
-        if self.resolution[0] == 0:
-            self.resolution = viewer.width
-        if self.resolution[1] == 0:
-            self.resolution = viewer.height
+        self.resolution = list(resolution)
+        if self.resolution[0] == 0 or self.resolution[1] == 0:
+            self.resolution = (viewer.app.viewer.width, viewer.app.viewer.height)
+        #Ensure resolution values are even or encoder fails
+        self.resolution = (2 * int(self.resolution[0]//2), 2 * int(self.resolution[1] // 2))
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
@@ -5504,8 +5510,11 @@ class Video(object):
             self.filename = "lavavu.mp4"
         self.player = player
         if self.player is None:
-            #Default player is half output resolution
-            self.player = {"width": self.resolution[0] // 2, "height": self.resolution[1] // 2}
+            #Default player is half output resolution, unless < 900 then full
+            if self.resolution[0] <= 900:
+                self.player = {"width": self.resolution[0], "height": self.resolution[1]}
+            else:
+                self.player = {"width": self.resolution[0]//2, "height": self.resolution[1]//2}
         self.encoder = encoder
         self.options = options
         #Also include extra args
@@ -5603,6 +5612,7 @@ class Video(object):
         self.container.close()
         self.container = None
         self.stream = None
+        self.viewer.recording = None
 
     def write(self, image):
         """
@@ -5630,9 +5640,8 @@ class Video(object):
 
     def play(self):
         """
-        Show the video in an inline player if in an interative notebook
+        Show the video in an inline player if in an interactive notebook
         """
-        print(self.player)
         player(self.filename, **self.player)
 
     def __enter__(self):
