@@ -1166,7 +1166,7 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucLuminanceData, width, height, depth)
 
-    def texture(self, data=None, flip=True, filter=2, bgr=False, label=""):
+    def texture(self, data=None, flip=None, filter=2, bgr=False, label=""):
         """
         Load or clear texture data for object
 
@@ -1186,7 +1186,7 @@ class Object(dict):
             If not provided, will use the default/primary texture for the object
         flip : boolean
             flip the texture vertically after loading
-            (default is enabled as usually required for OpenGL but can be disabled)
+            (default is to load value from "fliptexture" property)
         filter : int
             type of filtering, 0=None/nearest, 1=linear, 2=mipmap linear
         bgr : boolean
@@ -1196,6 +1196,11 @@ class Object(dict):
             #Clear texture
             self.parent.app.clearTexture(self.ref)
             return
+        if flip is None:
+            if "fliptexture" in self:
+                flip = self["fliptexture"]
+            else:
+                flip = self.parent["fliptexture"]
         if isinstance(data, str):
             self.parent.app.setTexture(self.ref, data, flip, filter, bgr, label)
             return
@@ -3734,7 +3739,7 @@ class Viewer(dict):
         else:
             return c.tolist()
 
-    def texture(self, label, data=None, flip=True, filter=2, bgr=False):
+    def texture(self, label, data=None, flip=None, filter=2, bgr=False):
         """
         Load or clear global/shared texture data
 
@@ -3753,7 +3758,7 @@ class Viewer(dict):
             Pass a string to load a texture from given filename
         flip : boolean
             flip the texture vertically after loading
-            (default is enabled as usually required for OpenGL but can be disabled)
+            (default is to load value from "fliptexture" property)
         filter : int
             type of filtering, 0=None/nearest, 1=linear, 2=mipmap linear
         bgr : boolean
@@ -3763,6 +3768,8 @@ class Viewer(dict):
             #Clear texture
             self.app.clearTexture(None, label)
             return
+        if flip is None:
+            flip = self["fliptexture"]
         if isinstance(data, str):
             self.app.setTexture(None, data, flip, filter, bgr, label)
             return
