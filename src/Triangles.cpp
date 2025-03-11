@@ -116,6 +116,7 @@ void Triangles::update()
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //if ((lastcount != total/3 && reload) || !tidx)
+  //printf("(tris) LastCount %d total %d, reload %d\n", lastcount, total, reload);
   if ((lastcount != total/3 && reload) || vbo == 0)
   {
     //Send the data to the GPU via VBO

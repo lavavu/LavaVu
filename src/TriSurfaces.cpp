@@ -62,17 +62,21 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
+  //printf("(trisurf %p) LastCount %d total %d, reload %d\n", this, lastcount, total, reload);
   if (lastcount != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
+    //printf("RELOADING TRISURF\n");
     //Load & optimise the mesh data (including updating centroids)
     loadMesh();
     calcCentroids();
     redraw = true;
   }
 
-  if (redraw) //Vertices possibly not updated but colours or properties?
+  //if (redraw) //Vertices possibly not updated but colours or properties?
+  if (reload) //Vertices possibly not updated but colours or properties?
   {
     //Send the data to the GPU via VBO
+    //printf("REDRAWING TRISURF (loadBuffers)\n");
     loadBuffers();
   }
 
@@ -82,7 +86,9 @@ void TriSurfaces::update()
 
   //Reload the sort array?
   //(NOTE: if reload not included here it is possible to get into a state where data is never reloaded)
-  if (reload || sorter.size != total/3 || !allVertsFixed || counts.size() != geom.size())
+  //printf("(trisurf %p) sorter.size %d total/3 %d, allVertsFixed %d counts.size %d geom.size() %d reload %d\n", this, sorter.size, total/3, allVertsFixed, counts.size(), geom.size(), reload);
+  //if (reload || sorter.size != total/3 || !allVertsFixed || counts.size() != geom.size())
+  if (reload || sorter.size != total/3 || counts.size() != geom.size())
     loadList();
 }
 

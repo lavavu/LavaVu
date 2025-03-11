@@ -708,12 +708,15 @@ void Model::reloadRedraw(DrawingObject* obj, bool reload)
     //Flag reload on all objects...
     for (auto g : geometry)
     {
-      if (reload)
+      if (reload) {
         //Full data reload...
         g->reload = true;
+      }
       else
+      {
         //Just flag a redraw, will only be reloaded if vertex count changed
         g->redraw = true;
+      }
     }
 
     for (unsigned int i = 0; i < colourMaps.size(); i++)
@@ -2537,12 +2540,12 @@ int Model::jsonRead(std::string data)
   }
 
   //If integer reload code provided, return it, otherwise reload if true, redraw otherwise
-  if (reloadflag.is_number())
+  if (reloadflag.is_number() || reloadflag.is_boolean())
     return reloadflag;
   else if ((reloadflag.is_boolean() && reloadflag))
     reload();
   else
-    redraw();
+    redraw();  //THIS IS WHERE REDRAW ALWAYS SET ON PROP LOAD
 
   return 0;
 }
