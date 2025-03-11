@@ -3249,10 +3249,12 @@ class Viewer(dict):
             self.validate = self.state["properties"]["validate"]
         self._objects._sync()
 
-    def _set(self):
+    def _set(self, reload=None):
         #Export state to lavavu
         #(include current object list state)
         #self.state["objects"] = [obj.dict for obj in self._objects.list]
+        if reload is not None:
+            self.state["reload"] = reload
         self.app.setState(json.dumps(self.state))
 
     def commands(self, cmds, queue=False):
@@ -4484,7 +4486,7 @@ class Viewer(dict):
             #Set
             if data is not None:
                 copyview(self.state["views"][0], data)
-                self._set()
+                self._set(reload=False)
 
         #Return
         return vdat
@@ -4551,7 +4553,7 @@ class Viewer(dict):
                 res = res / numpy.linalg.norm(res)
             final[key] = res.tolist()
 
-        self.camera(final)
+        self.camera(final, quiet=True)
 
     def flyto(self, pos, steps, stop=False, callback=None):
         # Fly using current camera orientation as start point
@@ -4559,7 +4561,7 @@ class Viewer(dict):
         return self.fly(pos0, pos, steps, stop, callback)
 
     def fly(self, pos0, pos1, steps, stop=False, callback=None):
-        self.camera(pos0)
+        self.camera(pos0, quiet=True)
         self.render()
 
         for i in range(steps):
