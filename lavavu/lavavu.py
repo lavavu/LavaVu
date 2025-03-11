@@ -5408,46 +5408,34 @@ def player(filename, params="controls autoplay loop", **kwargs):
         import uuid
         vid = 'video_' + str(uuid.uuid4())[:8]
 
-        '''
-        def get_fn(filename):
-            import os
-            #This is unreliable, path incorrect on NCI
-            nbpath = os.getenv('JPY_SESSION_NAME')
-            if nbpath is not None:
-                import os.path
-                relpath = os.path.relpath(os.getcwd(), start=os.path.dirname(nbpath))
-                return relpath + '/' + filename
-            return filename
-        ''';
-
-        #Embed player
-        filename = os.path.relpath(filename)
-        display(Video(url=filename, html_attributes=f"id='{vid}' " + params, **kwargs))
-
-        #Add download link
-        display(HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
-
         # Fallback - replace url on gadi and similar jupyterhub installs with 
         # fixed working directory that doesn't match notebook dir
         # check the video tag url and remove subpath on 404 error
         display(Javascript(f"""
-        let el = document.getElementById('{vid}');
-        let url = el.src;
-        fetch(url, {{method: 'HEAD'}}).then(response=>{{
-          if(response.status == 404) {{
+        function video_error(el) {{
+            let url = el.src;
             console.log("Bad video url: " + url);
             let toppath = "/files/home/"
             let baseurl = url.substring(0, url.indexOf(toppath)+toppath.length);
             let endurl = url.substring(url.indexOf("{filename}"));
             let fixed = baseurl + endurl;
-            console.log("Replaced video url: " + fixed);
-            el.src = fixed;
-            //Also fix download link
-            document.getElementById('link_{vid}').href = fixed;
-          }}
-        }});
+            if (url != fixed) {{
+              console.log("Replaced video url: " + fixed);
+              el.src = fixed;
+              //Also fix download link
+              document.getElementById('link_{vid}').href = fixed;
+            }} else {{
+              console.log("Not replacing video url, no change: " + fixed);
+            }}
+        }}
         """))
-        
+
+        #Embed player
+        filename = os.path.relpath(filename)
+        display(Video(url=filename, html_attributes=f'id="{vid}" onerror="video_error(this)"' + params, **kwargs))
+
+        #Add download link
+        display(HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
 
 #Class for managing video animation recording
 class Video(object):
@@ -5467,7 +5455,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer, filename="", resolution=(0,0), framerate=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
+    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5515,15 +5503,19 @@ class Video(object):
         self.quality = quality
         self.viewer = viewer
         self.filename = filename
-        if len(self.filename) == 0:
-            self.filename = "lavavu.mp4"
         self.player = player
         if self.player is None:
             #Default player is half output resolution, unless < 900 then full
-            if self.resolution[0] <= 900:
-                self.player = {"width": self.resolution[0], "height": self.resolution[1]}
-            else:
+            if "width" in kwargs or "height" in kwargs or "params" in kwargs:
+                #Back compatibility with old args
+                self.player = {}
+                self.player.update(kwargs)
+                kwargs = {}
+            elif self.resolution[0] > 900:
+                #Larger output res - default to half size player
                 self.player = {"width": self.resolution[0]//2, "height": self.resolution[1]//2}
+            else:
+                self.player = {}
         self.encoder = encoder
         self.options = options
         #Also include extra args
