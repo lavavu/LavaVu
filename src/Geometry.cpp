@@ -1865,7 +1865,26 @@ void Geometry::display(bool refresh)
           {
             geom[index]->opaque = true;
           }
+        }
 
+        //Load RGB/RGBA as texture
+        //printf("COLOURS %d VERTS %d RGB %d TEXTURE %d\n", geom[index]->colourCount() > geom[index]->count(), geom[index]->render->rgb.size(), geom[index]->render->colours.size(), geom[index]->hasTexture());
+        if (geom[index]->colourCount() > geom[index]->count())
+        {
+          if (geom[index]->render->rgb.size())
+          {
+            //printf("LOADING RGB %d to TEXTURE %d x %d\n", geom[index]->render->rgb.size(), geom[index]->texwidth, geom[index]->texheight);
+            assert(geom[index]->render->rgb.size() == geom[index]->texwidth * geom[index]->texheight * 3);
+            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->rgb.ref()), geom[index]->texwidth, geom[index]->texheight, 3, false);
+          }
+          else if (geom[index]->render->colours.size())
+          {
+            //printf("LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
+            assert(geom[index]->render->colours.size() == geom[index]->texwidth * geom[index]->texheight);
+            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->colours.ref()), geom[index]->texwidth, geom[index]->texheight, 4, false);
+            //std::ofstream of("texout.png");
+            //write_png(of, 4, geom[index]->texwidth, geom[index]->texheight, geom[index]->render->colours.ref());
+          }
         }
       }
     }
@@ -2173,9 +2192,18 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
 void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
-  if (width) geomdata->width = width;
-  if (height) geomdata->height = height;
-  if (depth) geomdata->depth = depth;
+  if (width && height && (dtype == lucRGBData || dtype == lucRGBAData))
+  {
+    //Set the texture width/height/depth
+    geomdata->texwidth = width;
+    geomdata->texheight = height;
+  }
+  else
+  {
+    if (width) geomdata->width = width;
+    if (height) geomdata->height = height;
+    if (depth) geomdata->depth = depth;
+  }
 
   //Read the data
   if (n > 0)

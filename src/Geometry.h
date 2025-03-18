@@ -317,6 +317,8 @@ public:
   unsigned int width;
   unsigned int height;
   unsigned int depth;
+  unsigned int texwidth;
+  unsigned int texheight;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   Texture_Ptr texture;               //Default texture
   lucGeometryType type;   //Holds the object type

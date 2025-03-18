@@ -2118,7 +2118,18 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
     if (!std::isfinite(max[c])) max[c] = 0.0;
   }
 
-  snprintf(SQL, SQL_QUERY_MAX, "INSERT INTO geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
+  //Use texwidth/height if RGB/RGBA data
+  int width = data->width;
+  int height = data->height;
+  int depth = data->depth;
+  if (dtype == lucRGBData || dtype == lucRGBAData)
+  {
+    width = data->texwidth;
+    height = data->texheight;
+    depth = dtype == lucRGBData ? 3 : 4;
+  }
+
+  snprintf(SQL, SQL_QUERY_MAX, "INSERT INTO geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) VALUES (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, height, depth, type, dtype, block->unitsize(), block->size(), width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 
   /* Prepare statement... */
   if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)

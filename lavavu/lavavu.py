@@ -1144,7 +1144,12 @@ class Object(dict):
             #Re-arrange to array of [r,g,b,a] values
             data = numpy.dstack((data[0],data[1],data[2]))
 
-        self._loadScalar(data, LavaVuPython.lucRGBAData)
+        #Use the shape as dims for texture image data
+        if len(data.shape) > 1:
+            width, height =  data.shape[1], data.shape[0]
+            depth = 4 #4 channel RGBA
+
+        self._loadScalar(data, LavaVuPython.lucRGBAData, width, height, depth)
 
 
     def luminance(self, data):
