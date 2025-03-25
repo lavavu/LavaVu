@@ -106,6 +106,13 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: Retrieve sdist
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sdist*
+          path: dist
+          merge-multiple: true
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         #Uncomment to use testing repo
