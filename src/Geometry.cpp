@@ -1406,21 +1406,21 @@ void Geometry::setState(Geom_Ptr g)
         std::string texfn = prop;
         //Support multiple textures, load subsequent from custom props
         //std::cout << label << " = " << prop << std::endl;
-        //std::cout << "SEARCH LOCAL..." << std::endl;
+        //std::cout << "  SEARCH LOCAL..." << std::endl;
         Texture_Ptr the_texture = nullptr;
         if (draw->textures.find(label) == draw->textures.end() || draw->textures[label]->fn.full != texfn)
         {
           //Search in global textures
-          //std::cout << "NOT FOUND, SEARCH SHARED..." << std::endl;
+          //std::cout << "    NOT FOUND, SEARCH SHARED..." << std::endl;
           if (session.textures.find(label) != session.textures.end())
           {
-            //std::cout << "USING SHARED TEXTURE " << label << " : " << texfn << std::endl;
+            //std::cout << "      USING SHARED TEXTURE " << label << " : " << texfn << std::endl;
             //Save a copy in draw->textures so hasTexture returns true
             the_texture = draw->textures[label] = session.textures[label];
           }
           else if (FileExists(texfn))
           {
-            //std::cout << "NOT FOUND, CREATE/LOAD FROM FILE..." << std::endl;
+            //std::cout << "      NOT FOUND, CREATE/LOAD FROM FILE..." << std::endl;
             //Add a new empty texture container
             draw->textures[label] = std::make_shared<ImageLoader>();
             //Default to the object flip setting
@@ -1434,13 +1434,13 @@ void Geometry::setState(Geom_Ptr g)
             }
             draw->textures[label]->flip = flip;
             draw->textures[label]->fn = texfn;
-            //std::cout << "LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
+            //std::cout << "      LOADED ADDITIONAL TEX " << label << " : " << texfn << std::endl;
             the_texture = draw->textures[label];
           }
         }
         else
         {
-          //std::cout << "FOUND LOCAL." << std::endl;
+          //std::cout << "    FOUND LOCAL." << std::endl;
           the_texture = draw->textures[label];
         }
 
@@ -1464,10 +1464,18 @@ void Geometry::setState(Geom_Ptr g)
             //printf("Texture unit set %d \n", texture_data->unit);
           }
           else
-            std::cout << "Texture load failed, data is NULL! " << label << " = " << prop << std::endl;
+          {
+            //This is fine if texture not set or is empty string
+            //std::cout << "Texture load failed, data is NULL! " << label << " = " << prop << std::endl;
+            prog->setUniformi(label, 1024); //Dummy unit
+          }
         }
         else
-          std::cout << "Texture load failed, not found. " << label << " = " << prop << std::endl;
+        {
+          //This is fine if texture not set or is empty string
+          //std::cout << "Texture load failed, not found. " << label << " = " << prop << std::endl;
+          prog->setUniformi(label, 1024); //Dummy unit
+        }
       }
       else if (!prop.is_null())
       {
