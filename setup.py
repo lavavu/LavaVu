@@ -383,19 +383,9 @@ if __name__ == "__main__":
             #EGL and OSMesa are built as optional extra modules
             '''
             if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
-                #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
-                ex = Extension('lavavu.egl._LavaVuPython',
-                                define_macros = defines + [('HAVE_EGL', '1')],
-                                include_dirs = inc_dirs,
-                                libraries = libs + ['OpenGL', 'EGL'],
-                                library_dirs = lib_dirs,
-                                runtime_library_dirs = rt_lib_dirs,
-                                extra_compile_args = cflags,
-                                extra_link_args = ldflags,
-                                extra_objects=extra_objects,
-                                sources = srcs)
-                extensions.append(ex)
             ''';
+
+            #OSMesa built as optional extra module
             if find_library('OSMesa') and check_libraries(['OSMesa'], ['GL/osmesa.h']):
                 #OSMesa for software rendered offscreen OpenGL, build as additional extension
                 ex = Extension('lavavu.osmesa._LavaVuPython',
@@ -411,7 +401,12 @@ if __name__ == "__main__":
                 extensions.append(ex)
 
             #Main extension - use X11 or GLFW
-            if ("LV_GLFW" in os.environ and find_library('glfw')
+            if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
+            and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
+                #EGL for offscreen OpenGL without X11/GLX - works with NVidia and latest Mesa
+                defines += [('HAVE_EGL', '1')]
+                libs += ['OpenGL', 'EGL']
+            elif ("LV_GLFW" in os.environ and find_library('glfw')
             and check_libraries(['glfw'], ['GLFW/glfw3.h'])):
                 #Use GLFW
                 defines += [('HAVE_GLFW', '1')]
