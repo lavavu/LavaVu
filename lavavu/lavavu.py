@@ -2744,7 +2744,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, *args, resolution=None, binpath=None, context="default", port=8080, threads=False, **kwargs):
+    def __init__(self, *args, resolution=None, binpath=None, context=None, port=8080, threads=False, **kwargs):
         """
         Create and init viewer instance
 
@@ -2781,7 +2781,9 @@ class Viewer(dict):
         self._collections = {}
         self.validate = True #Property validation flag
         self.recording = None
-        self.context = os.environ.get('LV_CONTEXT', context)
+        self.context = context
+        if self.context is None:
+            self.context = os.environ.get('LV_CONTEXT', 'default')
 
         #Exit handler to clean up threads
         #(__del__ does not always seem to get called on termination)
