@@ -4483,10 +4483,10 @@ class Viewer(dict):
                 for key in ["translate", "rotate", "xyzrotate", "fov", "focus"]:
                     if key in src:
                         dst[key] = copy.copy(src[key])
-                        #Round down arrays to max 3 decimal places
+                        #Round down arrays to max 6 decimal places
                         try:
                             for r in range(len(dst[key])):
-                                dst[key][r] = round(dst[key][r], 3)
+                                dst[key][r] = round(dst[key][r], 6)
                         except:
                             #Not a list/array
                             pass
