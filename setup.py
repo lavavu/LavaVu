@@ -402,7 +402,7 @@ if __name__ == "__main__":
 
             #Main extension - use X11 or GLFW
             if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
-            and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
+            and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
                 #EGL for offscreen OpenGL without X11/GLX - works with NVidia and latest Mesa
                 defines += [('HAVE_EGL', '1')]
                 libs += ['OpenGL', 'EGL']
