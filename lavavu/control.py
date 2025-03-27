@@ -1689,13 +1689,26 @@ class _ControlFactory(object):
         """
         if not is_notebook():
             return
-        #Find matching viewer id, redisplay all that match
+        from IPython.display import display,HTML,Javascript
+        display(Javascript(self.redisplay_call()))
+
+    def redisplay_call(self):
+        """Update the active viewer image if any
+        Applies changes made in python to the viewer and forces a redisplay
+        """
+        #Find matching viewer id, redisplay first  match
+        ids = self.active_viewers()
+        return ';'.join('_wi["{0}"].redisplay()'.format(i) for i in ids)
+
+    def active_viewers(self):
+        """Return matching active viewer IDs
+        """
+        #Find matching viewer ids, all that match
+        ids = []
         for idx,obj in enumerate(windows):
             if obj == self._target():
-                viewerid = winids[idx]
-                from IPython.display import display,HTML,Javascript
-                #display(Javascript('_wi["{0}"].redisplay();'.format(viewerid)))
-                display(HTML('<script>_wi["{0}"].redisplay();</script>'.format(viewerid)))
+                ids.append(winids[idx])
+        return ids
 
     def update(self):
         """Update the control values from current viewer data
