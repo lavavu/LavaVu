@@ -313,13 +313,13 @@ public:
   bool internal = false;
   static std::string names[lucMaxType];
   static std::string datalabels[lucMaxDataType+1];
-  DrawingObject* draw; //Parent drawing object
-  unsigned int width;
-  unsigned int height;
-  unsigned int depth;
-  unsigned int texwidth;
-  unsigned int texheight;
-  bool opaque;   //Flag for opaque geometry, render first, don't depth sort
+  DrawingObject* draw = NULL; //Parent drawing object
+  unsigned int width = 0;
+  unsigned int height = 0;
+  unsigned int depth = 0;
+  unsigned int texwidth = 0;
+  unsigned int texheight = 0;
+  bool opaque = false;   //Flag for opaque geometry, render first, don't depth sort
   Texture_Ptr texture;               //Default texture
   lucGeometryType type;   //Holds the object type
   int step = -1; //Holds the timestep
@@ -370,7 +370,7 @@ public:
   }
 
   GeomData(DrawingObject* draw, lucGeometryType type, int step=-1)
-    : draw(draw), width(0), height(0), depth(0), opaque(false), type(type), step(step)
+    : draw(draw), type(type), step(step)
   {
     texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
 
