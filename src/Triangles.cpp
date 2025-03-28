@@ -235,7 +235,7 @@ void Triangles::loadBuffers()
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
-      if (!hasTexture && !texmap && cidx * colrange == v)
+      if (!texmap && cidx * colrange == v)
         getColour(colour, cidx);
 
       float* vert = geom[index]->render->vertices[v];
