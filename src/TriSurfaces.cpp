@@ -126,7 +126,7 @@ void TriSurfaces::loadMesh()
     //Sort vertices vector with std::sort & custom compare sort( vec.begin(), vec.end() );
     //Iterate, for duplicates replace indices with index of first
     //Remove duplicate vertices Triangles stored as list of indices
-    unsigned int hasColours = !geom[index]->hasTexture() && geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->hasTexture() ? 0 : geom[index]->colourCount();
     bool vertColour = hasColours && (hasColours == geom[index]->count());
     t1=tt=clock();
 
@@ -312,8 +312,8 @@ void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<
   debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->vertices.size()/3);
   //Vertex elimination currently only works for per-vertex colouring, 
   // if less colour values provided, must precalc own indices to skip this step 
-  unsigned int hasColours = !geom[index]->hasTexture() && geom[index]->colourCount();
-  bool vertColour = (hasColours && hasColours >= geom[index]->render->vertices.size()/3);
+  unsigned int hasColours = geom[index]->hasTexture() ? 0 : geom[index]->colourCount();
+  bool vertColour = (hasColours && hasColours == geom[index]->render->vertices.size()/3);
   if (hasColours && !vertColour) debug_print("Not enough colour values for per-vertex normalisation %d < %d\n", hasColours, geom[index]->render->vertices.size()/3);
   bool vnormals = geom[index]->draw->properties["vertexnormals"];
   int anglemin = geom[index]->draw->properties["smoothangle"];

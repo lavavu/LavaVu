@@ -193,7 +193,7 @@ void Triangles::loadBuffers()
     FloatValues* vals = geom[index]->colourData();
     //Calibrate colour maps on range for this surface
     ColourLookup& getColour = geom[index]->colourCalibrate();
-    unsigned int hasColours = geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->hasTexture() ? 0 : geom[index]->colourCount();
     if (hasColours > geom[index]->count()) hasColours = geom[index]->count(); //Limit to vertices
     unsigned int colrange = hasColours ? geom[index]->count() / hasColours : 1;
     if (colrange < 1) colrange = 1;
