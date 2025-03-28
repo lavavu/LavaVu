@@ -1878,17 +1878,17 @@ void Geometry::display(bool refresh)
         //Load RGB/RGBA as texture
         if (geom[index]->texwidth && geom[index]->texheight)
         {
-           printf("TEX %d x %d RGB %d COLOURS %d TEXTURE %d\n", geom[index]->texwidth, geom[index]->texheight, geom[index]->render->rgb.size(), geom[index]->render->colours.size(), geom[index]->hasTexture());
+           //printf("TEX %d x %d RGB %d COLOURS %d TEXTURE %d\n", geom[index]->texwidth, geom[index]->texheight, geom[index]->render->rgb.size(), geom[index]->render->colours.size(), geom[index]->hasTexture());
           //RGB as ubyte * 3
           if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->rgb.size() * 3)
           {
-            printf(" - LOADING RGB %d to TEXTURE %d x %d\n", geom[index]->render->rgb.size(), geom[index]->texwidth, geom[index]->texheight);
+            //printf(" - LOADING RGB %d to TEXTURE %d x %d\n", geom[index]->render->rgb.size(), geom[index]->texwidth, geom[index]->texheight);
             geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->rgb.ref()), geom[index]->texwidth, geom[index]->texheight, 3, false);
           }
           //RGBA as int32 (ubyte * 4)
           else if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->colours.size())
           {
-            printf(" - LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
+            //printf(" - LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
             geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->colours.ref()), geom[index]->texwidth, geom[index]->texheight, 4, false);
             //std::ofstream of("texout.png");
             //write_png(of, 4, geom[index]->texwidth, geom[index]->texheight, geom[index]->render->colours.ref());
