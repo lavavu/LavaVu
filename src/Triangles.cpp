@@ -230,11 +230,11 @@ void Triangles::loadBuffers()
     float nullTexCoord[2] = {-1.0, -1.0};
     if (index > 0)
       geom[index]->voffset = geom[index-1]->voffset + geom[index-1]->count();
+    colour.value = 0; //Reset colour
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
-      colour.value = 0.0;
       if (!hasTexture && !texmap && cidx * colrange == v)
         getColour(colour, cidx);
 
