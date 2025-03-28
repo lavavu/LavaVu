@@ -1877,7 +1877,7 @@ void Geometry::display(bool refresh)
 
         //Load RGB/RGBA as texture
         //printf("COLOURS %d VERTS %d RGB %d TEXTURE %d\n", geom[index]->colourCount() > geom[index]->count(), geom[index]->render->rgb.size(), geom[index]->render->colours.size(), geom[index]->hasTexture());
-        if (geom[index]->colourCount() > geom[index]->count())
+        if (geom[index]->colourCount() > (int)geom[index]->count())
         {
           if (geom[index]->render->rgb.size())
           {
