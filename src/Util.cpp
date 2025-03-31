@@ -212,12 +212,13 @@ bool Properties::getBool(const std::string& key, bool def)
   return def;
 }
 
-void Properties::mergeJSON(json& dest, json& src)
+void Properties::mergeJSON(json& dest, json& src, bool overwrite)
 {
   //Merge: keep existing values, replace any imported
+  //overwrite (default: false) will always replace existing values
   for (json::iterator it = src.begin(); it != src.end(); ++it)
   {
-    if (!it.value().is_null())
+    if (overwrite || !it.value().is_null())
       dest[it.key()] = it.value();
   }
 }

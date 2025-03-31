@@ -347,7 +347,7 @@ public:
 
   template<typename T>
   static void toArray(const json& val, T* array, unsigned int size);
-  static void mergeJSON(json& dest, json& src);
+  static void mergeJSON(json& dest, json& src, bool overwrite=false);
 
   bool has(const std::string& key);
   bool hasglobal(const std::string& key);
