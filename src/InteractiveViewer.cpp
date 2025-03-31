@@ -1822,7 +1822,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    aview->properties.data["title"] = parsed.getall("title", 0);
+    if (amodel->timesteps.size() > 1)
+      session.timesteps[session.now]->properties.data["title"] = parsed.getall("title", 0);
+    else
+      aview->properties.data["title"] = parsed.getall("title", 0);
   }
   else if (parsed.exists("rulers"))
   {
