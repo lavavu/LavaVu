@@ -53,6 +53,7 @@ import weakref
 import asyncio
 import quaternion as quat
 import platform
+import matplotlib
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -1276,6 +1277,8 @@ class Object(dict):
             self.ref.colourMap = data.ref
             data = None
         else:
+            if isinstance(data, matplotlib.colors.Colormap):
+                data = matplotlib_cmap(data)
             if data is None:
                 self.parent._get() #Ensure in sync
                 cmid = self["colourmap"]
