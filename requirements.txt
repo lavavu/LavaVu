@@ -1,5 +1,6 @@
 numpy >= 1.18
 aiohttp
 jupyter_server_proxy
+matplotlib
 numpy-quaternion
 
