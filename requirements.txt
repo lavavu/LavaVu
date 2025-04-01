@@ -2,5 +2,5 @@ numpy >= 1.18
 aiohttp
 jupyter_server_proxy
 matplotlib
-numpy-quaternion @ https://github.com/moble/quaternion/archive/refs/heads/main.zip
+numpy-quaternion
 
