@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/lavavu/LavaVu/workflows/Test/badge.svg)](https://github.com/lavavu/LavaVu/actions?query=workflow:Test)
 [![Deploy Status](https://github.com/lavavu/LavaVu/workflows/Deploy/badge.svg?branch=1.7.3)](https://github.com/lavavu/LavaVu/actions?query=workflow:Deploy)
 [![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.0)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.1)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
@@ -16,7 +16,7 @@ Prior development was funded by the Monash Immersive Visualisation Plaform at [M
 
 The acronym stands for: lightweight, automatable  visualisation and analysis viewing utility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It was also chosen to be unique enough to find the repository with google.
 
-The project started in the gLucifer<sup>1</sup> framework for visualising geodynamics simulations. The OpenGL visualisation module was separated from the simulation and sampling libraries and became a more general purpose visualisation tool. gLucifer continues as a set of sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/) code. LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
+The project started as a replacement rendering library for the gLucifer<sup>1</sup> framework, visualising geodynamics simulations. The new OpenGL visualisation code was re-implemented as a more general purpose visualisation tool. gLucifer continues as a set of sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/) code. LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive Jupyter notebooks and offline through saved visualisation databases and images/movies.
 
 As a standalone tool it is a scriptable 3D visualisation tool capable of producing publication quality high res images and video output from time varying data sets along with HTML5 3D visualisations in WebGL.
 Rendering features include correctly and efficiently rendering large numbers of opaque and transparent points and surfaces and volume rendering by GPU ray-marching. There are also features for drawing vector fields and tracers (streamlines).
@@ -39,13 +39,10 @@ Development happens in the "master" branch with stable releases tagged, so if yo
 It's now in the python package index, so you can install with *pip*:
 
 ```
-pip install --user lavavu
+python -m pip install lavavu
 ```
 
-> If you don't have pip available, you can try `sudo easy_install pip` or just install [Anaconda](https://www.anaconda.com/download), which comes with pip and a whole lot of other useful packages for scientific work with python. Once in anaconda `pip install lavavu` will install the package.
-
-> Currently no binaries are provided and the installer needs to compile the library, so on Linux you may need some developer tools and headers first, eg: for Ubuntu:
-`sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev`
+> Currently binary wheels are provided for Linux x86_64, MacOS x86_64 and ARM64 and Windows x86_64. 
 
 To try it out:
 
@@ -62,7 +59,12 @@ Alternatively, clone this repository with *git* and build from source:
 ```
   git clone https://github.com/lavavu/LavaVu
   cd LavaVu
+  python -m pip install .
+```
+or 
+```
   make -j4
+
 ```
 
 If all goes well the viewer will be built, try running with:
@@ -71,14 +73,14 @@ If all goes well the viewer will be built, try running with:
 ### Dependencies ###
 
 * OpenGL and Zlib, present on most systems, headers may need to be installed
-* To use with python requires python 2.7+ and NumPy
-* For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
+* To use with python requires python 3.6+ and NumPy
+* For video output, requires: PyAV or for built in encoding, libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
 * To build the python interface from source requires swig (http://www.swig.org/)
 
 ### Who do I talk to? ###
 
 * Report bugs/issues here on github: https://github.com/lavavu/LavaVu/issues
-* Contact developer: Owen Kaluza (at) monash.edu
+* Contact developer: Owen Kaluza (at) anu.edu.au
 
 For further documentation / examples, see the online documentation
 * https://lavavu.github.io/Documentation

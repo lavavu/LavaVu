@@ -59,7 +59,7 @@ Dependencies
    installed, eg: on Ubuntu
    ``sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev``
 -  To use with python requires python 3.6+ and NumPy.
--  For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
+-  For video output, requires: pyav, or for built in encoding: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
    Can be installed on Ubuntu with 
    ``sudo apt install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev``
    Or on Mac with ``brew install ffmpeg``
@@ -189,6 +189,6 @@ A base dockerfile is provided in the repository root.
 You can try it out on binder
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.0
+ :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.1
 
 

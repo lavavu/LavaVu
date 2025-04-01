@@ -10,9 +10,8 @@ LavaVu provides access to OpenGL powered 3D rendering of point, line, surface an
 .. figure:: images/examples.png
    :alt: examplevis
 
-LavaVu development is supported by the `Monash Immersive Visualisation
-Plaform <http://monash.edu.au/mivp>`__ and the Simulation, Analysis &
-Modelling component of the `NCRIS
+LavaVu development is supported by `ACCESS-NRI <https://www.access-nri.org.au/>`__.
+Prior development was funded by the Monash Immersive Visualisation Plaform at `Monash eResearch <https://www.monash.edu/researchinfrastructure/eresearch>`__ and the Simulation, Analysis & Modelling component of the `NCRIS
 AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 
 .. toctree::
@@ -56,9 +55,9 @@ Originally a set of tools for visualising geodynamics simulations on HPC facilit
 
 LavaVu is now a separate library and general purpose visualisation tool..
 
-LavaVu provides a rendering engine for creating 2d and 3d
-visualisations, particularly focused on time varying simulation data, 3D volume (eg: medical CT/MRI) capable of interactively viewing sampled data inline within interactive
-IPython notebooks and offline through saved visualisation databases and
+LavaVu provides the rendering library for creating 2d and 3d
+visualisations to view this sampled data, inline within interactive
+Jupyter notebooks and offline through saved visualisation databases and
 images/movies.
 
 As a standalone tool it is a scriptable 3D visualisation tool capable of
@@ -71,26 +70,18 @@ tracers (streamlines).
 
 Control is via python and a set of simple verbose scripting commands
 along with mouse/keyboard interaction. GUI components can be generated
-for use from a web browser and a built
+for use from a web browser via the python “control” module and a built
 in web server.
 
-A native data format called GLDB is used to store and serialise visualisation data and state in
+Widgets for interactive use in the Jupyter notebook environment allow
+use for remote visualisation, eg: on supercomputing environments.
+
+A native data format called GLDB is used to store and visualisations in
 a compact single file, using SQLite for storage and fast loading. A
 small number of other data formats are supported for import (OBJ
 surfaces, TIFF stacks etc). Further data import formats are supported
 with python scripts, with the numpy interface allowing rapid loading and
 manipulation of data.
-
-A CAVE2 virtual reality mode is provided by utilising Omegalib
-(http://github.com/uic-evl/omegalib) to allow use in Virtual Reality and
-Immersive Visualisation facilities, such as the CAVE2 at Monash, see
-(https://github.com/mivp/LavaVR). Side-by-side and quad buffer
-stereoscopic 3D support is also provided for other 3D displays.
-VR output can also be used to view WebGL content using a WebVR capable browser.
-
-(The acronym stands for: Lightweight, Automatable Visualisation and
-Analysis Viewing Utility, but “lava” is also a reference to its origins
-as a viewer for geophysical simulations. It's also unique enough to find the repository with google.)
 
 How do I get started?
 ~~~~~~~~~~~~~~~~~~~~~
@@ -145,7 +136,7 @@ Who do I talk to?
 
 -  Report bugs or request help on the github issue tracker:
    https://github.com/lavavu/LavaVu/issues
--  Contact developers: Owen Kaluza (at) monash.edu
+-  Contact developers: Owen Kaluza (at) anu.edu.au
 
 Included libraries
 ~~~~~~~~~~~~~~~~~~
