@@ -611,12 +611,12 @@ class Object(dict):
         return key in self.dict
 
     def __repr__(self):
-        return str(self.ref)
+        return self.__str__()
 
     def __str__(self):
         #Default string representation
         self.parent._get() #Ensure in sync
-        return '{\n' + str('\n'.join(['  %s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()])) + '\n}\n'
+        return '{\n' + str('\n'.join(['  %s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()])) + '\n}'
 
     #Interface for setting filters
     def include(self, *args, **kwargs):
