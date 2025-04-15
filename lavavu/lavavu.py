@@ -4187,7 +4187,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", resolution=(0,0), fps=30, quality=0, encoder="h264", player=None, options={}, **kwargs):
+    def video(self, filename="", resolution=(0,0), fps=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
