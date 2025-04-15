@@ -4187,7 +4187,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", resolution=(0,0), fps=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
+    def video(self, filename="", resolution=(0,0), fps=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -4214,6 +4214,9 @@ class Viewer(dict):
             If omitted will use default settings, can fine tune settings in kwargs
         encoder : str
             Name of encoder to use, eg: "h264" (default), "mpeg"
+        embed : bool
+            Set to true to embed the video file rather than link to url
+            Not recommended for large videos, default is False
         player : dict
             Args to pass to the player when the video is finished, eg:
             {"width" : 800, "height", 400, "params": "controls autoplay"}
@@ -4228,12 +4231,11 @@ class Viewer(dict):
         recorder : Video(object)
             Context manager object that controls the video recording
         """
-        return Video(self, filename, resolution, fps, quality, encoder, player, options, **kwargs)
+        return Video(self, filename, resolution, fps, quality, encoder, embed, player, options, **kwargs)
 
-    def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
+    def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
+        my_func.__doc__
         """
-        TODO: Fix to use pyAV
-
         Record a video of the model by looping through all time steps
 
         Shows the generated video inline within an ipython notebook.
@@ -4245,21 +4247,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename : str
-            Name of the file to save, if not provided a default will be used
         start : int
             First timestep to record, if not specified will use first available
         end : int
             Last timestep to record, if not specified will use last available
-        resolution : list or tuple
-            Video resolution in pixels [x,y]
-        fps : int
-            Frames to output per second of video
-        quality : int
-            Encoding quality, 1=low, 2=medium(default), 3=high, higher quality reduces
-            encoding artifacts at cost of larger file size
-        **kwargs :
-            Any additional keyword args will also be passed as options to the encoder
+
+        All other parameters same as video()
         """
 
         try:
@@ -4267,7 +4260,7 @@ class Viewer(dict):
             if end == 0: end = len(steps)
             steps = steps[start:end]
             from tqdm.notebook import tqdm
-            with Video(self, filename, resolution, fps, quality, encoder, player, options, **kwargs):
+            with Video(self, filename, resolution, fps, quality, encoder, embed, player, options, **kwargs):
                 for s in tqdm(steps, desc='Rendering loop'):
                     self.timestep(s)
                     self.render()
@@ -5415,37 +5408,44 @@ def player(filename, params="controls autoplay loop", **kwargs):
 
     if is_notebook():
         from IPython.display import display,HTML,Video,Javascript
-        import uuid
-        vid = 'video_' + str(uuid.uuid4())[:8]
 
         # Fallback - replace url on gadi and similar jupyterhub installs with 
         # fixed working directory that doesn't match notebook dir
         # check the video tag url and remove subpath on 404 error
-        display(Javascript(f"""
-        function video_error(el) {{
-            let url = el.src;
-            console.log("Bad video url: " + url);
-            let toppath = "/files/home/"
-            let baseurl = url.substring(0, url.indexOf(toppath)+toppath.length);
-            let endurl = url.substring(url.indexOf("{filename}"));
-            let fixed = baseurl + endurl;
-            if (url != fixed) {{
-              console.log("Replaced video url: " + fixed);
-              el.src = fixed;
+        onerror = """{
+          let url = this.src;
+          console.log('Error in video url: ' + url);
+          var urlp = new window.URL(url);
+          let toppath = '/files/home/';
+          let startidx = urlp.pathname.indexOf(toppath);
+          if (startidx < 0) {
+            toppath = '/files/';
+            startidx = urlp.pathname.indexOf(toppath);
+          }
+          if (startidx >= 0) {
+            let filename = urlp.pathname.split('/').pop();
+            let base = urlp.pathname.substring(0, startidx+toppath.length);
+            urlp.pathname = base + filename;
+            if (url != urlp.href) {
+              console.log('Replaced video url: ' + urlp.href);
+              this.src = urlp.href;
               //Also fix download link
-              document.getElementById('link_{vid}').href = fixed;
-            }} else {{
-              console.log("Not replacing video url, no change: " + fixed);
-            }}
-        }}
-        """))
+              let link = document.getElementById('link_' + this.id);
+              if (link) link.href = urlp.href;
+            }
+          }
+        }"""
 
-        #Embed player
+        if "embed" in kwargs:
+            #Not needed if embedding
+            onerror = ""
+
+        #Display player and download link
+        import uuid
+        vid = 'video_' + str(uuid.uuid4())[:8]
         filename = os.path.relpath(filename)
-        display(Video(url=filename, html_attributes=f'id="{vid}" onerror="video_error(this)"' + params, **kwargs))
-
-        #Add download link
-        display(HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
+        display(Video(filename=filename, html_attributes=f'id="{vid}" onerror="{onerror}" ' + params, **kwargs),
+                HTML(f'<a id="link_{vid}" href="{filename}" download>Download Video</a>'))
 
 #Class for managing video animation recording
 class Video(object):
@@ -5465,7 +5465,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder="h264", player=None, options={}, **kwargs):
+    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5492,6 +5492,9 @@ class Video(object):
             Video resolution in pixels [x,y]
         encoder : str
             Name of encoder to use, eg: "h264" (default), "mpeg"
+        embed : bool
+            Set to true to embed the video file rather than link to url
+            Not recommended for large videos, default is False
         player : dict
             Args to pass to the player when the video is finished, eg:
             {"width" : 800, "height", 400, "params": "controls autoplay"}
@@ -5526,6 +5529,8 @@ class Video(object):
                 self.player = {"width": self.resolution[0]//2, "height": self.resolution[1]//2}
             else:
                 self.player = {}
+        if embed:
+            self.player["embed"] = True
         self.encoder = encoder
         self.options = options
         #Also include extra args
