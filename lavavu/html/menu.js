@@ -123,7 +123,12 @@ function menu_addctrls(menu, obj, viewer, onchange) {
     //Check if it has been set on the target object
     if (prop in obj) {
       //console.log(prop + " ==> " + JSON.stringify(viewer.dict[prop]));
-      menu_addctrl(menu, obj, viewer, prop, onchange);
+      try {
+        //Catch errors and continue gracefully
+        menu_addctrl(menu, obj, viewer, prop, onchange);
+      } catch(e) {
+        console.log("Error adding control to menu: " + e);
+      }
 
     } else {
       //Save list of properties without controls
