@@ -164,9 +164,9 @@ function menu_addctrls(menu, obj, viewer, onchange) {
 
 function menu_addcmaps(menu, obj, viewer, onchange) {
   //Colourmap editing menu
-  if (viewer.cgui.prmenu) viewer.cgui.removeFolder(viewer.cgui.prmenu);
-  if (viewer.cgui.cmenu) viewer.cgui.removeFolder(viewer.cgui.cmenu);
-  if (viewer.cgui.pomenu) viewer.cgui.removeFolder(viewer.cgui.pomenu);
+  if (viewer.cgui.prmenu) viewer.cgui.remove(viewer.cgui.prmenu);
+  if (viewer.cgui.cmenu) viewer.cgui.remove(viewer.cgui.cmenu);
+  if (viewer.cgui.pomenu) viewer.cgui.remove(viewer.cgui.pomenu);
   viewer.cgui.prmenu = viewer.cgui.addFolder("Properties");
   viewer.cgui.cmenu = viewer.cgui.addFolder("Colours");
   viewer.cgui.pomenu = viewer.cgui.addFolder("Positions");
