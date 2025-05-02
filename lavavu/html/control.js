@@ -87,7 +87,7 @@ function WindowInteractor(id, uid, port) {
 
     //Several possible modes to try
     //Modern JupyterHub lab URL
-    var regex = /\/lab\//;
+    var regex = /\/lab(\/|\?|$)/; //Match "/lab" at end of url or "/lab/" or "/lab?" anywhere
     var parsed = regex.exec(loc.href);
     if (parsed && parsed.length > 0) {
       connect(loc.href.substring(0,parsed.index) + "/proxy/" + port);
