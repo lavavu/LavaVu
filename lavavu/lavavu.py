@@ -4354,7 +4354,7 @@ class Viewer(dict):
 
         for f in sorted(imagelist):
             outfile = outputPath+f
-            expfile = expectedPath+f
+            expfile = os.path.join(expectedPath, f)
             results.append(self.testimage(expfile, outfile, tolerance, clear))
 
         #Combined result
