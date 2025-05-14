@@ -4353,7 +4353,7 @@ class Viewer(dict):
             os.chdir(cwd)
 
         for f in sorted(imagelist):
-            outfile = outputPath+f
+            outfile = os.path.join(outputPath, f)
             expfile = os.path.join(expectedPath, f)
             results.append(self.testimage(expfile, outfile, tolerance, clear))
 
