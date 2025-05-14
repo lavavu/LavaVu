@@ -1,1 +1,1 @@
-FROM ghcr.io/lavavu/lavavu:1.9.6
+FROM ghcr.io/lavavu/lavavu:1.9.7
