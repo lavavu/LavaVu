@@ -23,7 +23,7 @@ __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 
 import os
 #must be an object or won't be referenced from __init__.py import
 #(enures values are passed on when set externally)
-settings = {"default_args" : [], "echo_fails" : False, "quality_override" : None}
+settings = {"default_args" : [], "echo_fails" : False, "quality_override" : None, "test_mode" : False}
 #Default arguments for viewer creation
 _val = os.environ.get('LV_ARGS')
 if _val:
@@ -36,6 +36,10 @@ if _val:
 _val = os.environ.get('LV_QUALITY')
 if _val:
     settings["quality_override"] = int(_val)
+#Test mode - changes some behaviour to support automated testing
+_val = os.environ.get('LV_TEST')
+if _val:
+    settings["test_mode"] = bool(_val)
 
 import json
 import math
@@ -54,6 +58,7 @@ import asyncio
 import quaternion as quat
 import platform
 import matplotlib
+from pathlib import Path
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -3562,7 +3567,6 @@ class Viewer(dict):
         ll = len(self.objects.list) #Save list length before load
         if not self.app.loadFile(filename):
             #Support trimesh formats
-            from pathlib import Path
             path = Path(filename)
             ext = path.suffix.lower()[1:]
             import convert
@@ -3876,6 +3880,9 @@ class Viewer(dict):
         """        
         Render a new frame, explicit display update
         """
+        if settings["test_mode"] and self.recording and self.recording.framecount != 0:
+            #Skip rendering all except first and last frames when testing
+            return
         self.app.render()
         #Video recording?
         if self.recording:
@@ -4305,7 +4312,7 @@ class Viewer(dict):
         #This is thread safe as doesn't load texture
         return self.app.imageFromFile(filename)
 
-    def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
+    def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', png=True, jpg=False, clear=True):
         """
         Compare a list of images to expected images for testing
 
@@ -4320,6 +4327,10 @@ class Viewer(dict):
             Where to find the expected result images (should have the same filenames as output images)
         outputPath : str
             Where to find the output images
+        png : boolean
+            Check png image outputs, defaults to True
+        jpng : boolean
+            Check jpg image outputs, defaults to False
         clear : boolean
             If the test passes the output images will be deleted, set to False to disable deletion
         """
@@ -4333,8 +4344,11 @@ class Viewer(dict):
                 #No expected images yet, just get images in cwd
                 #will be copied in to expected in testimage()
                 pass
-            imagelist = glob.glob("*.png")
-            imagelist += glob.glob("*.jpg")
+            imagelist = []
+            if png:
+                imagelist += glob.glob("*.png")
+            if jpg:
+                imagelist += glob.glob("*.jpg")
             imagelist.sort(key=os.path.getmtime)
             os.chdir(cwd)
 
@@ -5504,9 +5518,6 @@ class Video(object):
         **kwargs :
             Any additional keyword args will also be passed as options to the encoder
         """
-        if av is None:
-            raise(ImportError("Video output not supported without pyAV - pip install av"))
-            return
         self.resolution = list(resolution)
         if self.resolution[0] == 0 or self.resolution[1] == 0:
             self.resolution = (viewer.app.viewer.width, viewer.app.viewer.height)
@@ -5515,7 +5526,20 @@ class Video(object):
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
-        self.filename = filename
+        self.filename = Path(filename)
+        if settings["test_mode"]:
+            #Force png output when testing
+            encoder = 'png'
+        if av is None or encoder == 'png' or encoder == 'jpg':
+            if av is None:
+                print("Video output not supported without pyAV - pip install av, writing image frames instead")
+            self.encoder = 'png' if encoder == 'png' else 'jpg'
+            p = self.filename
+            self.basename = p.stem
+            self.filename = p.parent / p.stem
+            self.framecount = 0
+            return
+
         self.player = player
         if self.player is None:
             #Default player is half output resolution, unless < 900 then full
@@ -5547,6 +5571,12 @@ class Video(object):
         #Compression level, lower = high quality
         #See also: https://github.com/PyAV-Org/PyAV/blob/main/tests/test_encode.py
         options = {}
+        if self.encoder == 'jpg' or self.encoder == 'png':
+            if not settings["test_mode"]:
+                self.filename.mkdir(exist_ok=True)
+            self.viewer.recording = self
+            return
+
         if self.encoder == 'h264' or self.encoder == 'libx265':
             #Only have default options for h264/265 for now
             if self.quality == 1:
@@ -5576,7 +5606,7 @@ class Video(object):
         options.update(self.options)
 
         #print(options)
-        self.container = av.open(self.filename, mode="w")
+        self.container = av.open(str(self.filename), mode="w")
         self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=options)
         self.stream.width = self.resolution[0]
         self.stream.height = self.resolution[1]
@@ -5602,10 +5632,19 @@ class Video(object):
         Write a frame, called when viewer.render() is called
         while a recording is in progress
         """
-        img = self.viewer.rawimage(resolution=self.resolution, channels=3)
-        frame = av.VideoFrame.from_ndarray(img.data, format="rgb24")
-        for packet in self.stream.encode(frame):
-            self.container.mux(packet)
+        if self.encoder == 'jpg' or self.encoder == 'png':
+            if settings["test_mode"]:
+                #Don't output in subdir
+                fn = f"{self.framecount:06}_{self.basename}.{self.encoder}"
+            else:
+                fn = self.filename / f"{self.framecount:06}_{self.basename}.{self.encoder}"
+            self.framecount += 1
+            self.viewer.image(str(fn), resolution=self.resolution)
+        else:
+            img = self.viewer.rawimage(resolution=self.resolution, channels=3)
+            frame = av.VideoFrame.from_ndarray(img.data, format="rgb24")
+            for packet in self.stream.encode(frame):
+                self.container.mux(packet)
 
     def pause(self):
         """
@@ -5621,6 +5660,15 @@ class Video(object):
         Stop recording, final frames will be written and file closed, ready to play. 
         No further frames will be added to the video
         """
+        if self.encoder == 'jpg' or self.encoder == 'png':
+            self.viewer.recording = None
+            if settings["test_mode"]:
+                #Render the last frame for tests
+                self.viewer.app.render()
+                fn = f"{self.framecount:06}_{self.basename}.{self.encoder}"
+                self.viewer.image(str(fn), resolution=self.resolution)
+            self.framecount = 0
+            return
         # Flush stream
         for packet in self.stream.encode():
             self.container.mux(packet)
@@ -5648,7 +5696,14 @@ class Video(object):
             if image.size == self.resolution[0] * self.resolution[1] * 4:
                 image = image.reshape(self.resolution[0], self.resolution[1], 4)
                 image = image[::,::,:3] #Remove alpha channel
-            #self.encoder.copyframe(image.ravel())
+
+            if self.encoder == 'jpg' or self.encoder == 'png':
+                from PIL import Image as PILImage
+                img = PILImage.fromarray(image)
+                fn = self.filename / f"{self.framecount:06}_{self.basename}.{self.encoder}"
+                self.framecount += 1
+                img.save(fn)
+                return
 
             frame = av.VideoFrame.from_ndarray(image, format="rgb24")
             for packet in self.stream.encode(frame):
@@ -5658,7 +5713,11 @@ class Video(object):
         """
         Show the video in an inline player if in an interactive notebook
         """
-        player(self.filename, **self.player)
+        if self.encoder == 'jpg' or self.encoder == 'png':
+            from IPython.display import display,HTML
+            display(HTML('<p>Video written to images, no player available</p>'))
+        else:
+            player(self.filename, **self.player)
 
     def __enter__(self):
         self.start()
@@ -5671,6 +5730,8 @@ class Video(object):
             self.play()
         else:
             print('Recording failed: ', exc_value)
+            import traceback
+            print(traceback.format_exc())
         return True
 
 #Wrapper class for raw image data
