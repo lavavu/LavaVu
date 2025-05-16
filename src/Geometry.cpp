@@ -1493,6 +1493,13 @@ void Geometry::setState(Geom_Ptr g)
   bool allopaque = session.global("opaque");
   if (allopaque) opacity = 1.0;
   prog->setUniformf("uOpacity", opacity);
+  if (props.has("colour") && !draw->colourMap && g->render->colours.size() == 0)
+    prog->setUniform("uColour", draw->colour);
+  else
+  {
+    Colour clear(0.0, 0.0, 0.0, 0.0);
+    prog->setUniform("uColour", clear);
+  }
   prog->setUniformi("uLighting", lighting);
   prog->setUniformf("uBrightness", props["brightness"]);
   prog->setUniformf("uContrast", props["contrast"]);

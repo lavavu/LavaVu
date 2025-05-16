@@ -26,10 +26,10 @@ void main(void)
 
   vNormal = normalize(mat3(uNMatrix) * aVertexNormal);
 
-  if (uColour.a > 0.0)
-    vColour = uColour;
-  else
+  if (aVertexColour.a > 0.0)
     vColour = aVertexColour;
+  else
+    vColour = uColour;
 
   vTexCoord = aVertexTexCoord;
   vFlatColour = vColour;
