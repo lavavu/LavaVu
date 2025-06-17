@@ -1,5 +1,5 @@
 # Builds a special version of the wheel including OSMesa for use on Gadi
-name: OSMesa-Deploy
+name: OSMesaDeploy
 
 on:
   #push
@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CIBW_BUILD_VERBOSITY: 1 #3
-      CIBW_SKIP: *-manylinux_i686
+      CIBW_SKIP: cp*-win32 *-musllinux_* *-manylinux_i686
       CIBW_BUILD: cp313-*
       CIBW_ENVIRONMENT: >
         LV_LIB_DIRS=/usr/local/lib64:/usr/lib64:${HOME}/lib
