@@ -24,7 +24,7 @@ def random_particles(count, lowerbound=[0,0,0], upperbound=[1,1,1], dims=3):
     return numpy.stack(p).T
 
 class Tracers():
-    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=None, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, viewer=None):
+    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=None, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, label='', viewer=None):
         """
         Seed random particles into a vector field and trace their positions
 
@@ -52,6 +52,8 @@ class Tracers():
             Speed multiplier, scaling factor for the velocity taken from the vector values
         height : float
             A fixed height value, all positions will be given this height as their Z component
+        label : str
+            Name label prefix for the visualisation objects when plotting
         viewer : lavavu.Viewer
             Viewer object for plotting functions
         """
@@ -100,6 +102,7 @@ class Tracers():
         self.speed_multiply = speed_multiply
         self.height = height
 
+        self.label = label
         self.lv = viewer
         self.points = None
         self.arrows = None
@@ -157,8 +160,8 @@ class Tracers():
                 self.speed[r] = 0.0
 
         if self.lv:
-            positions = self.positions
-            if self.dims == 2 and self.height != 0:
+            positions = self.get_positions()
+            if positions.shape[1] == 2 and self.height != 0:
                 #Convert to 3d and set z coord to height
                 shape = list(positions.shape)
                 shape[-1] = 3
@@ -180,15 +183,25 @@ class Tracers():
                 if len(self.tracers["colourmap"]):
                     self.tracers.values(self.speed)
 
+    def get_positions(self):
+        """
+        This funcion can be overridden if positions need to be transformed
+        in any way before plotting, eg: plotting on spherical earth model
+        """
+        return self.positions
+
+    def prefix(self):
+        return self.label + '_' if len(self.label) else ''
+
     def plot_points(self, **kwargs):
         if self.lv is not None and self.points is None:
-            self.points = self.lv.points('tracer_points', **kwargs)
+            self.points = self.lv.points(self.prefix() + 'tracer_points', **kwargs)
 
     def plot_arrows(self, **kwargs):
         if self.lv is not None and self.arrows is None:
-            self.arrows = self.lv.vectors('tracer_arrows', **kwargs)
+            self.arrows = self.lv.vectors(self.prefix() + 'tracer_arrows', **kwargs)
 
     def plot_tracers(self, **kwargs):
         if self.lv is not None and self.tracers is None:
-            self.tracers = self.lv.tracers('tracers', dims=self.count, limit=self.limit, **kwargs)
+            self.tracers = self.lv.tracers(self.prefix() + 'tracers', dims=self.count, limit=self.limit, **kwargs)
 
