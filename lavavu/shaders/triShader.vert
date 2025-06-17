@@ -8,7 +8,6 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat4 uNMatrix;
 
-uniform vec4 uColour;
 uniform vec4 uLightPos;
 
 out vec4 vColour;
@@ -26,11 +25,10 @@ void main(void)
 
   vNormal = normalize(mat3(uNMatrix) * aVertexNormal);
 
-  if (uColour.a == 0.0)
-    vColour = aVertexColour;
-  else
-    vColour = uColour;
-
+  //This shader only applies attribute colour
+  //uColour is set for other/custom shaders
+  //Note uOpacity is "alpha" prop, "oapcity" is passed via attrib
+  vColour = aVertexColour;
   vTexCoord = aVertexTexCoord;
   vFlatColour = vColour;
   vVertex = aVertexPosition;
