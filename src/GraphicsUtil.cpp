@@ -203,7 +203,10 @@ Colour FontManager::setFont(Properties& properties, float scaling, bool print3d)
   //Set font type
   //Hershey line font for very small text
   if (fonttype == "line" || fonttype == "small")
+  {
     charset = FONT_LINE;
+    context->setLineWidth(0.75, properties["upscalelines"]);
+  }
   //Mesh vector font is the default
   else
     charset = FONT_VECTOR;
@@ -280,9 +283,6 @@ void FontManager::printString(const char* str)
   else
   {
     //Line font
-    float lineWidth = (context->scale2d - 0.5) * 1.5;
-    if (context->core && lineWidth > 1.0) lineWidth = 1.0;
-    glLineWidth(lineWidth);
     for (unsigned int c=0; c<strlen(str); c++)
     {
       //Render character

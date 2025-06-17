@@ -157,3 +157,21 @@ mat4 RenderContext::ortho(float left, float right, float bottom, float top, floa
   return M;
 }
 
+void RenderContext::setLineWidth(float lineWidth, bool upscale)
+{
+  //Attempt to set line width, even in core profile
+  //Previously we prevented this but in some drivers it still works
+  GL_Error_Check
+  //if (core && lineWidth > 1.0) lineWidth = 1.0;
+  if (upscale)
+    lineWidth *= scale2d; //Include 2d scale factor
+  glLineWidth(lineWidth);
+  if (glGetError() == GL_INVALID_VALUE)
+  {
+    debug_print("WARNING: line width > 1.0 not supported in core profile (%f)\n", lineWidth);
+    glLineWidth(1.0);
+  }
+  GL_Error_Check
+}
+
+

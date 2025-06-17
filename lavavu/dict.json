@@ -2147,6 +2147,17 @@
       false
     ]
   },
+  "upscalelines": {
+    "default": false,
+    "target": "global",
+    "type": "real",
+    "desc": "Enable to scale lines with the viewport size.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "fps": {
     "default": false,
     "target": "global",

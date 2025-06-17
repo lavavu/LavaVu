@@ -308,10 +308,9 @@ void Lines::draw()
         float scaling = props["scalelines"];
         //Don't apply object scaling to internal lines objects
         if (!internal) scaling *= (float)props["scaling"];
-        float lineWidth = (float)props["linewidth"] * scaling * session.context.scale2d; //Include 2d scale factor
+        float lineWidth = (float)props["linewidth"] * scaling;
         if (lineWidth <= 0) lineWidth = scaling;
-        if (session.context.core && lineWidth > 1.0) lineWidth = 1.0;
-        glLineWidth(lineWidth);
+        session.context.setLineWidth(lineWidth, props["upscalelines"]);
 
         if (props["loop"])
           primitive = GL_LINE_LOOP;

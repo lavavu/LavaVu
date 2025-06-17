@@ -1357,10 +1357,8 @@ void Geometry::setState(Geom_Ptr g)
   }
 
   //Default line width
-  float lineWidth = (float)props["linewidth"] * session.context.scale2d; //Include 2d scale factor
-  if (session.context.core && lineWidth > 1.0) lineWidth = 1.0;
-  glLineWidth(lineWidth);
-  GL_Error_Check;
+  float lineWidth = (float)props["linewidth"];
+  session.context.setLineWidth(lineWidth, props["upscalelines"]);
 
   //Disable depth test by default for 2d lines, otherwise enable
   bool depthTestDefault = (view->is3d || type != lucLineType);
