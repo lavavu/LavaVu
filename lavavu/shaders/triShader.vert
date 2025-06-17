@@ -26,7 +26,7 @@ void main(void)
 
   vNormal = normalize(mat3(uNMatrix) * aVertexNormal);
 
-  if (aVertexColour.a > 0.0)
+  if (uColour.a == 0.0)
     vColour = aVertexColour;
   else
     vColour = uColour;
