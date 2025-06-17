@@ -386,7 +386,8 @@ if __name__ == "__main__":
             ''';
 
             #OSMesa built as optional extra module
-            if find_library('OSMesa') and check_libraries(['OSMesa'], ['GL/osmesa.h']):
+            if ("LV_OSMESA" in os.environ and find_library('OSMesa')
+            and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
                 #OSMesa for software rendered offscreen OpenGL, build as additional extension
                 ex = Extension('lavavu.osmesa._LavaVuPython',
                                 define_macros = defines + [('HAVE_OSMESA', '1')],
