@@ -189,6 +189,6 @@ A base dockerfile is provided in the repository root.
 You can try it out on binder
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.8
+ :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.9
 
 

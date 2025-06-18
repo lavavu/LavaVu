@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/lavavu/LavaVu/workflows/Test/badge.svg)](https://github.com/lavavu/LavaVu/actions?query=workflow:Test)
 [![Deploy Status](https://github.com/lavavu/LavaVu/workflows/Deploy/badge.svg?branch=1.7.3)](https://github.com/lavavu/LavaVu/actions?query=workflow:Deploy)
 [![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.8)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.9.9)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
