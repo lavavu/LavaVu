@@ -263,6 +263,7 @@
 |*caption*         | string     | "default"      | Title for caption area and image output filenames|
 |*resolution*      | integer[2] | [1024,768]     | Window resolution X,Y|
 |*antialias*       | boolean    | true           | Enable multisample anti-aliasing, only works with interactive viewing|
+|*upscalelines*    | real       | false          | Enable to scale lines with the viewport size.|
 |*fps*             | boolean    | false          | Turn on to display FPS count|
 |*filestep*        | boolean    | false          | Turn on to automatically add and switch to a new timestep after loading a data file|
 |*hideall*         | boolean    | false          | Turn on to set initial state of all loaded objects to hidden|
