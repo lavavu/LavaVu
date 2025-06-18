@@ -2,6 +2,7 @@
 name: OSMesaDeploy
 
 on:
+  workflow_dispatch:
   #push
   # Runs when a (published) GitHub Release is created
   release:
