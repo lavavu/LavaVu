@@ -119,11 +119,14 @@ class Tracers():
         #Loop until new position further from current position than limit
         old_pos = self.positions[r]
         pos = numpy.array([0.] * self.dims)
+        pos = random_particles(1, self.lowerbound, self.upperbound, self.dims)
+        """
         for i in range(10):
             pos = random_particles(1, self.lowerbound, self.upperbound, self.dims)
             dist = numpy.linalg.norm(old_pos - pos)
             if dist > self.limit*1.01:
                 break
+        """
 
         self.ages[r] = 0
         self.positions[r] = pos
@@ -159,10 +162,10 @@ class Tracers():
             or (self.ages[r] > self.age and numpy.random.uniform() <= self.respawn_chance)):
                 #if r < 20: print("Kill", r, self.speed[r], numpy.isnan(self.speed[r])) # [0] == numpy.nan)
                 #self.positions[r] = numpy.array([numpy.inf] * self.dims)
-                #self.positions[r] = numpy.array([numpy.nan] * self.dims)
-                self.respawn(r)
-                self.velocities[r] = numpy.array([0.0] * self.dims)
+                self.positions[r] = numpy.array([numpy.nan] * self.dims)
+                #self.respawn(r)
                 self.speed[r] = 0.0
+                self.velocities[r] = numpy.array([0.0] * self.dims)
 
         if self.lv:
             positions = self.get_positions()
