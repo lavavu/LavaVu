@@ -136,6 +136,7 @@ public:
   int lastX, lastY;
 
   int blend_mode = BLEND_NONE;
+  int prev_blend_mode = BLEND_NONE;
   int outwidth = 0, outheight = 0;
   std::string output_path = "";
   bool imagemode = false;
