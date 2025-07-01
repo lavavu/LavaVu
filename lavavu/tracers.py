@@ -24,7 +24,7 @@ def random_particles(count, lowerbound=[0,0,0], upperbound=[1,1,1], dims=3):
     return numpy.stack(p).T
 
 class Tracers():
-    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=None, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, label='', viewer=None):
+    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=None, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, label='', viewer=None, seed=0):
         """
         Seed random particles into a vector field and trace their positions
 
@@ -56,6 +56,9 @@ class Tracers():
             Name label prefix for the visualisation objects when plotting
         viewer : lavavu.Viewer
             Viewer object for plotting functions
+        seed : int
+            Random seed for deterministic random particle positions, default=0, set to None to use
+            system time which will produce non-deterministic results (different each run)
         """
         if len(grid) == 2:
             self.gridx = grid[0]
@@ -108,6 +111,8 @@ class Tracers():
         self.arrows = None
         self.tracers = None
 
+        if seed is not None:
+            random.seed(seed)
 
     def respawn(self, r):
         #Dead or out of bounds particle, start at new position
