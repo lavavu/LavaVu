@@ -4241,7 +4241,6 @@ class Viewer(dict):
         return Video(self, filename, resolution, fps, quality, encoder, embed, player, options, **kwargs)
 
     def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
-        my_func.__doc__
         """
         Record a video of the model by looping through all time steps
 
