@@ -3,4 +3,5 @@ aiohttp
 jupyter_server_proxy
 matplotlib
 numpy-quaternion
+pillow
 

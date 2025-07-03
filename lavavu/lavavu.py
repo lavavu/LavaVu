@@ -59,6 +59,7 @@ import quaternion as quat
 import platform
 import matplotlib
 from pathlib import Path
+from PIL import Image as PILImage
 
 if sys.version_info[0] < 3:
     print("Python 3 required. LavaVu no longer supports Python 2.7.")
@@ -4194,7 +4195,7 @@ class Viewer(dict):
         from IPython.display import display,HTML,Javascript
         display(Javascript(js + code))
 
-    def video(self, filename="", resolution=(0,0), fps=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
+    def video(self, filename="", resolution=(0,0), fps=30, quality=2, encoder=None, embed=False, player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -4220,7 +4221,7 @@ class Viewer(dict):
             encoding artifacts at cost of larger file size
             If omitted will use default settings, can fine tune settings in kwargs
         encoder : str
-            Name of encoder to use, eg: "h264" (default), "mpeg"
+            Name of encoder to use, eg: "h264" (default for .mp4), default will be selected based on filename extension
         embed : bool
             Set to true to embed the video file rather than link to url
             Not recommended for large videos, default is False
@@ -4240,7 +4241,7 @@ class Viewer(dict):
         """
         return Video(self, filename, resolution, fps, quality, encoder, embed, player, options, **kwargs)
 
-    def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
+    def video_steps(self, filename="", start=0, end=0, resolution=(0,0), fps=30, quality=2, encoder=None, embed=False, player=None, options={}, **kwargs):
         """
         Record a video of the model by looping through all time steps
 
@@ -5478,7 +5479,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder="h264", embed=False, player=None, options={}, **kwargs):
+    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder=None, embed=False, player=None, options={}, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5504,7 +5505,7 @@ class Video(object):
         resolution : list or tuple
             Video resolution in pixels [x,y]
         encoder : str
-            Name of encoder to use, eg: "h264" (default), "mpeg"
+            Name of encoder to use, eg: "h264" (default for .mp4), default will be selected based on filename extension
         embed : bool
             Set to true to embed the video file rather than link to url
             Not recommended for large videos, default is False
@@ -5554,6 +5555,22 @@ class Video(object):
                 self.player = {}
         if embed:
             self.player["embed"] = True
+        if encoder is None:
+            if self.filename.suffix.lower() == '.mp4':
+                encoder = 'h264'
+            elif self.filename.suffix.lower() == '.webm':
+                encoder = 'libvpx-vp9'
+            elif self.filename.suffix.lower() == '.webp':
+                encoder = 'libwebp_anim'
+                options["lossless"] = "1"
+                options['pix_fmt'] = "rgb32" #Required for lossless
+                options["loop"] = "0" #This doesn't work, quality also has no effect
+                options["quality"] = str(min(30 + self.quality * 20, 100))
+            elif self.filename.suffix.lower() == '.gif':
+                encoder = 'gif'
+                options['pix_fmt'] = "rgb8"
+            else:
+                encoder = 'h264'
         self.encoder = encoder
         self.options = options
         #Also include extra args
@@ -5564,7 +5581,6 @@ class Video(object):
         """
         Start recording, all rendered frames will be added to the video
         """
-        #https://trac.ffmpeg.org/wiki/Encode/H.264
         # The range of the CRF scale is 0–51, where 0 is lossless (for 8 bit only, for 10 bit use -qp 0), 
         # 23 is the default, and 51 is worst quality possible
         #Compression level, lower = high quality
@@ -5577,7 +5593,8 @@ class Video(object):
             return
 
         if self.encoder == 'h264' or self.encoder == 'libx265':
-            #Only have default options for h264/265 for now
+            #https://trac.ffmpeg.org/wiki/Encode/H.264
+            #options['pix_fmt'] = "yuv420"
             if self.quality == 1:
                 options['qmin'] = '30' #'20' #'8'
                 options['qmax'] = '35' #'41'
@@ -5595,21 +5612,26 @@ class Video(object):
             options["preset"] = 'veryfast' #'veryfast' 'medium' 'slow'
             options["tune"] = 'animation' #'film'
 
-            #Settings from our original c++ encoder
-            #self.options['i_quant_factor'] = '0.71'
-            #self.options['qcompress'] = '0.6'
-            #self.options['max_qdiff'] = '4'
-            #self.options['refs'] = '3'
+        elif self.encoder == 'libvpx-vp9':
+            #https://trac.ffmpeg.org/wiki/Encode/VP9
+            options['crf'] = '15'
+            options['b:v'] = '0' #Required for constant quality single pass
+            if self.quality == 1:
+                options['crf'] = '30' #'40'
+            elif self.quality == 2:
+                options['crf'] = '20' #'23'
+            elif self.quality == 3:
+                options['crf'] = '10' #'10'
+                #options['pix_fmt'] = "yuv444p"
 
         #Merge user options, allowing override of above settings
         options.update(self.options)
+        #print(options, self.encoder)
 
-        #print(options)
         self.container = av.open(str(self.filename), mode="w")
         self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=options)
         self.stream.width = self.resolution[0]
         self.stream.height = self.resolution[1]
-        self.stream.pix_fmt = "yuv420p"
         self.viewer.recording = self
 
         stream = self.stream
@@ -5619,14 +5641,52 @@ class Video(object):
         #print(stream.profiles)
         #print(stream.profile)
         #print(stream.options)
+
+        if 'pix_fmt' in options:
+            self.stream.pix_fmt = options['pix_fmt']
+        #Select higher quality colour where supported
+        elif self.encoder == 'h264' or self.encoder == 'libx265' or self.encoder == 'libvpx-vp9':
+            #Reduce chroma subsampling for better colour output
+            if self.quality < 3:
+                self.stream.pix_fmt = "yuv420p"
+            else:
+                self.stream.pix_fmt = "yuv422p"
+            #10 bit formats
+            #self.stream.pix_fmt = "yuv444p10le"
+            #self.stream.pix_fmt = "yuv422p10le"
+
         #Need to set profile here or it isn't applied
-        #(Default to main)
-        stream.profile = 'Main' #Baseline / High
+        #(better chroma sampling requires the correct profile)
+        if 'profile' in options:
+            stream.profile = options['profile']
+        elif self.encoder == 'h264' or self.encoder == 'libx265':
+            #['Baseline', 'Constrained Baseline', 'Main', 'Extended',
+            # 'High', 'High 10', 'High 10 Intra', 'High 4:2:2',
+            # 'High 4:2:2 Intra', 'High 4:4:4', 'High 4:4:4 Predictive',
+            # 'High 4:4:4 Intra', 'CAVLC 4:4:4', 'Multiview High', 'Stereo High']
+                    #stream.profile = 'High 4:4:4'
+            if self.stream.pix_fmt == 'yuv420p':
+                stream.profile = 'Main'
+            elif 'yuv422' in self.stream.pix_fmt:
+                stream.profile = 'High 4:2:2'
+            elif 'yuv444' in self.stream.pix_fmt:
+                stream.profile = 'High 4:4:4'
+        elif self.encoder == 'libvpx-vp9':
+            #Profile Color Depth    Chroma Subsampling
+            #0       8 bit/sample   4:2:0
+            #1       8 bit          4:2:2,4:4:4
+            #2       10 or 12 bit   4:2:0
+            #3       10 or 12 bit   4:2:2, 4:4:4
+            if self.stream.pix_fmt == 'yuv420p':
+                stream.profile = 'Profile 0'
+            elif 'yuv422' in self.stream.pix_fmt or 'yuv444' in self.stream.pix_fmt:
+                stream.profile = 'Profile 1'
+
         cc = stream.codec_context
         #print(cc.options)
-        #print(cc.profile)
+        #print(cc.profile, stream.pix_fmt)
 
-    def frame(self):
+    def frame(self, img=None):
         """
         Write a frame, called when viewer.render() is called
         while a recording is in progress
@@ -5638,10 +5698,17 @@ class Video(object):
             else:
                 fn = self.filename / f"{self.framecount:06}_{self.basename}.{self.encoder}"
             self.framecount += 1
-            self.viewer.image(str(fn), resolution=self.resolution)
+            if img:
+                image = PILImage.fromarray(img)
+                image.save(fn)
+                image.save(fn, subsampling=0, quality=95)
+            else:
+                self.viewer.image(str(fn), resolution=self.resolution)
         else:
-            img = self.viewer.rawimage(resolution=self.resolution, channels=3)
-            frame = av.VideoFrame.from_ndarray(img.data, format="rgb24")
+            if img is None:
+                img = self.viewer.rawimage(resolution=self.resolution, channels=3).data
+            frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+            #frame = av.VideoFrame.from_image(PILImage.fromarray(img)) #, format="rgb24")
             for packet in self.stream.encode(frame):
                 self.container.mux(packet)
 
@@ -5696,23 +5763,16 @@ class Video(object):
                 image = image.reshape(self.resolution[0], self.resolution[1], 4)
                 image = image[::,::,:3] #Remove alpha channel
 
-            if self.encoder == 'jpg' or self.encoder == 'png':
-                from PIL import Image as PILImage
-                img = PILImage.fromarray(image)
-                fn = self.filename / f"{self.framecount:06}_{self.basename}.{self.encoder}"
-                self.framecount += 1
-                img.save(fn)
-                return
-
-            frame = av.VideoFrame.from_ndarray(image, format="rgb24")
-            for packet in self.stream.encode(frame):
-                self.container.mux(packet)
+            self.frame(image)
 
     def play(self):
         """
         Show the video in an inline player if in an interactive notebook
         """
-        if self.encoder == 'jpg' or self.encoder == 'png':
+        if self.encoder == 'gif' or self.encoder == 'libwebp_anim':
+            from IPython.display import display,Image
+            display(Image(self.filename, **self.player))
+        elif self.encoder == 'jpg' or self.encoder == 'png':
             from IPython.display import display,HTML
             display(HTML('<p>Video written to images, no player available</p>'))
         else:
@@ -5840,7 +5900,6 @@ class Image(object):
         """
         try:
             #Get array from PIL images
-            from PIL import Image as PILImage
             if isinstance(source, PILImage.Image):
                 source = numpy.array(source)
         except (ImportError) as e:
