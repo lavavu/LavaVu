@@ -24,7 +24,7 @@ def random_particles(count, lowerbound=[0,0,0], upperbound=[1,1,1], dims=3):
     return numpy.stack(p).T
 
 class Tracers():
-    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=None, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, label='', viewer=None, seed=0):
+    def __init__(self, grid, count=1000, lowerbound=None, upperbound=None, limit=0, age=4, respawn_chance=0.2, speed_multiply=1.0, height=0.0, label='', viewer=None, seed=0):
         """
         Seed random particles into a vector field and trace their positions
 
@@ -40,10 +40,7 @@ class Tracers():
         upperbound : optional maximum vertex point defining particle bounding box,
             if not provided will be taken from grid upper corner
         limit : float
-            Distance limit over which tracers are not connected,
-            For example if using a periodic boundary, setting limit to
-            half the bounding box size will prevent tracer lines being
-            connected when passing through the boundary
+            Distance limit over which tracers are not drawn
         age : int
             Minimum particle age in steps after which particle can be deleted and respawned, defaults to 4
         respawn : float
@@ -120,16 +117,9 @@ class Tracers():
         old_pos = self.positions[r]
         pos = numpy.array([0.] * self.dims)
         pos = random_particles(1, self.lowerbound, self.upperbound, self.dims)
-        """
-        for i in range(10):
-            pos = random_particles(1, self.lowerbound, self.upperbound, self.dims)
-            dist = numpy.linalg.norm(old_pos - pos)
-            if dist > self.limit*1.01:
-                break
-        """
-
         self.ages[r] = 0
         self.positions[r] = pos
+        self.velocities[r] = numpy.array([0.0] * self.dims)
 
     def update(self, vectors=None):
         #Interpolate velocity at all positions,
@@ -148,24 +138,21 @@ class Tracers():
 
         for r in range(len(self.velocities)):
             #Lookup velocity at this index, multiply by position to get delta and add
-            self.speed[r] = numpy.linalg.norm(self.velocities[r])
-            if numpy.isnan(self.speed[r]): self.speed[r] = 0.0
-            if self.speed[r] == 0.0: #numpy.any(numpy.isinf(self.old_pos[r])) or numpy.any(numpy.isinf(self.positions[r])):
+            if self.ages[r] < 0:
                 self.respawn(r)
             else:
+                self.speed[r] = numpy.linalg.norm(self.velocities[r])
+                if numpy.isnan(self.speed[r]) or numpy.isinf(self.speed[r]): self.speed[r] = 0.0
                 self.positions[r] = self.positions[r] + self.speed_multiply * self.velocities[r]
                 self.ages[r] += 1
 
-            #Bounds checks
-            #Chance of killing particle when over age, default 1 in 5 (0.2)
-            if (any(self.positions[r] < self.lowerbound[0:self.dims]) or any(self.positions[r] > self.upperbound[0:self.dims])
-            or (self.ages[r] > self.age and numpy.random.uniform() <= self.respawn_chance)):
-                #if r < 20: print("Kill", r, self.speed[r], numpy.isnan(self.speed[r])) # [0] == numpy.nan)
-                #self.positions[r] = numpy.array([numpy.inf] * self.dims)
-                self.positions[r] = numpy.array([numpy.nan] * self.dims)
-                #self.respawn(r)
-                self.speed[r] = 0.0
-                self.velocities[r] = numpy.array([0.0] * self.dims)
+                #Bounds checks
+                #Chance of killing particle when over age, default 1 in 5 (0.2)
+                if (any(self.positions[r] < self.lowerbound[0:self.dims]) or any(self.positions[r] > self.upperbound[0:self.dims])
+                or (self.ages[r] > self.age and numpy.random.uniform() <= self.respawn_chance)):
+                    self.positions[r] = numpy.array([numpy.nan] * self.dims)
+                    self.ages[r] = -1
+                    self.velocities[r] = numpy.array([0.0] * self.dims)
 
         if self.lv:
             positions = self.get_positions()
