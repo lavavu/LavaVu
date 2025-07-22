@@ -1,11 +1,6 @@
 /*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 * LavaVu python interface
 **~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*/
-#%module LavaVuPython
-#%module(package="mypackage") LavaVuPython
-#%module(package="LavaVuPython", moduleimport="import $module") foo
-#%module(moduleimport="from osmesa import _LavaVuPython") foo
-
 %define MODULEIMPORT
 "
 import os
