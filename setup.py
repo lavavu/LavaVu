@@ -368,7 +368,7 @@ if __name__ == "__main__":
                 defines += [('HAVE_LIBTIFF', 1)]
                 libs += ['tiff']
 
-            if (find_library('avcodec') and find_library('avformat') and find_library('avutil')
+            if ("LV_VIDEO" in os.environ and find_library('avcodec') and find_library('avformat') and find_library('avutil')
                 and check_libraries(['avcodec', 'avformat', 'avutil'],
                     ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
                      'libavutil/imgutils.h'])):
