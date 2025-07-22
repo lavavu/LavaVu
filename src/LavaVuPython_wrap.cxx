@@ -143,6 +143,26 @@
 #endif 
 
 
+/* C99 and C++11 should provide snprintf, but define SWIG_NO_SNPRINTF
+ * if you're missing it.
+ */
+#if ((defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L) || \
+     (defined __cplusplus && __cplusplus >= 201103L) || \
+     defined SWIG_HAVE_SNPRINTF) && \
+    !defined SWIG_NO_SNPRINTF
+# define SWIG_snprintf(O,S,F,A) snprintf(O,S,F,A)
+# define SWIG_snprintf2(O,S,F,A,B) snprintf(O,S,F,A,B)
+#else
+/* Fallback versions ignore the buffer size, but most of our uses either have a
+ * fixed maximum possible size or dynamically allocate a buffer that's large
+ * enough.
+ */
+# define SWIG_snprintf(O,S,F,A) sprintf(O,F,A)
+# define SWIG_snprintf2(O,S,F,A,B) sprintf(O,F,A,B)
+#endif
+
+
+
 #if defined(__GNUC__) && defined(_WIN32) && !defined(SWIG_PYTHON_NO_HYPOT_WORKAROUND)
 /* Workaround for '::hypot' has not been declared', see https://bugs.python.org/issue11566 */
 # include <math.h>
@@ -364,23 +384,6 @@ SWIGINTERNINLINE int SWIG_CheckState(int r) {
 #  define SWIG_CheckState(r) (SWIG_IsOK(r) ? 1 : 0)
 #endif
 
-/* C99 and C++11 should provide snprintf, but define SWIG_NO_SNPRINTF
- * if you're missing it.
- */
-#if ((defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L) || \
-     (defined __cplusplus && __cplusplus >= 201103L) || \
-     defined SWIG_HAVE_SNPRINTF) && \
-    !defined SWIG_NO_SNPRINTF
-# define SWIG_snprintf(O,S,F,A) snprintf(O,S,F,A)
-# define SWIG_snprintf2(O,S,F,A,B) snprintf(O,S,F,A,B)
-#else
-/* Fallback versions ignore the buffer size, but most of our uses either have a
- * fixed maximum possible size or dynamically allocate a buffer that's large
- * enough.
- */
-# define SWIG_snprintf(O,S,F,A) sprintf(O,F,A)
-# define SWIG_snprintf2(O,S,F,A,B) sprintf(O,F,A,B)
-#endif
 
 #include <string.h>
 
@@ -3364,9 +3367,9 @@ namespace swig {
 #include <iostream>
 
 #if PY_VERSION_HEX >= 0x03020000
-# define SWIGPY_SLICE_ARG(obj) ((PyObject*) (obj))
+# define SWIGPY_SLICEOBJECT PyObject
 #else
-# define SWIGPY_SLICE_ARG(obj) ((PySliceObject*) (obj))
+# define SWIGPY_SLICEOBJECT PySliceObject
 #endif
 
 
@@ -5042,46 +5045,46 @@ SWIGINTERN void std_vector_Sl_float_Sg____delslice__(std::vector< float > *self,
 SWIGINTERN void std_vector_Sl_float_Sg____delitem____SWIG_0(std::vector< float > *self,std::vector< float >::difference_type i){
       swig::erase(self, swig::getpos(self, i));
     }
-SWIGINTERN std::vector< float,std::allocator< float > > *std_vector_Sl_float_Sg____getitem____SWIG_0(std::vector< float > *self,PySliceObject *slice){
+SWIGINTERN std::vector< float,std::allocator< float > > *std_vector_Sl_float_Sg____getitem____SWIG_0(std::vector< float > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return NULL;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< float,std::allocator< float > >::difference_type id = i;
       std::vector< float,std::allocator< float > >::difference_type jd = j;
       return swig::getslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_float_Sg____setitem____SWIG_0(std::vector< float > *self,PySliceObject *slice,std::vector< float,std::allocator< float > > const &v){
+SWIGINTERN void std_vector_Sl_float_Sg____setitem____SWIG_0(std::vector< float > *self,SWIGPY_SLICEOBJECT *slice,std::vector< float,std::allocator< float > > const &v){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< float,std::allocator< float > >::difference_type id = i;
       std::vector< float,std::allocator< float > >::difference_type jd = j;
       swig::setslice(self, id, jd, step, v);
     }
-SWIGINTERN void std_vector_Sl_float_Sg____setitem____SWIG_1(std::vector< float > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_float_Sg____setitem____SWIG_1(std::vector< float > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< float,std::allocator< float > >::difference_type id = i;
       std::vector< float,std::allocator< float > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_float_Sg____delitem____SWIG_1(std::vector< float > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_float_Sg____delitem____SWIG_1(std::vector< float > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< float,std::allocator< float > >::difference_type id = i;
       std::vector< float,std::allocator< float > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
@@ -5178,46 +5181,46 @@ SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____delslice__(std::vect
 SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____delitem____SWIG_0(std::vector< std::vector< float > > *self,std::vector< std::vector< float > >::difference_type i){
       swig::erase(self, swig::getpos(self, i));
     }
-SWIGINTERN std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *std_vector_Sl_std_vector_Sl_float_Sg__Sg____getitem____SWIG_0(std::vector< std::vector< float > > *self,PySliceObject *slice){
+SWIGINTERN std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *std_vector_Sl_std_vector_Sl_float_Sg__Sg____getitem____SWIG_0(std::vector< std::vector< float > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return NULL;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type id = i;
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type jd = j;
       return swig::getslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____setitem____SWIG_0(std::vector< std::vector< float > > *self,PySliceObject *slice,std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > const &v){
+SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____setitem____SWIG_0(std::vector< std::vector< float > > *self,SWIGPY_SLICEOBJECT *slice,std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > const &v){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type id = i;
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type jd = j;
       swig::setslice(self, id, jd, step, v);
     }
-SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____setitem____SWIG_1(std::vector< std::vector< float > > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____setitem____SWIG_1(std::vector< std::vector< float > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type id = i;
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____delitem____SWIG_1(std::vector< std::vector< float > > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_vector_Sl_float_Sg__Sg____delitem____SWIG_1(std::vector< std::vector< float > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type id = i;
       std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
@@ -5480,46 +5483,46 @@ SWIGINTERN void std_vector_Sl_std_string_Sg____delslice__(std::vector< std::stri
 SWIGINTERN void std_vector_Sl_std_string_Sg____delitem____SWIG_0(std::vector< std::string > *self,std::vector< std::string >::difference_type i){
       swig::erase(self, swig::getpos(self, i));
     }
-SWIGINTERN std::vector< std::string,std::allocator< std::string > > *std_vector_Sl_std_string_Sg____getitem____SWIG_0(std::vector< std::string > *self,PySliceObject *slice){
+SWIGINTERN std::vector< std::string,std::allocator< std::string > > *std_vector_Sl_std_string_Sg____getitem____SWIG_0(std::vector< std::string > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return NULL;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::string,std::allocator< std::string > >::difference_type id = i;
       std::vector< std::string,std::allocator< std::string > >::difference_type jd = j;
       return swig::getslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_string_Sg____setitem____SWIG_0(std::vector< std::string > *self,PySliceObject *slice,std::vector< std::string,std::allocator< std::string > > const &v){
+SWIGINTERN void std_vector_Sl_std_string_Sg____setitem____SWIG_0(std::vector< std::string > *self,SWIGPY_SLICEOBJECT *slice,std::vector< std::string,std::allocator< std::string > > const &v){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::string,std::allocator< std::string > >::difference_type id = i;
       std::vector< std::string,std::allocator< std::string > >::difference_type jd = j;
       swig::setslice(self, id, jd, step, v);
     }
-SWIGINTERN void std_vector_Sl_std_string_Sg____setitem____SWIG_1(std::vector< std::string > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_string_Sg____setitem____SWIG_1(std::vector< std::string > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::string,std::allocator< std::string > >::difference_type id = i;
       std::vector< std::string,std::allocator< std::string > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_string_Sg____delitem____SWIG_1(std::vector< std::string > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_string_Sg____delitem____SWIG_1(std::vector< std::string > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::string,std::allocator< std::string > >::difference_type id = i;
       std::vector< std::string,std::allocator< std::string > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
@@ -5589,46 +5592,46 @@ SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delslice__(st
 SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i){
       swig::erase(self, swig::getpos(self, i));
     }
-SWIGINTERN std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+SWIGINTERN std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return NULL;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
       return swig::getslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &v){
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,SWIGPY_SLICEOBJECT *slice,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &v){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
       swig::setslice(self, id, jd, step, v);
     }
-SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
       std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
@@ -5733,46 +5736,46 @@ SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____delslice__(std::vector< uns
 SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____delitem____SWIG_0(std::vector< unsigned char > *self,std::vector< unsigned char >::difference_type i){
       swig::erase(self, swig::getpos(self, i));
     }
-SWIGINTERN std::vector< unsigned char,std::allocator< unsigned char > > *std_vector_Sl_unsigned_SS_char_Sg____getitem____SWIG_0(std::vector< unsigned char > *self,PySliceObject *slice){
+SWIGINTERN std::vector< unsigned char,std::allocator< unsigned char > > *std_vector_Sl_unsigned_SS_char_Sg____getitem____SWIG_0(std::vector< unsigned char > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return NULL;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type id = i;
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type jd = j;
       return swig::getslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____setitem____SWIG_0(std::vector< unsigned char > *self,PySliceObject *slice,std::vector< unsigned char,std::allocator< unsigned char > > const &v){
+SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____setitem____SWIG_0(std::vector< unsigned char > *self,SWIGPY_SLICEOBJECT *slice,std::vector< unsigned char,std::allocator< unsigned char > > const &v){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type id = i;
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type jd = j;
       swig::setslice(self, id, jd, step, v);
     }
-SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____setitem____SWIG_1(std::vector< unsigned char > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____setitem____SWIG_1(std::vector< unsigned char > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type id = i;
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
     }
-SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____delitem____SWIG_1(std::vector< unsigned char > *self,PySliceObject *slice){
+SWIGINTERN void std_vector_Sl_unsigned_SS_char_Sg____delitem____SWIG_1(std::vector< unsigned char > *self,SWIGPY_SLICEOBJECT *slice){
       Py_ssize_t i, j, step;
       if( !PySlice_Check(slice) ) {
         SWIG_Error(SWIG_TypeError, "Slice object expected.");
         return;
       }
-      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      PySlice_GetIndices(slice, (Py_ssize_t)self->size(), &i, &j, &step);
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type id = i;
       std::vector< unsigned char,std::allocator< unsigned char > >::difference_type jd = j;
       swig::delslice(self, id, jd, step);
@@ -7545,7 +7548,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Line___getitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< float > *arg1 = (std::vector< float > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::vector< float,std::allocator< float > > *result = 0 ;
@@ -7559,9 +7562,9 @@ SWIGINTERN PyObject *_wrap_Line___getitem____SWIG_0(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< float > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___getitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -7586,7 +7589,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Line___setitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< float > *arg1 = (std::vector< float > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   std::vector< float,std::allocator< float > > *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -7601,9 +7604,9 @@ SWIGINTERN PyObject *_wrap_Line___setitem____SWIG_0(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< float > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     std::vector< float,std::allocator< float > > *ptr = (std::vector< float,std::allocator< float > > *)0;
@@ -7641,7 +7644,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Line___setitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< float > *arg1 = (std::vector< float > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -7654,9 +7657,9 @@ SWIGINTERN PyObject *_wrap_Line___setitem____SWIG_1(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< float > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -7681,7 +7684,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Line___delitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< float > *arg1 = (std::vector< float > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -7694,9 +7697,9 @@ SWIGINTERN PyObject *_wrap_Line___delitem____SWIG_1(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< float > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Line___delitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -7748,7 +7751,7 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Line___delitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    std::vector< float >::__delitem__(std::vector< float >::difference_type)\n"
-    "    std::vector< float >::__delitem__(PySliceObject *)\n");
+    "    std::vector< float >::__delitem__(SWIGPY_SLICEOBJECT *)\n");
   return 0;
 }
 
@@ -7823,7 +7826,7 @@ check_1:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Line___getitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< float >::__getitem__(PySliceObject *)\n"
+    "    std::vector< float >::__getitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< float >::__getitem__(std::vector< float >::difference_type) const\n");
   return 0;
 }
@@ -7917,8 +7920,8 @@ check_2:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Line___setitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< float >::__setitem__(PySliceObject *,std::vector< float,std::allocator< float > > const &)\n"
-    "    std::vector< float >::__setitem__(PySliceObject *)\n"
+    "    std::vector< float >::__setitem__(SWIGPY_SLICEOBJECT *,std::vector< float,std::allocator< float > > const &)\n"
+    "    std::vector< float >::__setitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< float >::__setitem__(std::vector< float >::difference_type,std::vector< float >::value_type const &)\n");
   return 0;
 }
@@ -9512,7 +9515,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Array___getitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::vector< float > > *arg1 = (std::vector< std::vector< float > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *result = 0 ;
@@ -9526,9 +9529,9 @@ SWIGINTERN PyObject *_wrap_Array___getitem____SWIG_0(PyObject *self, Py_ssize_t 
   arg1 = reinterpret_cast< std::vector< std::vector< float > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___getitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -9553,7 +9556,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Array___setitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::vector< float > > *arg1 = (std::vector< std::vector< float > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -9568,9 +9571,9 @@ SWIGINTERN PyObject *_wrap_Array___setitem____SWIG_0(PyObject *self, Py_ssize_t 
   arg1 = reinterpret_cast< std::vector< std::vector< float > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *ptr = (std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *)0;
@@ -9608,7 +9611,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Array___setitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::vector< float > > *arg1 = (std::vector< std::vector< float > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -9621,9 +9624,9 @@ SWIGINTERN PyObject *_wrap_Array___setitem____SWIG_1(PyObject *self, Py_ssize_t 
   arg1 = reinterpret_cast< std::vector< std::vector< float > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -9648,7 +9651,7 @@ fail:
 SWIGINTERN PyObject *_wrap_Array___delitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::vector< float > > *arg1 = (std::vector< std::vector< float > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -9661,9 +9664,9 @@ SWIGINTERN PyObject *_wrap_Array___delitem____SWIG_1(PyObject *self, Py_ssize_t 
   arg1 = reinterpret_cast< std::vector< std::vector< float > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "Array___delitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -9715,7 +9718,7 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Array___delitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    std::vector< std::vector< float > >::__delitem__(std::vector< std::vector< float > >::difference_type)\n"
-    "    std::vector< std::vector< float > >::__delitem__(PySliceObject *)\n");
+    "    std::vector< std::vector< float > >::__delitem__(SWIGPY_SLICEOBJECT *)\n");
   return 0;
 }
 
@@ -9790,7 +9793,7 @@ check_1:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Array___getitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::vector< float > >::__getitem__(PySliceObject *)\n"
+    "    std::vector< std::vector< float > >::__getitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::vector< float > >::__getitem__(std::vector< std::vector< float > >::difference_type) const\n");
   return 0;
 }
@@ -9889,8 +9892,8 @@ check_2:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'Array___setitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::vector< float > >::__setitem__(PySliceObject *,std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > const &)\n"
-    "    std::vector< std::vector< float > >::__setitem__(PySliceObject *)\n"
+    "    std::vector< std::vector< float > >::__setitem__(SWIGPY_SLICEOBJECT *,std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > const &)\n"
+    "    std::vector< std::vector< float > >::__setitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::vector< float > >::__setitem__(std::vector< std::vector< float > >::difference_type,std::vector< std::vector< float > >::value_type const &)\n");
   return 0;
 }
@@ -11519,7 +11522,7 @@ fail:
 SWIGINTERN PyObject *_wrap_List___getitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::string > *arg1 = (std::vector< std::string > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::vector< std::string,std::allocator< std::string > > *result = 0 ;
@@ -11533,9 +11536,9 @@ SWIGINTERN PyObject *_wrap_List___getitem____SWIG_0(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< std::string > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___getitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -11560,7 +11563,7 @@ fail:
 SWIGINTERN PyObject *_wrap_List___setitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::string > *arg1 = (std::vector< std::string > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   std::vector< std::string,std::allocator< std::string > > *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -11575,9 +11578,9 @@ SWIGINTERN PyObject *_wrap_List___setitem____SWIG_0(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< std::string > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     std::vector< std::string,std::allocator< std::string > > *ptr = (std::vector< std::string,std::allocator< std::string > > *)0;
@@ -11615,7 +11618,7 @@ fail:
 SWIGINTERN PyObject *_wrap_List___setitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::string > *arg1 = (std::vector< std::string > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -11628,9 +11631,9 @@ SWIGINTERN PyObject *_wrap_List___setitem____SWIG_1(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< std::string > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -11655,7 +11658,7 @@ fail:
 SWIGINTERN PyObject *_wrap_List___delitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::string > *arg1 = (std::vector< std::string > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -11668,9 +11671,9 @@ SWIGINTERN PyObject *_wrap_List___delitem____SWIG_1(PyObject *self, Py_ssize_t n
   arg1 = reinterpret_cast< std::vector< std::string > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "List___delitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -11722,7 +11725,7 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'List___delitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    std::vector< std::string >::__delitem__(std::vector< std::string >::difference_type)\n"
-    "    std::vector< std::string >::__delitem__(PySliceObject *)\n");
+    "    std::vector< std::string >::__delitem__(SWIGPY_SLICEOBJECT *)\n");
   return 0;
 }
 
@@ -11797,7 +11800,7 @@ check_1:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'List___getitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::string >::__getitem__(PySliceObject *)\n"
+    "    std::vector< std::string >::__getitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::string >::__getitem__(std::vector< std::string >::difference_type) const\n");
   return 0;
 }
@@ -11896,8 +11899,8 @@ check_2:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'List___setitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::string >::__setitem__(PySliceObject *,std::vector< std::string,std::allocator< std::string > > const &)\n"
-    "    std::vector< std::string >::__setitem__(PySliceObject *)\n"
+    "    std::vector< std::string >::__setitem__(SWIGPY_SLICEOBJECT *,std::vector< std::string,std::allocator< std::string > > const &)\n"
+    "    std::vector< std::string >::__setitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::string >::__setitem__(std::vector< std::string >::difference_type,std::vector< std::string >::value_type const &)\n");
   return 0;
 }
@@ -13526,7 +13529,7 @@ fail:
 SWIGINTERN PyObject *_wrap_GeomList___getitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *result = 0 ;
@@ -13540,9 +13543,9 @@ SWIGINTERN PyObject *_wrap_GeomList___getitem____SWIG_0(PyObject *self, Py_ssize
   arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___getitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -13567,7 +13570,7 @@ fail:
 SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -13582,9 +13585,9 @@ SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_0(PyObject *self, Py_ssize
   arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *ptr = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)0;
@@ -13622,7 +13625,7 @@ fail:
 SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -13635,9 +13638,9 @@ SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_1(PyObject *self, Py_ssize
   arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -13662,7 +13665,7 @@ fail:
 SWIGINTERN PyObject *_wrap_GeomList___delitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -13675,9 +13678,9 @@ SWIGINTERN PyObject *_wrap_GeomList___delitem____SWIG_1(PyObject *self, Py_ssize
   arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___delitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -13729,7 +13732,7 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'GeomList___delitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    std::vector< std::shared_ptr< GeomData > >::__delitem__(std::vector< std::shared_ptr< GeomData > >::difference_type)\n"
-    "    std::vector< std::shared_ptr< GeomData > >::__delitem__(PySliceObject *)\n");
+    "    std::vector< std::shared_ptr< GeomData > >::__delitem__(SWIGPY_SLICEOBJECT *)\n");
   return 0;
 }
 
@@ -13807,7 +13810,7 @@ check_1:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'GeomList___getitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::shared_ptr< GeomData > >::__getitem__(PySliceObject *)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__getitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::shared_ptr< GeomData > >::__getitem__(std::vector< std::shared_ptr< GeomData > >::difference_type) const\n");
   return 0;
 }
@@ -13909,8 +13912,8 @@ check_2:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'GeomList___setitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(PySliceObject *,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)\n"
-    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(PySliceObject *)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(SWIGPY_SLICEOBJECT *,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< std::shared_ptr< GeomData > >::__setitem__(std::vector< std::shared_ptr< GeomData > >::difference_type,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n");
   return 0;
 }
@@ -15569,7 +15572,7 @@ fail:
 SWIGINTERN PyObject *_wrap_ByteArray___getitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< unsigned char > *arg1 = (std::vector< unsigned char > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::vector< unsigned char,std::allocator< unsigned char > > *result = 0 ;
@@ -15583,9 +15586,9 @@ SWIGINTERN PyObject *_wrap_ByteArray___getitem____SWIG_0(PyObject *self, Py_ssiz
   arg1 = reinterpret_cast< std::vector< unsigned char > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___getitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -15610,7 +15613,7 @@ fail:
 SWIGINTERN PyObject *_wrap_ByteArray___setitem____SWIG_0(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< unsigned char > *arg1 = (std::vector< unsigned char > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   std::vector< unsigned char,std::allocator< unsigned char > > *arg3 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -15625,9 +15628,9 @@ SWIGINTERN PyObject *_wrap_ByteArray___setitem____SWIG_0(PyObject *self, Py_ssiz
   arg1 = reinterpret_cast< std::vector< unsigned char > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     std::vector< unsigned char,std::allocator< unsigned char > > *ptr = (std::vector< unsigned char,std::allocator< unsigned char > > *)0;
@@ -15665,7 +15668,7 @@ fail:
 SWIGINTERN PyObject *_wrap_ByteArray___setitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< unsigned char > *arg1 = (std::vector< unsigned char > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -15678,9 +15681,9 @@ SWIGINTERN PyObject *_wrap_ByteArray___setitem____SWIG_1(PyObject *self, Py_ssiz
   arg1 = reinterpret_cast< std::vector< unsigned char > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___setitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -15705,7 +15708,7 @@ fail:
 SWIGINTERN PyObject *_wrap_ByteArray___delitem____SWIG_1(PyObject *self, Py_ssize_t nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::vector< unsigned char > *arg1 = (std::vector< unsigned char > *) 0 ;
-  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  SWIGPY_SLICEOBJECT *arg2 = (SWIGPY_SLICEOBJECT *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   
@@ -15718,9 +15721,9 @@ SWIGINTERN PyObject *_wrap_ByteArray___delitem____SWIG_1(PyObject *self, Py_ssiz
   arg1 = reinterpret_cast< std::vector< unsigned char > * >(argp1);
   {
     if (!PySlice_Check(swig_obj[1])) {
-      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "ByteArray___delitem__" "', argument " "2"" of type '" "SWIGPY_SLICEOBJECT *""'");
     }
-    arg2 = (PySliceObject *) swig_obj[1];
+    arg2 = (SWIGPY_SLICEOBJECT *) swig_obj[1];
   }
   {
     try {
@@ -15772,7 +15775,7 @@ fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'ByteArray___delitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
     "    std::vector< unsigned char >::__delitem__(std::vector< unsigned char >::difference_type)\n"
-    "    std::vector< unsigned char >::__delitem__(PySliceObject *)\n");
+    "    std::vector< unsigned char >::__delitem__(SWIGPY_SLICEOBJECT *)\n");
   return 0;
 }
 
@@ -15847,7 +15850,7 @@ check_1:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'ByteArray___getitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< unsigned char >::__getitem__(PySliceObject *)\n"
+    "    std::vector< unsigned char >::__getitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< unsigned char >::__getitem__(std::vector< unsigned char >::difference_type) const\n");
   return 0;
 }
@@ -15941,8 +15944,8 @@ check_2:
 fail:
   SWIG_Python_RaiseOrModifyTypeError("Wrong number or type of arguments for overloaded function 'ByteArray___setitem__'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    std::vector< unsigned char >::__setitem__(PySliceObject *,std::vector< unsigned char,std::allocator< unsigned char > > const &)\n"
-    "    std::vector< unsigned char >::__setitem__(PySliceObject *)\n"
+    "    std::vector< unsigned char >::__setitem__(SWIGPY_SLICEOBJECT *,std::vector< unsigned char,std::allocator< unsigned char > > const &)\n"
+    "    std::vector< unsigned char >::__setitem__(SWIGPY_SLICEOBJECT *)\n"
     "    std::vector< unsigned char >::__setitem__(std::vector< unsigned char >::difference_type,std::vector< unsigned char >::value_type const &)\n");
   return 0;
 }

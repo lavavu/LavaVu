@@ -1,7 +1,22 @@
 /*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 * LavaVu python interface
 **~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*/
-%module LavaVuPython
+#%module LavaVuPython
+#%module(package="mypackage") LavaVuPython
+#%module(package="LavaVuPython", moduleimport="import $module") foo
+#%module(moduleimport="from osmesa import _LavaVuPython") foo
+
+%define MODULEIMPORT
+"
+import os
+if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
+    from osmesa import $module
+else:
+    import $module
+"
+%enddef
+
+%module(moduleimport=MODULEIMPORT) LavaVuPython
 
 %{
 #define SWIG_FILE_WITH_INIT

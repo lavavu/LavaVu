@@ -256,8 +256,9 @@ endif
 
 .PHONY: swig
 swig : $(INC) src/LavaVuPython.i | paths
+	#NOTE: bug in swig requires pip install swig==4.2 until fixed
 	swig -v -Wextra -python -py3 -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
-	cd $(PREFIX)/osmesa; ln -sf ../LavaVuPython.py; touch __init__.py
+	cd $(PREFIX)/osmesa; touch __init__.py
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	-rm -f $(PREFIX)/_LavaVuPython.*

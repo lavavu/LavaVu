@@ -5,11 +5,13 @@
 # the SWIG interface file instead.
 
 from sys import version_info as _swig_python_version_info
-# Import the low-level C/C++ module
-if __package__ or "." in __name__:
-    from . import _LavaVuPython
+
+import os
+if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
+    from osmesa import _LavaVuPython
 else:
     import _LavaVuPython
+
 
 try:
     import builtins as __builtin__

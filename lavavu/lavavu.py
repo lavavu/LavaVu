@@ -102,18 +102,13 @@ if platform.system() == 'Linux':
                 context = 'moderngl'
             except Exception as e:
                 context = 'osmesa'
-
-        if context == 'osmesa':
-            #OSMesa fallback, CPU only, multicore
-            from osmesa import LavaVuPython
+            os.environ['LV_CONTEXT'] = context
 
 #Default module if none already loaded
 try:
     LavaVuPython
 except:
     import LavaVuPython
-
-os.environ['LV_CONTEXT'] = context
 
 version = LavaVuPython.version
 server_ports = []
