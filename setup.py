@@ -305,8 +305,7 @@ if __name__ == "__main__":
             # - Lib and dll files - just grab by current location
             win_dlls = glob.glob(os.path.join('windows-main', LIBS, '*.dll'))
             win_libs = glob.glob(os.path.join('windows-main', LIBS, '*.lib'))
-            #If we got this far, enable video, tiff
-            defines += [('HAVE_LIBAVCODEC', '1'), ('HAVE_SWSCALE', '1')]
+            #If we got this far, enable tiff
             defines += [('HAVE_LIBTIFF', '1')]
 
         except (Exception) as e:
@@ -327,9 +326,6 @@ if __name__ == "__main__":
         #Copy dlls into ./lavavu so can be found by package_data
         for d in win_dlls:
             shutil.copy(d, 'lavavu')
-        #print(libs)
-        #print(inc_dirs)
-        #print(lib_dirs)
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
