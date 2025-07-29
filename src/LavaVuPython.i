@@ -3,10 +3,13 @@
 **~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*/
 %define MODULEIMPORT
 "
-import os
-if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
-    from osmesa import $module
-else:
+try:
+    import os
+    if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
+        from osmesa import $module
+    else:
+        import $module
+except ImportError as e:
     import $module
 "
 %enddef

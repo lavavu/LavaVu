@@ -88,11 +88,11 @@ try:
 except (ImportError) as e:
     av = None
 
-#import swig module
-context = os.environ.get("LV_CONTEXT", "").strip()
+#Prepare to import swig module
 if platform.system() == 'Linux':
     #Default context requires DISPLAY set for X11
     display = os.environ.get("DISPLAY", "").strip()
+    context = os.environ.get("LV_CONTEXT", "").strip()
     if len(context) == 0: context = 'default'
     if context != 'default' or len(display) == 0:
         if context != 'osmesa':
@@ -102,13 +102,10 @@ if platform.system() == 'Linux':
                 context = 'moderngl'
             except Exception as e:
                 context = 'osmesa'
-            os.environ['LV_CONTEXT'] = context
+    os.environ['LV_CONTEXT'] = context
 
-#Default module if none already loaded
-try:
-    LavaVuPython
-except:
-    import LavaVuPython
+#Import swig module
+import LavaVuPython
 
 version = LavaVuPython.version
 server_ports = []
@@ -3102,7 +3099,8 @@ class Viewer(dict):
         """
         Return GL version string
         """
-        return self.app.gl_version()
+        ctx = os.environ.get("LV_CONTEXT", "")
+        return f"[{ctx}] : {self.app.gl_version()}"
 
     @property
     def port(self):

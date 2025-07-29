@@ -376,13 +376,8 @@ if __name__ == "__main__":
 
         if P == 'Linux':
             #Linux GLFW, X11, EGL or OSMesa
-            #EGL and OSMesa are built as optional extra modules
-            '''
-            if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
-            ''';
-
-            #OSMesa built as optional extra module
-            if ("LV_OSMESA" in os.environ and find_library('OSMesa')
+            #OSMesa can be built as optional extra module
+            if ("LV_OSMESA_EXT" in os.environ and find_library('OSMesa')
             and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
                 #OSMesa for software rendered offscreen OpenGL, build as additional extension
                 ex = Extension('lavavu.osmesa._LavaVuPython',
@@ -397,8 +392,13 @@ if __name__ == "__main__":
                                 sources = srcs)
                 extensions.append(ex)
 
-            #Main extension - use X11 or GLFW
-            if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
+            #Main extension - use X11 or GLFW (or OSMesa)
+            if ("LV_OSMESA" in os.environ and find_library('OSMesa')
+            and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
+                #OSMesa for software rendered offscreen OpenGL
+                defines += [('HAVE_OSMESA', '1')]
+                libs += ['OSMesa']
+            elif ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
             and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
                 #EGL for offscreen OpenGL without X11/GLX - works with NVidia and latest Mesa
                 defines += [('HAVE_EGL', '1')]

@@ -22,7 +22,7 @@ jobs:
         LV_INC_DIRS=${HOME}/include
         LV_MIN_DEPS=1
         LV_PACKAGE=lavavu-osmesa
-        LV_OSMESA=1
+        LV_OSMESA_EXT=1
         LV_ECHO_FAIL=1
         LV_ARGS="-v"
       CIBW_BEFORE_BUILD_LINUX: >

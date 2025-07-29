@@ -6,10 +6,13 @@
 
 from sys import version_info as _swig_python_version_info
 
-import os
-if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
-    from osmesa import _LavaVuPython
-else:
+try:
+    import os
+    if 'osmesa' in os.environ.get('LV_CONTEXT', ''):
+        from osmesa import _LavaVuPython
+    else:
+        import _LavaVuPython
+except ImportError as e:
     import _LavaVuPython
 
 
