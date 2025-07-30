@@ -1,9 +1,10 @@
 {% set name = "lavavu" %}
-{% set version = load_setup_py_data().version %}
+{% set version = load_setup_py_data(setup_file='../setup.py', from_recipe_dir=True).get('version') %}
+#{% set version = load_setup_py_data(setup_file='setup.py').get('version') %}
 
 package:
-  name: "{{ name|lower }}"
-  version: "{{ version }}"
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
   git_url: https://github.com/lavavu/LavaVu.git
@@ -11,70 +12,85 @@ source:
   #git_rev: "{{ version }}"
 
 build:
-  number: 1
+  number: 0
   entry_points:
     - LV = lavavu.__main__:main
     - LavaVu = lavavu.__main__:main
   script_env:
-   - LV_OSMESA
    - LV_GLFW
-   - MESA_DIR
-  script: "{{ PYTHON }} -m pip install --no-deps ."
+   - LV_MIN_DEPS
+#   - LV_OSMESA_EXT
+#   - LV_OSMESA
+#   - LV_EGL
+  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed .
 
 requirements:
   build:
+    - python
+    - setuptools
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     # https://conda-forge.org/docs/maintainer/knowledge_base.html#libgl
     - {{ cdt('mesa-libgl') }}  # [linux]
     - {{ cdt('mesa-libgl-devel') }}  # [linux]
     - {{ cdt('mesa-dri-drivers') }}  # [linux]
-    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
-    - {{ cdt('libx11-devel') }}  # [linux]
-    - {{ cdt('libxfixes') }}  # [linux]
-    - {{ cdt('libxfixes-devel') }}  # [linux]
+    - mesalib  # [linux]
+#    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+#    - {{ cdt('libx11-devel') }}  # [linux]
+#    - {{ cdt('libxfixes') }}  # [linux]
+#    - {{ cdt('libxfixes-devel') }}  # [linux]
     - pip
+    - glfw
+    - numpy >=1.18
+    - libsqlite
+    - libtiff
   host:
     - python
     - glfw
     - mesalib  # [linux]
-    - ffmpeg
-    - sqlite
+    #- libsqlite
     - libtiff
+    - zlib
     - numpy >=1.18
     - jupyter-server-proxy
     - aiohttp
   run:
     - glfw
+    #- libsqlite
+    - libtiff
     - numpy >=1.18
     - jupyter-server-proxy
     - aiohttp
+    - matplotlib
+    - quaternion
+    - pillow
+    - moderngl
 
 test:
-  # Tests require visual context not present on CIs
   test:
     requires:
-    - numpy >=1.11
+    - numpy >=1.18
     - jupyter-server-proxy
     - aiohttp
-    - glfw
-    - {{ cdt('mesa-libgl-devel') }}  # [linux]
-    - {{ cdt('mesa-dri-drivers') }}  # [linux]
-  #imports:
-  #  - lavavu #Implicit
+    - matplotlib
+    - moderngl
+    - quaternion
+    - pillow
+    - moderngl
+  imports:
+    - lavavu
   commands:
-    #This will not work on CI without opengl context / osmesa
-    #- printf "test\nimage\nquit\n" | LavaVu
-    - printf "quit\n" | LavaVu # [linux]
-    #- printf "dummy tests"
-    #- {{ PYTHON }} -c "import lavavu; print(lavavu.__version__);"
+    #This will not work on CI without opengl context
+    - python -c "import lavavu; print(lavavu.__version__); lv = lavavu.Viewer(); print(lv.gl); lv.test(); lv.image('test.jpg');" # [linux]
 
 about:
-  home: "https://github.com/lavavu/LavaVu"
+  summary: Python interface to LavaVu OpenGL 3D scientific visualisation utilities
+  home: https://lavavu.github.io/
+  dev_url: https://github.com/lavavu/LavaVu
+  doc_url: https://lavavu.github.io/Documentation/ 
   license: "GNU Lesser General Public v3 (LGPLv3)"
   license_family: LGPL
-  summary: "Python interface to LavaVu OpenGL 3D scientific visualisation utilities"
-  doc_url: https://lavavu.github.io/Documentation/ 
+  license_file: LICENSE.md
 
 extra:
   recipe-maintainers:

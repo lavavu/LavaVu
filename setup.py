@@ -21,6 +21,10 @@ import shutil
 #(must be of the form X.Y.Z to trigger wheel builds)
 version = "1.9.10"
 
+if len(sys.argv) < 2:
+    #No args, skip the rest
+    exit()
+
 """
 To release a new verison:
 

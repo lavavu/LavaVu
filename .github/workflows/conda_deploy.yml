@@ -1,0 +1,43 @@
+name: Conda
+
+on:
+  [push, workflow_dispatch]
+  # Runs when a (published) GitHub Release is created
+  #release:
+  #  types:
+  #    - published
+
+jobs:
+
+  conda:
+    name: build and deploy to conda (${{ matrix.os }})
+    #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    runs-on: ${{ matrix.os }}
+    env:
+      LV_GLFW: 1
+      LV_MIN_DEPS: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"] #, "macos-latest"]
+        python-version: ["3.11"] #, "3.12", "3.13"]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          environment-file: .conda/environment.yml
+          auto-update-conda: false
+          auto-activate-base: false
+          show-channel-urls: true
+
+      - name: Build and upload the conda package
+        uses: ACCESS-NRI/action-build-and-upload-conda-packages@v2.0.1
+        with:
+          meta_yaml_dir: conda
+          label: main
+          user: ${{ secrets.ANACONDA_USER }}
+          token: ${{ secrets.ANACONDA_TOKEN }}
