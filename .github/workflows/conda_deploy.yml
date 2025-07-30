@@ -29,7 +29,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python-version }}
-          environment-file: .conda/environment.yml
+          environment-file: conda/environment.yml
           auto-update-conda: false
           auto-activate-base: false
           show-channel-urls: true
