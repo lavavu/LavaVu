@@ -399,7 +399,7 @@ if __name__ == "__main__":
                 extensions.append(ex)
             else:
                 #Remove any osmesa extension from previous builds
-                shutil.rmtree("lavavu/osmesa")
+                shutil.rmtree("lavavu/osmesa", ignore_errors=True)
 
             #Main extension - use X11 or GLFW (or OSMesa)
             if ("LV_OSMESA" in os.environ and find_library('OSMesa')
