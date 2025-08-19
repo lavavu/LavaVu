@@ -384,7 +384,7 @@ if __name__ == "__main__":
             if ("LV_OSMESA_EXT" in os.environ and find_library('OSMesa')
             and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
                 #OSMesa for software rendered offscreen OpenGL, build as additional extension
-                pathlib.Path("lavavu/osmesa").mkdir(parents=True, exist_ok=True)
+                Path("lavavu/osmesa").mkdir(parents=True, exist_ok=True)
                 Path("lavavu/osmesa/__init__.py").touch()
                 ex = Extension('lavavu.osmesa._LavaVuPython',
                                 define_macros = defines + [('HAVE_OSMESA', '1')],
