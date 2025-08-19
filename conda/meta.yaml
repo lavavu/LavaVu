@@ -66,24 +66,24 @@ requirements:
     - pillow
     - moderngl
 
-test:
-  test:
-    requires:
-    - numpy >=1.18
-    - jupyter-server-proxy
-    - aiohttp
-    - matplotlib
-    - moderngl
-    - quaternion
-    - pillow
-    - moderngl
-  imports:
-    - lavavu
-  commands:
-    #This will not work on CI without opengl context
-    - python -c "import lavavu; print(lavavu.__version__); lv = lavavu.Viewer(); print(lv.gl); lv.test(); lv.image('test.jpg');" # [linux]
+#test:
+#  test:
+#    requires:
+#    - numpy >=1.18
+#    - jupyter-server-proxy
+#    - aiohttp
+#    - matplotlib
+#    - moderngl
+#    - quaternion
+#    - pillow
+#    - moderngl
+#  imports:
+#    - lavavu
+#  commands:
+#    #this will not work on ci without opengl context
+#    - python -c "import lavavu; print(lavavu.__version__); lv = lavavu.viewer(); print(lv.gl); lv.test(); lv.image('test.jpg');" # [linux]
 
-about:
+#about:
   summary: Python interface to LavaVu OpenGL 3D scientific visualisation utilities
   home: https://lavavu.github.io/
   dev_url: https://github.com/lavavu/LavaVu
