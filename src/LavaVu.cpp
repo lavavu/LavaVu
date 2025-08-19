@@ -122,6 +122,10 @@ LavaVu::LavaVu(std::string binpath, bool havecontext) : ViewerApp()
 #ifdef SHADER_PATH
   FilePath::paths.push_back(SHADER_PATH);
 #endif
+  //Add any shader paths in env
+  char* path = getenv("SHADER_PATH");
+  if (path)
+    FilePath::paths.push_back(path);
 
   //Initialise the session
   session.init(binpath);
