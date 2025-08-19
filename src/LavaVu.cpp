@@ -118,7 +118,7 @@ LavaVu::LavaVu(std::string binpath, bool havecontext) : ViewerApp()
 #endif
   this->binpath = binpath;
 
-  if (FilePath::paths.size() == 0) FilePath::paths.push_back(binpath + "shaders/");
+  if (FilePath::paths.size() == 0) FilePath::paths.push_back(binpath + "shaders");
 #ifdef SHADER_PATH
   FilePath::paths.push_back(SHADER_PATH);
 #endif

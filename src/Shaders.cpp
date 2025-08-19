@@ -136,8 +136,16 @@ std::string Shader::read_file(const std::string& fname)
     //std::cout << "TRY SHADER: " << filepath << std::endl;
     if (FileExists(filepath))
       break;
-    else if (path.length() > 0)
+
+    if (path.length() > 0)
+    {
+#if defined _WIN32
+      if (path.back() != '\\') path += "\\";
+#else
+      if (path.back() != '/') path += "/";
+#endif
       filepath = path + base_filename;
+    }
   }
 
   debug_print("Shader loading: %s\n", filepath.c_str());
