@@ -1302,6 +1302,9 @@ void Geometry::setState(Geom_Ptr g)
   //NOTE: Transparent triangle surfaces/points are drawn as a single object so
   //      no per-object state settings work, state applied is that of first in list
   GL_Error_Check;
+  int texture_units = 0;
+  glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &texture_units);
+  GL_Error_Check;
   DrawingObject* draw = g->draw;
   Properties& props = g->draw->properties;
 
@@ -1465,14 +1468,14 @@ void Geometry::setState(Geom_Ptr g)
           {
             //This is fine if texture not set or is empty string
             //std::cout << "Texture load failed, data is NULL! " << label << " = " << prop << std::endl;
-            prog->setUniformi(label, 1024); //Dummy unit
+            prog->setUniformi(label, texture_units); //Dummy unit - use max
           }
         }
         else
         {
           //This is fine if texture not set or is empty string
           //std::cout << "Texture load failed, not found. " << label << " = " << prop << std::endl;
-          prog->setUniformi(label, 1024); //Dummy unit
+          prog->setUniformi(label, texture_units); //Dummy unit - use max
         }
       }
       else if (!prop.is_null())
