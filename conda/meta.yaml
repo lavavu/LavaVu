@@ -35,10 +35,10 @@ requirements:
     - {{ cdt('mesa-libgl-devel') }}  # [linux]
     - {{ cdt('mesa-dri-drivers') }}  # [linux]
     - mesalib  # [linux]
-#    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
-#    - {{ cdt('libx11-devel') }}  # [linux]
-#    - {{ cdt('libxfixes') }}  # [linux]
-#    - {{ cdt('libxfixes-devel') }}  # [linux]
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux]
+    - {{ cdt('libx11-devel') }}  # [linux]
+    - {{ cdt('libxfixes') }}  # [linux]
+    - {{ cdt('libxfixes-devel') }}  # [linux]
     - pip
     - glfw
     - numpy >=1.18
