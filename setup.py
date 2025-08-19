@@ -16,6 +16,7 @@ from ctypes.util import find_library
 import platform
 import glob
 import shutil
+from pathlib import Path
 
 #Current version
 #(must be of the form X.Y.Z to trigger wheel builds)
@@ -325,7 +326,6 @@ if __name__ == "__main__":
         inc_dirs += [os.path.join('windows-main', 'inc')]
         lib_dirs += [os.path.join('windows-main', LIBS)]
         ldflags += ['/LIBPATH:' + os.path.join('windows-main', LIBS)]
-        from pathlib import Path
         libs = ['opengl32'] + [Path(l).stem for l in win_libs]
         #Copy dlls into ./lavavu so can be found by package_data
         for d in win_dlls:
@@ -384,6 +384,8 @@ if __name__ == "__main__":
             if ("LV_OSMESA_EXT" in os.environ and find_library('OSMesa')
             and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
                 #OSMesa for software rendered offscreen OpenGL, build as additional extension
+                pathlib.Path("lavavu/osmesa").mkdir(parents=True, exist_ok=True)
+                Path("lavavu/osmesa/__init__.py").touch()
                 ex = Extension('lavavu.osmesa._LavaVuPython',
                                 define_macros = defines + [('HAVE_OSMESA', '1')],
                                 include_dirs = inc_dirs,
@@ -395,6 +397,9 @@ if __name__ == "__main__":
                                 extra_objects=extra_objects,
                                 sources = srcs)
                 extensions.append(ex)
+            else:
+                #Remove any osmesa extension from previous builds
+                shutil.rmtree("lavavu/osmesa")
 
             #Main extension - use X11 or GLFW (or OSMesa)
             if ("LV_OSMESA" in os.environ and find_library('OSMesa')
