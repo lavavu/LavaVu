@@ -627,6 +627,8 @@ void TriSurfaces::render()
   t1 = clock();
   //After render(), copy filtered count to elements, indices.size() is unfiltered
   elements = tricount * 3;
+  //Clear sorter flag!
+  sorter.changed = false;
 }
 
 void TriSurfaces::draw()

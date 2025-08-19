@@ -390,6 +390,8 @@ void Points::render()
 
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
+  //Clear sorter flag!
+  sorter.changed = false;
 }
 
 int Points::getPointType(int index)

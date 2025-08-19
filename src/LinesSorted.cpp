@@ -335,6 +335,8 @@ void LinesSorted::render()
   t1 = clock();
   //After render(), copy filtered count to elements, indices.size() is unfiltered
   elements = linecount * 2;
+  //Clear sorter flag!
+  sorter.changed = false;
 }
 
 void LinesSorted::draw()
