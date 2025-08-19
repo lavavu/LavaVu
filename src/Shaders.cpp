@@ -129,13 +129,15 @@ std::string Shader::read_file(const std::string& fname)
   //If shader found locally in working directory, use it instead
   //If not, loop through list of paths until found
   std::string base_filename = fname.substr(fname.find_last_of("/\\") + 1);
-  std::string filepath = base_filename;
+  std::string filepath = fname;
+  //std::cout << "SHADER: " << filepath << std::endl;
   for (auto path : FilePath::paths)
   {
-    if (path.length() > 0 && !FileExists(filepath))
-      filepath = path + base_filename;
+    //std::cout << "TRY SHADER: " << filepath << std::endl;
     if (FileExists(filepath))
       break;
+    else if (path.length() > 0)
+      filepath = path + base_filename;
   }
 
   debug_print("Shader loading: %s\n", filepath.c_str());
