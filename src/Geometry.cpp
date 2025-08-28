@@ -1883,20 +1883,29 @@ void Geometry::display(bool refresh)
         //Load RGB/RGBA as texture
         if (geom[index]->texwidth && geom[index]->texheight)
         {
+          bool flip = geom[index]->draw->properties["fliptexture"];
            //printf("TEX %d x %d RGB %d COLOURS %d TEXTURE %d\n", geom[index]->texwidth, geom[index]->texheight, geom[index]->render->rgb.size(), geom[index]->render->colours.size(), geom[index]->hasTexture());
           //RGB as ubyte * 3
           if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->rgb.size() * 3)
           {
             //printf(" - LOADING RGB %d to TEXTURE %d x %d\n", geom[index]->render->rgb.size(), geom[index]->texwidth, geom[index]->texheight);
-            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->rgb.ref()), geom[index]->texwidth, geom[index]->texheight, 3, false);
+            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->rgb.ref()), geom[index]->texwidth, geom[index]->texheight, 3, flip);
           }
           //RGBA as int32 (ubyte * 4)
           else if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->colours.size())
           {
             //printf(" - LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
-            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->colours.ref()), geom[index]->texwidth, geom[index]->texheight, 4, false);
+            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->colours.ref()), geom[index]->texwidth, geom[index]->texheight, 4, flip);
             //std::ofstream of("texout.png");
             //write_png(of, 4, geom[index]->texwidth, geom[index]->texheight, geom[index]->render->colours.ref());
+          }
+          //LUM as ubyte * 1
+          else if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->luminance.size())
+          {
+            //printf(" - LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
+            geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->luminance.ref()), geom[index]->texwidth, geom[index]->texheight, 1, flip);
+            //std::ofstream of("texout.png");
+            //write_png(of, 4, geom[index]->texwidth, geom[index]->texheight, geom[index]->render->luminance.ref());
           }
         }
       }
@@ -2205,7 +2214,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
 void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
-  if (type != lucVolumeType && width && height && (dtype == lucRGBData || dtype == lucRGBAData))
+  if (type != lucVolumeType && width && height && (dtype == lucRGBData || dtype == lucRGBAData || dtype == lucLuminanceData))
   {
     //Set the texture width/height/depth
     geomdata->texwidth = width;
