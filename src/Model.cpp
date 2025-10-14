@@ -2122,7 +2122,7 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
   int width = data->width;
   int height = data->height;
   int depth = data->depth;
-  if (dtype == lucRGBData || dtype == lucRGBAData)
+  if (dtype == lucRGBData || dtype == lucRGBAData || dtype == lucLuminanceData)
   {
     width = data->texwidth;
     height = data->texheight;
