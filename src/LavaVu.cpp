@@ -1909,8 +1909,11 @@ void LavaVu::resetViews(bool autozoom)
   std::stringstream title;
   std::string name = session.global("caption");
   std::string vptitle = aview->properties["title"];
+  std::string gtitle = session.global("title");
   if (vptitle.length() > 0)
     title << vptitle;
+  else if (gtitle.length() > 0)
+    title << gtitle;
   else
     title << "LavaVu";
   if (name.length() > 0)

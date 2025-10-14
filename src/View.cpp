@@ -1170,6 +1170,8 @@ void View::drawOverlay()
 
   //Title
   std::string title = properties["title"];
+  std::string gtitle = session.global("title");
+  if (title.length() == 0) title = gtitle;
   if (title.length())
   {
     //Timestep macro ##
