@@ -117,7 +117,7 @@ public:
   Colour get(float value);
   float scaleValue(float value);
   Colour getFromScaled(float scaledValue);
-  void drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat=false);
+  void drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat=false, float brightness=0.0, float contrast=1.0, float saturation=1.0);
   void draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);

@@ -81,7 +81,7 @@ public:
   void scale(float factor);
   void scale3(float x, float y, float z);
   void translate3(float x, float y, float z);
-  void useDefaultShader(bool is2d=true, bool flat=false);
+  void useDefaultShader(bool is2d=true, bool flat=false, float brightness=0.0, float contrast=1.0, float saturation=1.0);
   void viewport2d(int width, int height);
   int project(float objx, float objy, float objz, float *windowCoordinate);
   int project(float x, float y, float z, int* viewport, float* windowCoordinate);

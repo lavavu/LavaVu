@@ -79,7 +79,7 @@ void RenderContext::translate3(float x, float y, float z)
   MV = linalg::mul(MV, linalg::translation_matrix(vec3(x, y, z)));
 }
 
-void RenderContext::useDefaultShader(bool is2d, bool flat)
+void RenderContext::useDefaultShader(bool is2d, bool flat, float brightness, float contrast, float saturation)
 {
   //Setup default vertex attributes
   int vcount = is2d ? 2 : 3;
@@ -94,6 +94,9 @@ void RenderContext::useDefaultShader(bool is2d, bool flat)
   defaultshader->setUniformMatrixf("uMVMatrix", MV);
   defaultshader->setUniformMatrixf("uPMatrix", P);
   defaultshader->setUniformi("uFlat", flat);
+  defaultshader->setUniformf("uBrightness", brightness);
+  defaultshader->setUniformf("uContrast", contrast);
+  defaultshader->setUniformf("uSaturation", saturation);
 }
 
 void RenderContext::viewport2d(int width, int height)

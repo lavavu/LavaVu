@@ -553,7 +553,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define VERT2D(x, y, c, swap) if (swap) vertices.push_back(ColourVert2d(y, x, c)); else vertices.push_back(ColourVert2d(x, y, c));
 #define RECT2D(x0, y0, x1, y1, c, s) { VERT2D(x0, y1, c, s); VERT2D(x0, y0, c, s); VERT2D(x1, y1, c, s); VERT2D(x0, y0, c, s); VERT2D(x1, y0, c, s); VERT2D(x1, y1, c, s);}
 
-void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat)
+void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat, float brightness, float contrast, float saturation)
 {
   //Initialise vertex array object for OpenGL 3.2+
   GL_Error_Check;
@@ -563,7 +563,7 @@ void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertic
   if (!vbo) glGenBuffers(1, &vbo);
   int stride = 2 * sizeof(float) + sizeof(Colour);   //2d vertices + 32-bit colour
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  session.context.useDefaultShader(true, flat);
+  session.context.useDefaultShader(true, flat, brightness, contrast, saturation);
   if (glIsBuffer(vbo))
   {
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * stride, vertices.data(), GL_DYNAMIC_DRAW);
@@ -668,8 +668,11 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
     }
   }
 
+  float brightness = colourbarprops["brightness"];
+  float contrast = colourbarprops["contrast"];
+  float saturation = colourbarprops["saturation"];
   //Send the buffer
-  drawVertices(session, vertices, GL_TRIANGLE_STRIP, discrete);
+  drawVertices(session, vertices, GL_TRIANGLE_STRIP, discrete, brightness, contrast, saturation);
 
   //Labels / tick marks
   colour = session.fonts.setFont(colourbarprops);
