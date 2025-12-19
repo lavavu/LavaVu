@@ -1314,6 +1314,25 @@ void Geometry::setState(Geom_Ptr g)
   if (draw == cached) return;
   cached = draw;
 
+  //Viewport override - will effect all objects in this renderer
+  if (props.has("viewport"))
+  {
+    float vp[4];
+    Properties::toArray<float>(props["viewport"], vp, 4);
+
+    if (vp[2] == 0.0) vp[2] = 1.0;
+    if (vp[3] == 0.0) vp[3] = 1.0;
+
+    float x = view->width*vp[0];
+    float y = view->height*vp[1];
+    float w = view->width*vp[2];
+    float h = view->height*vp[3];
+    debug_print("CUSTOM VIEWPORT %f %f %f %f (%f,%f) %f %f %f %f\n", vp[0], vp[1], vp[2], vp[3], view->width, view->height, x, y, w, h);
+
+    session.context.viewport = true; //Flag so can be restored
+    glViewport(x, y, w, h);
+  }
+
   //printf("SETSTATE %s TEXTURE %p\n", g->draw->name().c_str(), texture);
   bool lighting = props["lit"];
   //Don't light surfaces in 2d models
@@ -1936,6 +1955,13 @@ void Geometry::display(bool refresh)
   //Restore default polygon mode
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
+
+  //Reset any custom viewports
+  if (session.context.viewport)
+  {
+    session.context.viewport = false;
+    view->port();
+  }
 }
 
 void Geometry::update()

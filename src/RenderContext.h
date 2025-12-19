@@ -51,6 +51,7 @@ public:
   GLint major = 0, minor = 0, core = 0;
   int samples = 1;
   bool antialiased = false;
+  bool viewport = false; //Viewport override active
 
   //Matrices
   mat4 MV;

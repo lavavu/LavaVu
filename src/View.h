@@ -186,6 +186,7 @@ public:
 
   void port(int x, int y, int width, int height);
   void port(int win_width, int win_height);
+  void port();
   bool hasPixel(int x, int y);
 
   void projection(int eye);

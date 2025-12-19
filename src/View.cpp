@@ -585,6 +585,13 @@ void View::port(int win_width, int win_height)
   if (base_height == 0) base_height = height / session.context.scale2d;
 }
 
+void View::port()
+{
+  glViewport(xpos, ypos, width, height);
+  glScissor(xpos, ypos, width, height);
+  //debug_print("-------Viewport (%f,%f %fx%f) set at %d,%d %d x %d\n", x,y,w,h, xpos, ypos, width, height);
+}
+
 bool View::hasPixel(int x, int y)
 {
   if (x < xpos) return false;

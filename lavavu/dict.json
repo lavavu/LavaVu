@@ -180,6 +180,22 @@
       true
     ]
   },
+  "viewport": {
+    "default": [
+      0,
+      0,
+      1,
+      1
+    ],
+    "target": "object",
+    "type": "real[4]",
+    "desc": "Custom dimensions of viewport for drawing this object (x, y, width, height) proportional to main window size",
+    "strict": true,
+    "redraw": 1,
+    "control": [
+      false
+    ]
+  },
   "fixed": {
     "default": false,
     "target": "object",
