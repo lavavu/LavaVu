@@ -341,7 +341,15 @@ async def _serve(viewer, sock):
 def serve(viewer, port=None, ipv6=False, retries=100):
     s = Server(viewer, port, ipv6, retries)
     #Attach to event loop
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as ex:
+        #Python 3.14 always throws error now
+        if "There is no current event loop" in str(ex):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        else:
+            raise ex
     loop.create_task(s.run())
     return s
 
