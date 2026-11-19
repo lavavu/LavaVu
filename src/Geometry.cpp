@@ -1297,6 +1297,12 @@ void Geometry::setState(unsigned int i)
   setState(geom[i]);
 }
 
+bool Geometry::hasUniform(DrawingObject* draw, const std::string& name)
+{
+  Shader_Ptr prog = getShader(draw);
+  return prog->hasUniform(name) >= 0;
+}
+
 void Geometry::setState(Geom_Ptr g)
 {
   //NOTE: Transparent triangle surfaces/points are drawn as a single object so

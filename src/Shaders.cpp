@@ -270,11 +270,29 @@ void Shader::loadAttribs()
   }
 }
 
+GLint Shader::hasUniform(const std::string& name)
+{
+  if (!program)
+  {
+    //std::cout << "   NO PROGRAM" << std::endl;
+    return -1;
+  }
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it != uniforms.end())
+    return uniforms[name];
+  //std::cout << "   NOT IN LIST" << std::endl;
+  return -1;
+}
+
 void Shader::setUniform(const std::string& name, json& value)
 {
   if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it == uniforms.end()) return;
+  if (it == uniforms.end()) 
+  {
+    //std::cout << "FAIL0! SET UNIFORM " << name << "," << value << std::endl;
+    return;
+  }
 
   //Handle integer/float uniforms, singular, vector values (2,3 or 4) or scalar arrays (>4)
   //NOTE: this is a bit error prone, probably need to flag int/float by parsing shader rather than
@@ -294,49 +312,62 @@ void Shader::setUniform(const std::string& name, json& value)
   }
 
   GL_Error_Check
+  GLint loc = hasUniform(name);
+  if (loc < 0) 
+  {
+    //std::cout << "FAIL! SET UNIFORM " << name << " [" << uniform_types[name] << "] = " << value << std::endl;
+    return;
+  }
 
+  //std::cout << "SET UNIFORM " << name << " [" << uniform_types[name] << "] = " << value << std::endl;
   switch (uniform_types[name])
   {
     case GL_FLOAT:
       if (dims == 1)
-        glUniform1f(uniforms[name], (float)value);
+        glUniform1f(loc, (float)value);
       else //Array of scalars
-        glUniform1fv(uniforms[name], dims, fdat);
+        glUniform1fv(loc, dims, fdat);
       GL_Error_Print
       break;
     case GL_INT:
     case GL_BOOL:
       if (dims == 1)
-        glUniform1i(uniforms[name], (int)value);
+        glUniform1i(loc, (int)value);
       else //Array of scalars
-        glUniform1iv(uniforms[name], dims, idat);
+        glUniform1iv(loc, dims, idat);
       GL_Error_Print
       break;
     case GL_FLOAT_VEC2:
       assert(dims>=2);
-      glUniform2fv(uniforms[name], 1, fdat);
+      glUniform2fv(loc, 1, fdat);
       GL_Error_Print
       break;
     case GL_INT_VEC2:
-      glUniform2iv(uniforms[name], 1, idat);
+      glUniform2iv(loc, 1, idat);
       GL_Error_Print
       break;
     case GL_FLOAT_VEC3:
-      glUniform3fv(uniforms[name], 1, fdat);
+      glUniform3fv(loc, 1, fdat);
       GL_Error_Print
       break;
     case GL_INT_VEC3:
-      glUniform3iv(uniforms[name], 1, idat);
+      glUniform3iv(loc, 1, idat);
       GL_Error_Print
       break;
     case GL_FLOAT_VEC4:
-      glUniform4fv(uniforms[name], 1, fdat);
+      glUniform4fv(loc, 1, fdat);
       GL_Error_Print
       break;
     case GL_INT_VEC4:
-      glUniform4iv(uniforms[name], 1, idat);
+      glUniform4iv(loc, 1, idat);
       GL_Error_Print
       break;
+    default:
+      //std::cout << "   SET DEFAULT UNIFORM " << name << " [" << uniform_types[name] << "] = " << value << std::endl;
+      //Assume sampler - send an int
+      glUniform1i(loc, (int)value);
+      break;
+
   }
 
   GL_Error_Check;
@@ -357,75 +388,57 @@ void Shader::setUniform(const std::string& name, Colour& colour)
 void Shader::setUniformi(const std::string& name, int value)
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
-  {
-    GLint loc = uniforms[name];
-    if (loc >= 0) glUniform1i(loc, value);
-    GL_Error_Check;
-  }
+  GLint loc = hasUniform(name);
+  if (loc >= 0) glUniform1i(loc, value);
+  GL_Error_Check;
 }
 
 void Shader::setUniformf(const std::string& name, float value)
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
+  GLint loc = hasUniform(name);
+  if (loc >= 0)
   {
-    GLint loc = uniforms[name];
-    if (loc >= 0) glUniform1f(loc, value);
-    GL_Error_Check;
+  //std::cout << name << " => " << value << " " << " @ " << loc << std::endl;
+    glUniform1f(loc, value);
   }
+  //else
+  //  std::cout << "FAIL0! SET UNIFORM " << name << "," << value << " @ " << loc << std::endl;
+  GL_Error_Check;
 }
 
 void Shader::setUniform2f(const std::string& name, float value[2])
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
-  {
-    GLint loc = uniforms[name];
-    if (loc >= 0)
-      glUniform2fv(loc, 1, value);
-    GL_Error_Check;
-  }
+  GLint loc = hasUniform(name);
+  if (loc >= 0)
+    glUniform2fv(loc, 1, value);
+  GL_Error_Check;
 }
 
 void Shader::setUniform3f(const std::string& name, float value[3])
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
-  {
-    GLint loc = uniforms[name];
-    if (loc >= 0)
-      glUniform3fv(loc, 1, value);
-    GL_Error_Check;
-  }
+  GLint loc = hasUniform(name);
+  if (loc >= 0)
+    glUniform3fv(loc, 1, value);
+  GL_Error_Check;
 }
 
 void Shader::setUniform4f(const std::string& name, float value[4])
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
-  {
-    GLint loc = uniforms[name];
-    if (loc >= 0)
-      glUniform4fv(loc, 1, value);
-    GL_Error_Check;
-  }
+  GLint loc = hasUniform(name);
+  if (loc >= 0)
+    glUniform4fv(loc, 1, value);
+  GL_Error_Check;
 }
 
 void Shader::setUniformMatrixf(const std::string& name, mat4& matrix, bool transpose)
 {
   if (!program) return;
-  std::map<std::string,int>::iterator it = uniforms.find(name);
-  if (it != uniforms.end())
-  {
-    GLint loc = uniforms[name];
-    if (loc >= 0)
-      glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, &matrix[0][0]);
-    GL_Error_Check;
-  }
+  GLint loc = hasUniform(name);
+  if (loc >= 0)
+    glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, &matrix[0][0]);
+  GL_Error_Check;
 }

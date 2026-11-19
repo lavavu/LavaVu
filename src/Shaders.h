@@ -26,6 +26,7 @@ public:
   void use();
   void loadUniforms();
   void loadAttribs();
+  GLint hasUniform(const std::string& name);
   void setUniform(const std::string& name, json& value);
   void setUniform(const std::string& name, int value);
   void setUniform(const std::string& name, float value);

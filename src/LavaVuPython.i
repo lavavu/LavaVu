@@ -222,6 +222,8 @@ public:
   void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, int filter=2, bool bgr=false, std::string label="");
   void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, int filter=2, bool bgr=false, std::string label="");
 
+  bool hasUniform(DrawingObject* target, const std::string& name);
+
   std::vector<Geom_Ptr> getGeometry(DrawingObject* target);
   std::vector<Geom_Ptr> getGeometryAt(DrawingObject* target, int timestep=-2);
   std::vector<float> getBoundingBox(DrawingObject* target, bool allsteps=false);

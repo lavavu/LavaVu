@@ -3715,6 +3715,13 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
     std::cerr << "Container not found object:" << target->name() << std::endl;
 }
 
+bool LavaVu::hasUniform(DrawingObject* target, const std::string& name)
+{
+  if (!amodel || !target) return false;
+  Geometry* container = amodel->lookupObjectRenderer(target);
+  return container->hasUniform(target, name);
+}
+
 //GeomData interface, for loading/acessing geom store directly
 std::vector<Geom_Ptr> LavaVu::getGeometry(DrawingObject* target)
 {

@@ -610,6 +610,7 @@ public:
   void merge(int start=-2, int end=-2);
   Shader_Ptr getShader(DrawingObject* draw=NULL);
   Shader_Ptr getShader(lucGeometryType type);
+  bool hasUniform(DrawingObject* draw, const std::string& name);
   void setState(unsigned int i);
   void setState(Geom_Ptr g);
   void convertColours(int step=-1, DrawingObject* obj=NULL);

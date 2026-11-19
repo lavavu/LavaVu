@@ -592,8 +592,16 @@ class Object(dict):
 
     def __setitem__(self, key, value):
         #Check for valid key
-        if self.parent.validate and not key in self.parent.properties:
-            raise KeyError(key + " : Invalid property name")
+        if not key in self.parent.properties:
+            #Check for valid uniform
+            if "uniforms" in self.dict and self.parent.app.hasUniform(self.ref, key):
+                print("Found", key, " in uniforms, applying")
+                uniforms = self.dict["uniforms"]
+                uniforms[key] = value
+                value = uniforms
+                key = "uniforms"
+            elif self.parent.validate:
+                raise KeyError(key + " : Invalid property name")
         if key == "colourmap":
             if isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
                 value = value.name #Use name instead of object when setting colourmap on object
