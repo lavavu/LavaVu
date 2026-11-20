@@ -1321,7 +1321,7 @@ void Geometry::setState(Geom_Ptr g)
   if (draw == cached) return;
   cached = draw;
 
-  //Viewport override - will effect all objects in this renderer
+  //Viewport override - might affect all objects in this renderer
   if (props.has("viewport"))
   {
     float vp[4];
@@ -1338,9 +1338,12 @@ void Geometry::setState(Geom_Ptr g)
 
     session.context.viewport = true; //Flag so can be restored
     glViewport(x, y, w, h);
+    glScissor(x, y, w, h);
   }
 
   //printf("SETSTATE %s TEXTURE %p\n", g->draw->name().c_str(), texture);
+  //printf("SETSTATE %s \n", g->draw->name().c_str());
+  //std::cout << props.data << std::endl;
   bool lighting = props["lit"];
   //Don't light surfaces in 2d models
   if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal)
