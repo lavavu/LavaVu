@@ -2735,6 +2735,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   // Vector is centered on pos[x,y,z]
   // Translate to the point of arrow -> position + vector/2
   float headD = head_radius*2;
+  float tc[2] = {0.0, 0.0};
   //Output is lines only if using very low quality setting
   if (type == lucLineType)
   {
@@ -2762,6 +2763,9 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       //Read triangle vertex, normal
       g->readVertex(vertex.ref());
+      tc[0] = v / (float)segment_count;
+      tc[1] = 0.0;
+      g->_texCoords->read(1, tc);
       Vec3d normal = rot * Vec3d(session.x_coords[v], session.y_coords[v], 0) * scale3;
       normal.normalise();
       g->_normals->read(1, normal.ref());
@@ -2772,6 +2776,8 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       //Read triangle vertex, normal
       g->readVertex(vertex.ref());
+      tc[1] = 1.0;
+      g->_texCoords->read(1, tc);
       g->_normals->read(1, normal.ref());
 
       //Triangle strip indices
@@ -2827,6 +2833,9 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       //Duplicate pinnacle vertex as each facet needs a different normal
       g->readVertex(vertex.ref());
+      tc[0] = 0.0;
+      tc[1] = 1.0;
+      g->_texCoords->read(1, tc);
       //Balance between smoothness (normal) and highlighting angle of cone (normal1)
       Vec3d avgnorm = normal * 0.4 + normal1 * 0.6 * scale3;
       avgnorm.normalise();
@@ -2835,6 +2844,8 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       //Read triangle vertex, normal
       g->readVertex(vertex1.ref());
+      tc[0] = v / (float)segment_count;
+      g->_texCoords->read(1, tc);
       g->_normals->read(1, avgnorm.ref());
 
       //Triangle fan indices
@@ -2854,6 +2865,8 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     normal = rot * Vec3d(0.0f, 0.0f, -1.0f) * scale3;
     //Read triangle vertex, normal
     g->readVertex(vertex.ref());
+    tc[0] = 0.0;
+    g->_texCoords->read(1, tc);
     g->_normals->read(1, normal.ref());
 
     // Repeat vertices for outer edges of cone base
@@ -2867,6 +2880,8 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       //Read triangle vertex, normal
       g->readVertex(vertex1.ref());
+      tc[0] = v / (float)segment_count;
+      g->_texCoords->read(1, tc);
       g->_normals->read(1, normal.ref());
 
       //Triangle fan indices
