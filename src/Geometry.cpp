@@ -294,6 +294,7 @@ int GeomData::colourCount()
   //Return number of colour values or RGBA colours
   int hasColours = render->colours.size();
   if (render->rgb.size()) hasColours = render->rgb.size() / 3;
+  if (render->luminance.size()) hasColours = render->luminance.size();
   if (values.size() > draw->colourIdx)
   {
     Values_Ptr fv = values[draw->colourIdx];
@@ -1927,7 +1928,7 @@ void Geometry::display(bool refresh)
           //LUM as ubyte * 1
           else if (geom[index]->texwidth * geom[index]->texheight == geom[index]->render->luminance.size())
           {
-            //printf(" - LOADING RGBA %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
+            //printf(" - LOADING LUMINANCE %d to TEXTURE %d x %d\n", geom[index]->render->colours.size(), geom[index]->texwidth, geom[index]->texheight);
             geom[index]->texture->loadData(static_cast<GLubyte*>(geom[index]->render->luminance.ref()), geom[index]->texwidth, geom[index]->texheight, 1, flip);
             //std::ofstream of("texout.png");
             //write_png(of, 4, geom[index]->texwidth, geom[index]->texheight, geom[index]->render->luminance.ref());
