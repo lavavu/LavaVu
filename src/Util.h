@@ -190,6 +190,9 @@ public:
     //Returns size of data units
     return datasize;
   }
+
+  bool empty() {return size() == 0;}
+
 };
 
 template <class dtype> class DataValues : public DataContainer

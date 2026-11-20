@@ -3834,7 +3834,7 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, fl
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Data_Ptr dat = geom->dataContainer(dtype);
-  if (dat == nullptr)
+  if (dat == nullptr || dat->empty())
   {
     *len = 0;
     return;
@@ -3849,7 +3849,7 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, float** array, int* len, std:
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Values_Ptr dat = geom->valueContainer(label);
-  if (dat == nullptr)
+  if (dat == nullptr || dat->empty())
   {
     *len = 0;
     return;
@@ -3864,6 +3864,11 @@ void LavaVu::geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, uns
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Data_Ptr dat = geom->dataContainer(dtype);
+  if (dat == nullptr || dat->empty())
+  {
+    *len = 0;
+    return;
+  }
   *array = (unsigned int*)dat->ref(0);
   *len = dat->size();
 }
@@ -3874,6 +3879,11 @@ void LavaVu::geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, un
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Data_Ptr dat = geom->dataContainer(dtype);
+  if (dat == nullptr || dat->empty())
+  {
+    *len = 0;
+    return;
+  }
   *array = (unsigned char*)dat->ref(0);
   *len = dat->size();
 }
