@@ -627,12 +627,68 @@ void Triangles::calcGridIndices(unsigned int i)
   int triverts = els * 6;
   if (triverts < 3) return;
   std::vector<GLuint> indices(triverts);
+  std::vector<Vec3d> vertices(geom[i]->width*geom[i]->height);
   clock_t t1,t2;
   t1=clock();
   debug_print("Calculating indices for grid tri surface %d... ", i);
   bool flip = geom[i]->draw->properties["flip"];
+  bool optimise = geom[i]->draw->properties["gridoptimise"];
+
+  //Re-index NaN/Inf vertices so can be skipped
+  std::vector<unsigned int> new_indices;
+  std::vector<bool> valid;
+  std::vector<float> values;
+  std::vector<float> texCoords;
+  unsigned int sz = geom[i]->width*geom[i]->height;
+  //bool hasTexCoords = geom[i]->render->texCoords.size() == sz;
+  //bool hasValues = geom[i]->colourData()->size() == sz;
+  //What about rgba colours? other values? ignore for now
+  unsigned int v = 0;
+  if (optimise)
+  {
+    unsigned int o = 0;
+    new_indices.resize(sz);
+    valid.resize(sz);
+    /*if (hasTexCoords)
+      texCoords.resize(sz);
+    if (hasValues)
+      values.resize(sz);*/
+    for (unsigned int j = 0 ; j < geom[i]->height; j++ )
+    {
+      for (unsigned int k = 0 ; k < geom[i]->width; k++ )
+      {
+        unsigned int offset = j * geom[i]->width + k;
+        float* vert = geom[i]->render->vertices[offset];
+        valid[offset] = true;
+        for (int i=0; i<3; i++)
+        {
+          if (std::isnan(vert[i]) || std::isinf(vert[i]))
+          {
+            valid[offset] = false;
+            new_indices[offset] = 0;
+            break;
+          }
+        }
+        //Add the next valid vertice to list
+        if (valid[offset])
+        {
+          new_indices[offset] = o++;
+          vertices[v] = vert;
+          /*if (hasTexCoords)
+          {
+            texCoords[v*2] = geom[i]->render->texCoords[offset][0];
+            texCoords[v*2+1] = geom[i]->render->texCoords[offset][1];
+          }
+          if (hasValues)
+            values[v] = geom[i]->colourData(offset);*/
+          v++;
+        }
+      }
+    }
+  }
 
   unsigned int o = 0;
+  unsigned int skipped = 0;
   for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
   {
     for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
@@ -644,25 +700,101 @@ void Triangles::calcGridIndices(unsigned int i)
       unsigned int offset1 = j1 * geom[i]->width + k;
       unsigned int offset2 = j0 * geom[i]->width + k + 1;
       unsigned int offset3 = j1 * geom[i]->width + k + 1;
-      assert(o <= indices.size()-6);
-      //Tri 1
-      indices[o++] = offset0;
-      indices[o++] = offset1;
-      indices[o++] = offset2;
-      //Tri 2
-      indices[o++] = offset1;
-      indices[o++] = offset3;
-      indices[o++] = offset2;
+      if (optimise)
+      {
+        unsigned int idx0 = new_indices[offset0];
+        unsigned int idx1 = new_indices[offset1];
+        unsigned int idx2 = new_indices[offset2];
+        unsigned int idx3 = new_indices[offset3];
+
+        //Check if any values NaN
+        if (!valid[offset1] || !valid[offset2])
+        {
+          skipped += 2;
+          continue;
+        }
+        assert(o <= indices.size()-6);
+
+        //Tri 1
+        if (valid[offset0])
+        {
+          indices[o++] = idx0; //offset0;
+          indices[o++] = idx1; //offset1;
+          indices[o++] = idx2; //offset2;
+        }
+        else
+          skipped++;
+
+        //Tri 2
+        if (valid[offset3])
+        {
+          indices[o++] = idx1; //offset1;
+          indices[o++] = idx3; //offset3;
+          indices[o++] = idx2; //offset2;
+        }
+        else
+          skipped++;
+      }
+      else
+      {
+        //Just load with no optimisation step
+        //Tri 1
+        indices[o++] = offset0;
+        indices[o++] = offset1;
+        indices[o++] = offset2;
+
+        //Tri 2
+        indices[o++] = offset1;
+        indices[o++] = offset3;
+        indices[o++] = offset2;
+      }
     }
   }
 
   //geom[i]->_indices = std::make_shared<UIntValues>();
-  geom[i]->render->indices.read(indices.size(), &indices[0]);
+  geom[i]->render->indices.read(indices.size()-(3*skipped), &indices[0]);
+  //Replace vertices too if skipped?
+  if (skipped > 0)
+  {
+    geom[i]->_vertices = std::make_shared<Coord3DValues>();
+    read(geom[i], v, lucVertexData, &vertices[0]);
+    if (geom[i]->render->normals.size())
+    {
+      //Recalc normals
+      geom[i]->setRenderData();
+      geom[i]->render->normals.clear(); //_normals = std::make_shared<Coord3DValues>();
+      calcTriangleNormals(i);
+    }
+/*
+    if (hasTexCoords)
+    {
+      geom[i]->_texCoords = std::make_shared<Coord2DValues>();
+      geom[i]->render->texCoords.read(v*2, &texCoords[0]);
+
+    }
+    if (hasValues)
+    {
+      //FloatValues* oldvalues = geom[i]->colourData();
+      FloatValues* vals = geom[i]->colourData();
+      //Values_Ptr newvalues = NULL;
+      //newvalues = Values_Ptr(new FloatValues());
+      //newvalues->label = oldvalues->label;
+      //newvalues->minimum = oldvalues->minimum;
+      //newvalues->maximum = oldvalues->maximum;
+      //newvalues->read(v, &values[0]);
+      //geom[i]->values[geom[i]->draw->colourIdx] = newvalues;
+      vals->clear();
+      vals->read(v, &values[0]);
+    }
+*/
+  }
+
   //Update the rendering references as some containers have been replaced
   geom[i]->setRenderData();
 
   t2 = clock();
   debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  //printf("  %.4lf seconds, skipped %d/%d verts %d/%d\n", (t2-t1)/(double)CLOCKS_PER_SEC, skipped, triverts, v, geom[i]->width*geom[i]->height);
   t1 = clock();
 }
 

@@ -952,6 +952,17 @@
       false
     ]
   },
+  "gridoptimise": {
+    "default": false,
+    "target": "object,surface",
+    "type": "boolean",
+    "desc": "Enable this flag to optimise grid meshes by removing NaN/Inf vertices",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "vertexnormals": {
     "default": true,
     "target": "object,surface",
