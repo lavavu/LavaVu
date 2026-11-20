@@ -768,6 +768,7 @@ void ImageLoader::loadJPEG(int reqChannels)
   source->height = height;
   source->channels = reqChannels ? reqChannels : channels;
   source->allocated = true; //Allocated by decompress_jpeg_image_from_file()
+  source->mallocated = true; //Allocated by malloc, needs to be free()'d
 }
 
 void ImageLoader::loadTIFF()

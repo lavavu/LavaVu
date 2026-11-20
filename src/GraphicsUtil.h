@@ -118,6 +118,7 @@ public:
   GLuint   channels = 4;    // Image Depth
   GLubyte* pixels = NULL;   // Image data
   bool allocated = false;
+  bool mallocated = false;
   bool flipped = false;
 
   ImageData(int w=0, int h=0, int c=4)
@@ -162,9 +163,15 @@ public:
     if (allocated)
     {
       if (pixels)
-        delete[] pixels;
+      {
+        if (mallocated)
+          free(pixels);
+        else
+         delete[] pixels;
+      }
       pixels = NULL;
       allocated = false;
+      mallocated = false;
     }
   }
 
@@ -192,7 +199,7 @@ public:
     memset(pixels, 0, size());
   }
 
-  void rgba2rgb()
+  void rgba2rgb() //NOTE: unused
   {
     if (channels != 4) return;
     GLubyte* dst = pixels;
