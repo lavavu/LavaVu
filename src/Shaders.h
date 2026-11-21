@@ -21,6 +21,7 @@ public:
   void init(std::string vsrc, std::string gsrc, std::string fsrc);
 
   std::string read_file(const std::string& fname);
+  std::string read_file(const std::string& fname, const std::string& parent);
   bool compile(const char *src, GLuint type);
   bool build();
   void use();

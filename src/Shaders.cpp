@@ -117,8 +117,13 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   }
 }
 
-//Read a fragment or vertex shader from a file into a shader object
 std::string Shader::read_file(const std::string& fname)
+{
+  return read_file(fname, "");
+}
+
+//Read a fragment or vertex shader from a file into a shader object
+std::string Shader::read_file(const std::string& fname, const std::string& parent)
 {
   if (!fname.length()) return std::string("");
 
@@ -147,6 +152,12 @@ std::string Shader::read_file(const std::string& fname)
       filepath = path + base_filename;
     }
   }
+  //Lastly attempt with parent path
+  if (!FileExists(filepath))
+  {
+    filepath = parent + fname;
+    //std::cout << "FINAL ATTEMPT: " << filepath << std::endl;
+  }
 
   debug_print("Shader loading: %s\n", filepath.c_str());
 
@@ -156,7 +167,33 @@ std::string Shader::read_file(const std::string& fname)
     buffer << ifs.rdbuf();
   else
     std::cerr << "Error opening shader: " << filepath << std::endl;
-  return buffer.str();
+
+  //Support #include
+  if (buffer.str().find("#include") == std::string::npos)
+    return buffer.str();
+
+  std::string line;
+  std::ostringstream newbuffer;
+  while (std::getline(buffer, line))
+  {
+    //std::cout << line << std::endl;
+    if (line.substr(0, 8) == "#include")
+    {
+      int start = line.find_first_of("\"")+1;
+      int end = line.find_last_of("\"")-1;
+      std::string fn = std::string(&line[start], &line[end+1]);
+      //std::cout << "INCLUDING " << fn << " in " << filepath << std::endl;
+      //Support relative include by passing parent path
+      std::string parent_path = filepath.substr(0, filepath.find_last_of("/\\")+1);
+      newbuffer << read_file(fn, parent_path);
+    }
+    else
+    {
+      newbuffer << line << std::endl;
+    }
+  }
+  //std::cout << newbuffer.str() << std::endl;
+  return newbuffer.str();
 }
 
 bool Shader::compile(const char *src, GLuint type)
