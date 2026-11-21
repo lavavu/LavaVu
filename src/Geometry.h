@@ -87,7 +87,7 @@ void radix(char byte, long N, T *source, T *dest)
   // Radix counting sort of 1 byte, 8 bits = 256 bins
   int size = sizeof(T);
   long count[256], index[256];
-  int i;
+  unsigned int i;
   memset(count, 0, sizeof(count)); //Clear counts
   unsigned char* src = (unsigned char*)source;
   //unsigned char* dst = (unsigned char*)dest;
@@ -624,6 +624,7 @@ public:
   std::vector<Geom_Ptr> getAllObjects(DrawingObject* draw);
   std::vector<Geom_Ptr> getAllObjectsAt(DrawingObject* draw, int step);
   Geom_Ptr getObjectStore(DrawingObject* draw, bool stepfilter=true);
+  Geom_Ptr getAnyObjectStore(DrawingObject* draw);
   Geom_Ptr add(DrawingObject* draw);
   Geom_Ptr read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
   void read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);

@@ -2116,6 +2116,18 @@ Geom_Ptr Geometry::getObjectStore(DrawingObject* draw, bool stepfilter)
   return nullptr;
 }
 
+
+Geom_Ptr Geometry::getAnyObjectStore(DrawingObject* draw)
+{
+  //Gets object store at current timestep, OR most recently added at any timestep if not found
+  //(eg: allows setting fixed data object textures when timestep has been changed)
+  Geom_Ptr geomdata = getObjectStore(draw);
+  //Try again without step filter
+  if (!geomdata)
+    geomdata = getObjectStore(draw, false);
+  return geomdata;
+}
+
 Geom_Ptr Geometry::add(DrawingObject* draw)
 {
   int timestep = session.now;
@@ -2460,7 +2472,7 @@ void Geometry::scanDataRange(DrawingObject* draw)
 void Geometry::label(DrawingObject* draw, const char* labels)
 {
   //Get passed object's most recently added data store and add vertex labels (newline separated)
-  Geom_Ptr geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getAnyObjectStore(draw);
   if (!geomdata) return;
 
   //Clear if NULL
@@ -2481,7 +2493,7 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
 {
   //Get passed object's most recently added data store and add vertex labels (newline separated)
-  Geom_Ptr geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getAnyObjectStore(draw);
   if (!geomdata) return;
 
   //Load from vector 
@@ -2567,7 +2579,7 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex, std::string labe
 {
   if (label.length() == 0)
   {
-    Geom_Ptr geomdata = getObjectStore(draw);
+    Geom_Ptr geomdata = getAnyObjectStore(draw);
     if (geomdata)
     {
       //printf("(%s) Set texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), tex.get());
@@ -2595,7 +2607,7 @@ void Geometry::clearTexture(DrawingObject* draw, std::string label)
     draw->texture = nullptr;
   if (draw->properties.has("texture"))
     draw->properties.data.erase("texture");
-  Geom_Ptr geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getAnyObjectStore(draw);
   if (geomdata)
     geomdata->texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
 }
@@ -2604,7 +2616,7 @@ void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLu
 {
   if (label.length() == 0)
   {
-    Geom_Ptr geomdata = getObjectStore(draw);
+    Geom_Ptr geomdata = getAnyObjectStore(draw);
     if (geomdata)
     {
       //printf("(%s) Load texture on %p to %p\n", GeomData::names[type].c_str(), geomdata.get(), geomdata->texture.get());
