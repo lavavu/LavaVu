@@ -1626,9 +1626,11 @@ void Geometry::setState(Geom_Ptr g)
   GL_Error_Check;
 
   //Object rotation/translation
-  if (props.has("translate") || props.has("rotate") || props.has("origin"))
+  bool applymv = (props.has("translate") || props.has("rotate") || props.has("origin") || props["ignorecam"]);
+  if (applymv)
   {
     //Apply model view
+    session.context.push();
     view->apply(&props);
   }
 
@@ -1637,6 +1639,9 @@ void Geometry::setState(Geom_Ptr g)
   prog->setUniformMatrixf("uMVMatrix", session.context.MV);
   prog->setUniformMatrixf("uNMatrix", nMatrix);
   prog->setUniformMatrixf("uPMatrix", session.context.P);
+  GL_Error_Check;
+  if (applymv)
+    session.context.pop();
   GL_Error_Check;
 }
 
