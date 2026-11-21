@@ -807,6 +807,17 @@
       true
     ]
   },
+  "ignorecam": {
+    "default": false,
+    "target": "object",
+    "type": "boolean",
+    "desc": "Ignore camera position, will only use local rotate/translate/scale properties",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "limit": {
     "default": 0,
     "target": "object,line",

@@ -672,6 +672,9 @@ void View::apply(Properties* objprops)
   // Right-handed (GL default) or Left-handed
   GL_Error_Check;
   int orientation = properties["coordsystem"];
+  Camera* tempcam = NULL;
+  bool ignorecam = (objprops && (*objprops)["ignorecam"]);
+
   if (properties["globalcam"])
   {
     if (!session.globalcam) 
@@ -702,19 +705,22 @@ void View::apply(Properties* objprops)
 
   // Translate model away from eye by camera zoom/pan translation
   //debug_print("APPLYING VIEW : trans %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
-  session.context.translate3(model_trans[0], model_trans[1], model_trans[2]);
-  GL_Error_Check;
-
-  // Adjust centre of rotation, default is same as focal point so this does nothing...
   float adjust[3] = {(focal_point[0]-rotate_origin[0]), (focal_point[1]-rotate_origin[1]), (focal_point[2]-rotate_origin[2])};
-  session.context.translate3(-adjust[0], -adjust[1], -adjust[2]);
-  GL_Error_Check;
-
-  // Rotate model
-  if (*rotation)
+  if (!ignorecam)
   {
-    rotation->apply(session.context.MV);
-    is3d = true; //Applying rotation requires 3d mode
+    session.context.translate3(model_trans[0], model_trans[1], model_trans[2]);
+    GL_Error_Check;
+
+    // Adjust centre of rotation, default is same as focal point so this does nothing...
+    session.context.translate3(-adjust[0], -adjust[1], -adjust[2]);
+    GL_Error_Check;
+
+    // Rotate model
+    if (*rotation)
+    {
+      rotation->apply(session.context.MV);
+      is3d = true; //Applying rotation requires 3d mode
+    }
   }
 
   //Object specific view
@@ -767,14 +773,17 @@ void View::apply(Properties* objprops)
   GL_Error_Check;
 
   // Adjust back for rotation centre
-  session.context.translate3(adjust[0], adjust[1], adjust[2]);
-  GL_Error_Check;
+  if (!ignorecam)
+  {
+    session.context.translate3(adjust[0], adjust[1], adjust[2]);
+    GL_Error_Check;
 
-  // Translate to align eye with model centre - view focal point
-  //session.context.translate3(-rotate_origin[0], -rotate_origin[1], -rotate_origin[2]);
-  //if (use_fp) session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  GL_Error_Check;
+    // Translate to align eye with model centre - view focal point
+    //session.context.translate3(-rotate_origin[0], -rotate_origin[1], -rotate_origin[2]);
+    //if (use_fp) session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+    session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+    GL_Error_Check;
+  }
 
   // Switch coordinate system if applicable and set default polygon front faces
   if (orientation == RIGHT_HANDED)
@@ -794,6 +803,8 @@ void View::apply(Properties* objprops)
     exportProps();
     updated = false;
   }
+  if (tempcam)
+    delete tempcam;
 }
 
 void View::importProps(bool force)
