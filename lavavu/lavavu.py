@@ -4607,19 +4607,23 @@ class Viewer(dict):
 
         self.camera(final, quiet=True)
 
-    def flyto(self, pos, steps, stop=False, callback=None):
+    def flyto(self, pos, steps, stop=False, callback=None, power=1, easing=None):
         # Fly using current camera orientation as start point
         pos0 = self.camera(quiet=True)
-        return self.fly(pos0, pos, steps, stop, callback)
+        return self.fly(pos0, pos, steps, stop, callback, power=power, easing=easing)
 
-    def fly(self, pos0, pos1, steps, stop=False, callback=None):
+    def fly(self, pos0, pos1, steps, stop=False, callback=None, power=1, easing=None):
         self.camera(pos0, quiet=True)
         self.render()
 
-        for i in range(steps):
+        from tqdm.notebook import tqdm
+        for i in tqdm(range(steps)):
             if stop and i > stop:
                 break
-            L = i / (steps - 1)
+            if easing is not None:
+                L = easing(i / (steps - 1))
+            else:
+                L = math.pow(i / (steps - 1), power)
             self.camlerp(pos0, pos1, L)
             if callback is not None:
                 callback(self, i, steps)
