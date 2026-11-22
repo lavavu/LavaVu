@@ -1779,9 +1779,10 @@ void Geometry::colourMapTexture(DrawingObject* obj)
       // - in colour/rgba data set? (for per element textures)
       records[index]->draw->properties.data["texture"] = texfn;
       //records[index]->draw->properties.data["texture"] = image_URI;
-      records[index]->draw->properties.data["texturefilter"] = 0;
-      records[index]->draw->properties.data["fliptexture"] = false;
-      records[index]->draw->properties.data["repeat"] = false;
+      //Why override these defaults? Use the property
+      //records[index]->draw->properties.data["texturefilter"] = 0;
+      //records[index]->draw->properties.data["fliptexture"] = false;
+      //records[index]->draw->properties.data["repeat"] = false;
 
       //Calibrate colour maps on range for this object
       unsigned int hasColours = records[index]->colourCount();
