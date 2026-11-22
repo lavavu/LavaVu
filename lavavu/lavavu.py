@@ -5410,7 +5410,7 @@ class DrawData(object):
             #Specified "dims" does not match data size, adjust the properties
             #print("NEWDIMS:", newdims)
             if length != array.size and len(newdims) == 3:
-                self._obj["dims"] = newdims[::-1]
+                self._obj.dict["dims"] = newdims[::-1]
                 self.data.width = newdims[2]
                 self.data.height = newdims[1]
                 self.data.depth = newdims[0]
