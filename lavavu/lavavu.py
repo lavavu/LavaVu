@@ -2907,6 +2907,10 @@ class Viewer(dict):
                                 else:
                                     arglist.append(str(a))
                             self.commands(' '.join(arglist))
+                            #Commands that require object list sync
+                            #(prevents segfault if object added again with same name before sync)
+                            if arglist[0] in ["delete", "deletedb"]:
+                                self._get()
                         return method
 
                     #Create method that runs this command:
