@@ -2111,22 +2111,30 @@ class _LavaVuWrapper(LavaVuPython.LavaVu):
         self._closing = False
         self.resolution = resolution
         self._loop = None
+        self.context = context
 
         #OpenGL context creation options
-        if context is None:
-            context = os.environ.get("LV_CONTEXT", "default")
+        if self.context is None:
+            self.context = os.environ.get("LV_CONTEXT", "default")
         havecontext = False
         self.use_moderngl = False
         self.use_moderngl_window = False
-        if "provided" in context:
+        self.moderngl_share = False
+        if "provided" in self.context:
             havecontext = True
-        elif "moderngl" in context:
+        elif "moderngl" in self.context:
             if moderngl is not None:
                 havecontext = True
                 self.use_moderngl = True
-                if len(context) > 8:
+                endpos = len('moderngl')
+                if 'share' in self.context:
+                    #context='moderngl_share'
+                    self.moderngl_share = True
+                    endpos += len('_share')
+                if len(self.context) > endpos:
+                    #context='moderngl_windowtype' or context='moderngl_share_windowtype'
                     if moderngl_window is not None:
-                        self.use_moderngl_window = context[9:]
+                        self.use_moderngl_window = self.context[endpos+1:]
                     else:
                         print("moderngl_window not available, try pip install moderngl_window")
             else:
@@ -3109,7 +3117,7 @@ class Viewer(dict):
         """
         Return GL version string
         """
-        ctx = os.environ.get("LV_CONTEXT", "")
+        ctx = self.context #os.environ.get("LV_CONTEXT", "")
         return f"[{ctx}] : {self.app.gl_version()}"
 
     @property
