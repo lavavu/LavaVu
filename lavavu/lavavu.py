@@ -5511,7 +5511,7 @@ class Video(object):
     ...         lv.rotate('y', 10) # doctest: +SKIP
     ...         lv.render()        # doctest: +SKIP
     """
-    def __init__(self, viewer, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder=None, embed=False, player=None, options={}, **kwargs):
+    def __init__(self, viewer=None, filename="output.mp4", resolution=(0,0), framerate=30, quality=2, encoder=None, embed=False, player=None, options={}, stills=[], stillres=2, **kwargs):
         """
         Record and show the generated video inline within an ipython notebook.
 
@@ -5524,8 +5524,8 @@ class Video(object):
 
         Parameters
         ----------
-        viewer : lavavu.Viewer()
-            Viewer object
+        viewers : lavavu.Viewer()
+            Viewer object, can be omitted and passed to .frame() to compose multiple views
         filename : str
             Name of the file to save, if not provided a default will be used
         fps : int
@@ -5547,6 +5547,11 @@ class Video(object):
         options : dict
             Args to pass to the encoder, eg: see 
             https://trac.ffmpeg.org/wiki/Encode/H.264
+        stills : list
+            Optional list of timestamps in format "Minutes:Seconds.X" to save high res stills
+            If fraction of seconds provided as .* will save 10 frames starting at this second
+        stillres : int
+            Multiplier of video res to use for still images
         **kwargs :
             Any additional keyword args will also be passed as options to the encoder
         """
@@ -5558,7 +5563,28 @@ class Video(object):
         self.framerate = framerate
         self.quality = quality
         self.viewer = viewer
+        self.image = None
         self.filename = Path(filename)
+        self.basename = self.filename.stem
+        self.framecount = 0
+        self.stillres = stillres
+        self.stillframes = []
+        for ts in stills:
+            minutes,seconds = ts.split(':')
+            multiple = False
+            if ".*" in seconds:
+                multiple = True
+                seconds = seconds.split('.')[0]
+            seconds = float(minutes) * 60 + float(seconds)
+            if multiple:
+                for s in range(10):
+                    frame = round((seconds + 0.1*s) * self.framerate)
+                    self.stillframes.append(frame)
+            else:
+                #Save nearest actual frame number
+                frame = round(seconds * self.framerate)
+                self.stillframes.append(frame)
+
         if settings["test_mode"]:
             #Force png output when testing
             encoder = 'png'
@@ -5566,10 +5592,7 @@ class Video(object):
             if av is None:
                 print("Video output not supported without pyAV - pip install av, writing image frames instead")
             self.encoder = 'png' if encoder == 'png' else 'jpg'
-            p = self.filename
-            self.basename = p.stem
-            self.filename = p.parent / p.stem
-            self.framecount = 0
+            self.filename = self.filename.parent / self.filename.stem
             return
 
         self.player = player
@@ -5621,7 +5644,8 @@ class Video(object):
         if self.encoder == 'jpg' or self.encoder == 'png':
             if not settings["test_mode"]:
                 self.filename.mkdir(exist_ok=True)
-            self.viewer.recording = self
+            if self.viewer:
+                self.viewer.recording = self
             return
 
         if self.encoder == 'h264' or self.encoder == 'libx265':
@@ -5635,7 +5659,7 @@ class Video(object):
                 options['qmin'] = '25' #'2'
                 options['qmax'] = '30' #'31'
                 options['crf'] = '20' #'23'
-            elif self.quality == 3:
+            elif self.quality >= 3:
                 options['qmin'] = '20' #'1'
                 options['qmax'] = '25' #'4'
                 options['crf'] = '10' #'10'
@@ -5652,7 +5676,7 @@ class Video(object):
                 options['crf'] = '30' #'40'
             elif self.quality == 2:
                 options['crf'] = '20' #'23'
-            elif self.quality == 3:
+            elif self.quality >= 3:
                 options['crf'] = '10' #'10'
                 #options['pix_fmt'] = "yuv444p"
 
@@ -5664,7 +5688,8 @@ class Video(object):
         self.stream = self.container.add_stream(self.encoder, rate=self.framerate, options=options)
         self.stream.width = self.resolution[0]
         self.stream.height = self.resolution[1]
-        self.viewer.recording = self
+        if self.viewer:
+            self.viewer.recording = self
 
         stream = self.stream
         #print(stream)
@@ -5679,9 +5704,10 @@ class Video(object):
         #Select higher quality colour where supported
         elif self.encoder == 'h264' or self.encoder == 'libx265' or self.encoder == 'libvpx-vp9':
             #Reduce chroma subsampling for better colour output
-            if self.quality < 3:
+            if self.quality < 4:
                 self.stream.pix_fmt = "yuv420p"
             else:
+                #For now disable this unless quality set to 4 as some players have trouble with it
                 self.stream.pix_fmt = "yuv422p"
             #10 bit formats
             #self.stream.pix_fmt = "yuv444p10le"
@@ -5718,6 +5744,23 @@ class Video(object):
         #print(cc.options)
         #print(cc.profile, stream.pix_fmt)
 
+    def saveframe(self, fn, img=None, res=None):
+        if res is None:
+            res = self.resolution
+        if img is not None:
+            if isinstance(img, Image):
+                #Also have viewer? Compose
+                if self.viewer:
+                    img2 = self.viewer.rawimage(resolution=res, channels=4)
+                    img.blend(img2)
+                img.save(str(fn))
+            else:
+                image = PILImage.fromarray(img)
+                image.save(fn)
+                image.save(fn, subsampling=0, quality=95)
+        elif self.viewer:
+            self.viewer.image(str(fn), res)
+
     def frame(self, img=None):
         """
         Write a frame, called when viewer.render() is called
@@ -5729,52 +5772,75 @@ class Video(object):
                 fn = f"{self.framecount:06}_{self.basename}.{self.encoder}"
             else:
                 fn = self.filename / f"{self.framecount:06}_{self.basename}.{self.encoder}"
-            self.framecount += 1
-            if img:
-                image = PILImage.fromarray(img)
-                image.save(fn)
-                image.save(fn, subsampling=0, quality=95)
-            else:
-                self.viewer.image(str(fn), resolution=self.resolution)
+            self.saveframe(fn, img=img)
         else:
             if img is None:
-                img = self.viewer.rawimage(resolution=self.resolution, channels=3).data
-            frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+                if self.viewer:
+                    #Get the frame from stored viewer
+                    srcimg = self.viewer.rawimage(resolution=self.resolution, channels=3).data
+            elif isinstance(img, Image):
+                #Also have viewer? Compose
+                if self.viewer:
+                    img2 = self.viewer.rawimage(resolution=self.resolution, channels=4)
+                    img.blend(img2)
+                srcimg = img.data
+            else:
+                srcimg = img
+
+            if srcimg.data.shape[2] == 3:
+                frame = av.VideoFrame.from_ndarray(srcimg, format="rgb24")
+            elif srcimg.data.shape[2] == 4:
+                #Discard alpha channel in output
+                frame = av.VideoFrame.from_ndarray(srcimg[::,::,0:3], format="rgb24")
             #frame = av.VideoFrame.from_image(PILImage.fromarray(img)) #, format="rgb24")
             for packet in self.stream.encode(frame):
                 self.container.mux(packet)
+
+        #Process any requested stills
+        if self.framecount in self.stillframes:
+            sec = self.framecount / self.framerate
+            minutes = int(sec // 60)
+            sec -= (minutes * 60)
+            fn = f"{self.basename}_{minutes}m_{sec:.3g}s.png"
+            res = (self.resolution[0]*self.stillres, self.resolution[1]*self.stillres)
+            print("STILL",fn, res)
+            self.saveframe(fn, img=img, res=res)
+
+        self.framecount += 1
+
 
     def pause(self):
         """
         Pause/resume recording, no rendered frames will be added to the video while paused
         """
-        if self.viewer.recording:
-            self.viewer.recording = None
-        else:
-            self.viewer.recording = self
+        if self.viewer:
+            if self.viewer.recording:
+                self.viewer.recording = None
+            else:
+                self.viewer.recording = self
 
     def stop(self):
         """
         Stop recording, final frames will be written and file closed, ready to play. 
         No further frames will be added to the video
         """
-        if self.encoder == 'jpg' or self.encoder == 'png':
+        if self.viewer:
             self.viewer.recording = None
-            if settings["test_mode"]:
-                #Render the last frame for tests
-                self.viewer.app.render()
-                fn = f"{self.framecount:06}_{self.basename}.{self.encoder}"
-                self.viewer.image(str(fn), resolution=self.resolution)
-            self.framecount = 0
-            return
-        # Flush stream
-        for packet in self.stream.encode():
-            self.container.mux(packet)
-        # Close the file
-        self.container.close()
-        self.container = None
-        self.stream = None
-        self.viewer.recording = None
+        if self.encoder == 'jpg' or self.encoder == 'png':
+                if settings["test_mode"]:
+                    #Render the last frame for tests
+                    self.viewer.app.render()
+                    fn = f"{self.framecount:06}_{self.basename}.{self.encoder}"
+                    self.viewer.image(str(fn), resolution=self.resolution)
+        else:
+            # Flush stream
+            for packet in self.stream.encode():
+                self.container.mux(packet)
+            # Close the file
+            self.container.close()
+            self.container = None
+            self.stream = None
+        self.framecount = 0
 
     def write(self, image):
         """
@@ -5846,14 +5912,8 @@ class Image(object):
         if data is not None and len(data.shape) > 2:
             self.data = data
         else:
-            if isinstance(value, int):
-                value = [value, value, value, 255]
-            if isinstance(value, float):
-                value = [value*255, value*255, value*255, 255]
-            while len(value) < channels:
-                value.append(value[-1])
-            fill = numpy.array(value[0:channels], dtype=numpy.uint8)
-            self.data = numpy.tile(fill, (resolution[1], resolution[0], 1))
+            self.data = numpy.zeros(shape=(resolution[1], resolution[0], channels), dtype=numpy.uint8)
+            self.clear(value)
 
     def crop(self, width, height, x=0, y=0):
         """
@@ -5915,6 +5975,51 @@ class Image(object):
                 print("Base image and source image have incompatible bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
         return source
 
+    def render(self, source, x=0, y=0, width=1.0, height=1.0, blend=False):
+        """
+        Render image to frame buffer, allows composing multiple image sources into a single frame
+
+        Calls render on passed lavavu.Viewer then composes the resultant image frame into the
+        image frame buffer. 
+
+        Parameters
+        ----------
+        source : lavavu.Viewer() or image array
+            Viewer object to render or image array to paste directly
+        x : int > 1 or float <= 1.0
+            X coordinate to insert image, either pixel offset > 1 or if < 1.0, ratio of frame size, default 0
+        y : int > 1 or float <= 1.0
+            Y coordinate to insert image, either pixel offset > 1 or if < 1.0, ratio of frame size, default 0
+        width : int > 1 or float <= 1.0
+            Image width scale, either exact pixel size or if < 1.0, fraction of frame width
+            If omitted assumes full frame width (default = 1.0)
+        height : int > 1 or float <= 1.0
+            Image height scale, either exact pixel size or if < 1.0, fraction of frame height
+            If omitted assumes full frame height (default = 1.0)
+        blend: bool
+            Force blending, will not clear background data
+        """
+        img = source
+        if isinstance(source, Viewer):
+            source.render()
+
+        outres = [int(self.data.shape[1]*width), int(self.data.shape[0]*height)]
+        outpos = [int(self.data.shape[1]*x), int(self.data.shape[0]*y)]
+        if x > 1:
+            outpos[0] = x
+        if y > 1:
+            outpos[1] = y
+        if width > 1:
+            outres[0] = width
+        if height > 1:
+            outres[1] = height
+
+        #Blend if the image buffer has an alpha channel
+        if self.data.shape[2] == 4 or blend:
+            self.blend(source, resolution=outres, position=outpos)
+        else:
+            self.paste(source, resolution=outres, position=outpos)
+
     def paste(self, source, resolution=None, position=(0,0)):
         """
         Render another image to a specified position with this image
@@ -5934,6 +6039,8 @@ class Image(object):
             #Get array from PIL images
             if isinstance(source, PILImage.Image):
                 source = numpy.array(source)
+            if isinstance(source, Image):
+                source = source.data
         except (ImportError) as e:
             pass
 
@@ -5974,27 +6081,45 @@ class Image(object):
             Sub-image x,y offset in pixels
 
         """
+        try:
+            #Get array from PIL images
+            if isinstance(source, PILImage.Image):
+                source = numpy.array(source)
+            if isinstance(source, Image):
+                source = source.data
+
+        except (ImportError) as e:
+            pass
         if not isinstance(source, numpy.ndarray):
-            source = source.rawimage(resolution, self.data.shape[2]).data
+            source = source.rawimage(resolution, channels=4).data
+        #elif source.data.shape[2] < 4:
+        #    print("Require alpha channel to blend source", source.data.shape)
+        #    return
 
         channels = self.data.shape[2]
-        if channels < 4:
-            print("Require alpha channel to blend")
-            return
+        #print("BLEND - SOURCE",  source.data.shape, "DEST", self.data.shape)
 
         if len(source.shape) == 3:
             if resolution is None:
                 resolution = (source.shape[1], source.shape[0])
 
-            if self.data.shape[2] != source.shape[2]:
+            if channels != source.shape[2]:
                 #Attempt conversion
-                source = self.convert(source)
+                if channels == 3 and source.shape[2] == 4:
+                    #Fine to blend if only source has alpha
+                    pass
+                else:
+                    source = self.convert(source)
 
         #Alpha blending, assumes not premultiplied alpha
         src = source.astype(numpy.float32)
         dst = self.data[position[1]:resolution[1] + position[1], position[0]:resolution[0] + position[0]].astype(numpy.float32)
-        srcalpha = src[:, :, 3] / 255.0
-        dstalpha = dst[:, :, 3] / 255.0
+        if channels < 4:
+            srcalpha = src[:, :, 3] / 255.0
+            dstalpha = numpy.ones_like(srcalpha)
+        else:
+            srcalpha = src[:, :, 3] / 255.0
+            dstalpha = dst[:, :, 3] / 255.0
         outalpha = srcalpha + dstalpha * (1.0 - srcalpha)
         #Ignore divide by zero if outalpha is zero
         with numpy.errstate(divide='ignore',invalid='ignore'):
@@ -6005,7 +6130,8 @@ class Image(object):
                 src[:, :, c] *= srcalpha
                 dst[:, :, c] *= dstalpha
                 dst[:, :, c] = (src[:, :, c] + dst[:, :, c] * (1.0 - srcalpha)) / outalpha
-        dst[:, :, 3] = outalpha * 255
+        if channels == 4:
+            dst[:, :, 3] = outalpha * 255
 
         self.paste(dst, resolution, position)
         #self.data[position[1]:dest[0], position[0]:dest[1]] = dst
@@ -6036,6 +6162,16 @@ class Image(object):
             #Return inline image result
             img = self.save("")
             display(HTML("<img src='%s'>" % img))
+
+    def clear(self, value=[255,255,255,0]):
+        if isinstance(value, int):
+            value = [value, value, value, 255]
+        if isinstance(value, float):
+            value = [value*255, value*255, value*255, 255]
+        channels = self.data.shape[2]
+        while len(value) < channels:
+            value.append(value[-1])
+        self.data[::,::] = value[0:channels]
 
 def loadCPT(fn, positions=True):
     """
