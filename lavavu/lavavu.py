@@ -829,7 +829,7 @@ class Object(dict):
     def _checkDims(self, size):
         #User provided dims value
         if 'dims' in self.dict:
-            D = self["dims"]
+            D = self.dict["dims"] #Avoid _getState by using dict directly
             """
             #Dims match provided data?
             if isinstance(D, int):
@@ -933,7 +933,9 @@ class Object(dict):
             #Quads or tracers? Use the shape as dims if not provided
             if D==3:
                 #Quad/Triangle type?
-                renderer = self["renderer"]
+                #(avoids slow prop lookup)
+                renderer = self.dict["renderer"]
+                #renderer = self["renderer"]
                 if ':' in renderer:
                     renderer = renderer[renderer.index(':')+1:]
                 if renderer in self.parent.renderers[LavaVuPython.lucGridType] or renderer in self.parent.renderers[LavaVuPython.lucTriangleType]:
@@ -3137,7 +3139,20 @@ class Viewer(dict):
             A dictionary wrapper containing the list of available visualisation objects
             Can be printed, iterated or accessed as a dictionary by object name
         """
-        self._get()
+        self._get() #SLOW
+        return self._objects
+
+    @property
+    def objs(self):
+        """
+        Returns the active objects without syncing - fast
+
+        Returns
+        -------
+        objects : _Objects(dict)
+            A dictionary wrapper containing the list of available visualisation objects
+            Can be printed, iterated or accessed as a dictionary by object name
+        """
         return self._objects
 
     @property
