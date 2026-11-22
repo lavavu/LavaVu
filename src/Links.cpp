@@ -67,7 +67,7 @@ void Links::update()
     geom[i]->draw->opacity = 1.0;
     //Skip colour lookups for just colour property, will be applied later
     Colour colour;
-    Colour* cptr = &getColour == &geom[i]->_getColour ? NULL : &colour;
+    Colour* cptr = &colour;
     float limit = props["limit"];
     bool linked = props["link"];
     bool looped = props["loop"];
@@ -124,7 +124,7 @@ void Links::update()
 
         Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V);
 
-        if (cptr)
+        if (hasColours)
         {
           getColour(colour, cidx);
           g->_colours->read1(colour.value);
@@ -140,7 +140,7 @@ void Links::update()
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         float* V0 = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[0]][0] : &geom[i]->render->vertices[0][0]);
         Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V0);
-        if (cptr)
+        if (hasColours)
         {
           getColour(colour, 0);
           g->_colours->read1(colour.value);
@@ -174,6 +174,7 @@ void Links::update()
       if (!view->is3d) line_scale_factor *= 1.5;
 
       float radius = 0.0025 * lineWidth * line_scale_factor;
+      unsigned int idxW = geom[i]->valuesLookup(geom[i]->draw->properties["widthby"]);
       //printf("LINEWIDTH %f RADIUS %f\n", lineWidth, radius);
       if (!props["tubes"] || props["flat"])
       {
@@ -181,27 +182,26 @@ void Links::update()
         quality = 4;
       }
       float* oldpos = NULL;
-      Colour colour;
       int count = 0;
+      float R;
+      float R0 = radius;
       for (unsigned int v=0; v < VC; v++)
       {
         if (filter && geom[i]->filter(v)) continue;
         
         if (v%2 == 0 && !linked) oldpos = NULL;
         float* pos = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[v]][0] : &geom[i]->render->vertices[v][0]);
+        R = radius;
+        if (geom[i]->valueData(idxW))
+          R = lineWidth * geom[i]->valueData(idxW, v);
         if (oldpos)
         {
-          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
-
-          //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
-          unsigned int cidx = v / colrange;
-          if (cidx >= hasColours) cidx = hasColours - 1;
-
-          //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-          getColour(colour, cidx);
-          g->_colours->read1(colour.value);
+          if (hasColours)
+            getColour(colour, v);
+          tris->drawTrajectory(geom[i]->draw, oldpos, pos, R0, R, -1, view->scale, limit, quality, cptr);
         }
         oldpos = pos;
+        R0 = R;
 
         //Count of vertices actually plotted
         count++;
@@ -214,10 +214,10 @@ void Links::update()
         float* pos = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[0]][0] : &geom[i]->render->vertices[0][0]);
         if (oldpos)
         {
-          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
-          //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-          getColour(colour, 0);
-          g->_colours->read1(colour.value);
+          R = radius;
+          if (geom[i]->valueData(idxW)) R = lineWidth * geom[i]->valueData(idxW, 0);
+          if (hasColours) getColour(colour, 0);
+          tris->drawTrajectory(geom[i]->draw, oldpos, pos, R0, R, -1, view->scale, limit, quality, cptr);
         }
         //Count of vertices actually plotted
         count++;
