@@ -124,11 +124,8 @@ void Links::update()
 
         Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V);
 
-        if (hasColours)
-        {
-          getColour(colour, cidx);
-          g->_colours->read1(colour.value);
-        }
+        getColour(colour, cidx);
+        g->_colours->read1(colour.value);
 
         //Count of vertices actually plotted
         count++;
@@ -140,11 +137,9 @@ void Links::update()
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         float* V0 = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[0]][0] : &geom[i]->render->vertices[0][0]);
         Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V0);
-        if (hasColours)
-        {
-          getColour(colour, 0);
-          g->_colours->read1(colour.value);
-        }
+        getColour(colour, 0);
+        g->_colours->read1(colour.value);
+
         //Count of vertices actually plotted
         count++;
       }
@@ -196,8 +191,7 @@ void Links::update()
           R = lineWidth * geom[i]->valueData(idxW, v);
         if (oldpos)
         {
-          if (hasColours)
-            getColour(colour, v);
+          getColour(colour, v);
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, R0, R, -1, view->scale, limit, quality, cptr);
         }
         oldpos = pos;
@@ -216,7 +210,7 @@ void Links::update()
         {
           R = radius;
           if (geom[i]->valueData(idxW)) R = lineWidth * geom[i]->valueData(idxW, 0);
-          if (hasColours) getColour(colour, 0);
+          getColour(colour, 0);
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, R0, R, -1, view->scale, limit, quality, cptr);
         }
         //Count of vertices actually plotted
