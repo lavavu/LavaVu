@@ -2351,11 +2351,13 @@ void LavaVu::drawAxis()
 
     //printf("%f %f %f %f\n", vp[0], vp[1], vp[2], vp[3]);
     glViewport(vp[0], vp[1], vp[2], vp[3]);
+    glScissor(vp[0], vp[1], vp[2], vp[3]);
   }
   else
   {
     size = 10 + (aview->width+aview->height)*2.0*size;
     glViewport(aview->xpos, aview->ypos, size, size);
+    glScissor(aview->xpos, aview->ypos, size, size);
     //printf("%d %d %f %f\n", aview->xpos, aview->ypos, size, size);
   }
 
