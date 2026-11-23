@@ -245,8 +245,11 @@ Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& rende
 
   //Create a renderer if none found...
   //std::cout << "DEFAULT RENDERER NOT FOUND: (so create) " << GeomData::names[type] << std::endl;
-  if (session.globals.count("renderlist"))
-    return NULL; //Do not create new renderers when renderlist set
+  //The default has been changed to always create a renderer if no suitable one found
+  //Previously, if renderlist provided then only those types would be rendered
+  //If the old behaviour is needed, set "renderall" property to false
+  if (!session.globals["renderall"])
+    return NULL; //Do not create new renderers
   Geometry* g = createRenderer(session, GeomData::names[type]);
   geometry.push_back(g);
   return g;

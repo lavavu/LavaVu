@@ -71,6 +71,17 @@
       false
     ]
   },
+  "renderall": {
+    "default": true,
+    "target": "all",
+    "type": "boolean",
+    "desc": "Default renderers are created when none exists for an object, change this to false to disable this behaviour.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "subrenderers": {
     "default": "sortedtriangles points simplelines",
     "target": "all",
