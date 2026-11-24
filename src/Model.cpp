@@ -1555,7 +1555,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop)
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
     statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,NULL,NULL,NULL,NULL,NULL,NULL,data FROM %sgeometry WHERE %s ORDER BY timestep,object_id", database.prefix, filter);
-    printf("Using legacy GLDB format\n");
+    if (statement != NULL) printf("Using legacy GLDB format\n");
   }
 
   if (!statement) return 0;
@@ -1597,7 +1597,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 {
   clock_t t1 = clock();
   int rows = 0;
-  int tbytes = 0;
+  long tbytes = 0;
   int ret;
   Geometry* active = NULL;
   do
@@ -1785,7 +1785,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
   while (ret == SQLITE_ROW);
 
   sqlite3_finalize(statement);
-  debug_print("... loaded %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("... loaded %d rows, %ld bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
 
   return rows;
 }
