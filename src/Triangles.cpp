@@ -109,7 +109,7 @@ unsigned int Triangles::triCount()
 void Triangles::update()
 {
   // Update triangles...
-  unsigned int lastcount = total/3;
+  //unsigned int lastcount = total/3;
   unsigned int drawelements = triCount();
   if (drawelements == 0) return;
 
@@ -117,13 +117,20 @@ void Triangles::update()
   //Not needed when objects hidden/shown but required if colours changed
   //if ((lastcount != total/3 && reload) || !tidx)
   //printf("(tris) LastCount %d total %d, reload %d\n", lastcount, total, reload);
-  if ((lastcount != total/3 && reload) || vbo == 0)
+  //if ((lastcount != total/3 && reload) || vbo == 0) //This fails if new geometry is loaded with the same tri count
+  if (reload || vbo == 0)
   {
     //Send the data to the GPU via VBO
     loadBuffers();
 
     //Initial render
     //render();
+  }
+  else
+  {
+    //At minimum, update the vertex offsets
+    for (unsigned int index = 1; index < geom.size(); index++)
+      geom[index]->voffset = geom[index-1]->voffset + geom[index-1]->count();
   }
 
   //Always trigger re-render (load indices) in case elements hidden/shown
