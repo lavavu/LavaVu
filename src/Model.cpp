@@ -1959,7 +1959,13 @@ void Model::writeDatabase(Database& outdb, DrawingObject* obj)
   {
     if ((!obj && objects[i]->properties.data["visible"]) || objects[i] == obj)
     {
-      if (!outdb.issue("insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str()))
+      //Always use existing id if provided
+      if (objects[i]->dbid)
+      {
+        if (!outdb.issue("insert into object (id, name, properties) values (%d, '%s', '%s')", objects[i]->dbid, objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str()))
+          return;
+      }
+      else if (!outdb.issue("insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str()))
         return;
       //Store the id
       objects[i]->dbid = sqlite3_last_insert_rowid(outdb.db);
