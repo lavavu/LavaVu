@@ -1188,8 +1188,8 @@ void View::drawOverlay()
 
   //Title
   std::string title = properties["title"];
-  std::string gtitle = session.global("title");
-  if (title.length() == 0) title = gtitle;
+  if (properties.hasglobal("title")) //Global overrides when set
+    title = session.global("title");
   if (title.length())
   {
     //Timestep macro ##
