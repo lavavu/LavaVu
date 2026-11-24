@@ -1961,6 +1961,17 @@
       true
     ]
   },
+  "overlay": {
+    "default": true,
+    "target": "global",
+    "type": "boolean",
+    "desc": "Overlay enabled (titles, colourbars etc). Set this to false to hide all overlay elements.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "filename": {
     "default": "",
     "target": "global",

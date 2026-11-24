@@ -2930,6 +2930,10 @@ void LavaVu::drawSceneBlended(bool nosort)
     break;
   }
 
+  //std::cout << session.global("overlay") << std::endl;
+  if (!session.global("overlay"))
+    return; //Skip drawing overlay elements
+
   drawAxis();
   aview->drawOverlay();
 }
