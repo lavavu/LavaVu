@@ -1142,22 +1142,24 @@ int Model::loadTimeSteps(bool scan)
       addTimeStep(step, props);
 
       //Set time property if provided
+      int tlen = timesteps.size();
+      int checkstep = step;
       if (sqlite3_column_type(statement, 1) != SQLITE_NULL)
       {
         float time = sqlite3_column_double(statement, 1);
-        int tlen = timesteps.size();
         timesteps[tlen-1]->properties.data["time"] = time;
+        checkstep = (int)time;
       }
 
       //No geometry in current db? Check for attachment db
       if (geomcount == 0)
       {
         //Look for additional db file (minimum 3 digit padded step in names)
-        std::string path = checkFileStep(step, basename, 3);
+        std::string path = checkFileStep(checkstep, basename, 3);
         if (path.length() > 0 && path != database.file.full)
         {
-          debug_print("Found step %d database %s\n", step, path.c_str());
-          timesteps[rows]->path = path;
+          debug_print("Found step %d database %s for idx %d\n", step, path.c_str(), tlen-1);
+          timesteps[tlen-1]->path = path;
         }
       }
 
@@ -1188,6 +1190,11 @@ int Model::loadTimeSteps(bool scan)
           timesteps[0]->step = ts;
           timesteps[0]->path = path;
         }
+        else if (hasTimeStep(ts))
+        {
+          int idx = nearestTimeStep(ts);
+          timesteps[idx]->path = path;
+        }
         else
           addTimeStep(ts, "", path);
       }
@@ -1212,6 +1219,13 @@ std::string Model::checkFileStep(unsigned int ts, const std::string& basename, u
     ss << database.file.path << basename << std::setw(w) << std::setfill('0') << ts;
     ss << "." << database.file.ext;
     std::string path = ss.str();
+    if (FileExists(path))
+      return path;
+    //Also try with intermediate period
+    ss.str(""); //Clear
+    ss << database.file.path << basename << "." << std::setw(w) << std::setfill('0') << ts;
+    ss << "." << database.file.ext;
+    path = ss.str();
     if (FileExists(path))
       return path;
   }
