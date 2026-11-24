@@ -193,7 +193,8 @@ void Triangles::loadBuffers()
     FloatValues* vals = geom[index]->colourData();
     //Calibrate colour maps on range for this surface
     ColourLookup& getColour = geom[index]->colourCalibrate();
-    unsigned int hasColours = geom[index]->hasTexture() ? 0 : geom[index]->colourCount();
+    //unsigned int hasColours = geom[index]->hasTexture() ? 0 : geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->colourCount();
     if (hasColours > geom[index]->count()) hasColours = geom[index]->count(); //Limit to vertices
     unsigned int colrange = hasColours ? geom[index]->count() / hasColours : 1;
     if (colrange < 1) colrange = 1;
@@ -230,12 +231,19 @@ void Triangles::loadBuffers()
     float nullTexCoord[2] = {-1.0, -1.0};
     if (index > 0)
       geom[index]->voffset = geom[index-1]->voffset + geom[index-1]->count();
-    colour.value = 0; //Reset colour
+
+    //printf("%d SET VOFFSET %d\n", index, geom[index]->voffset);
+
+    //Get default colour
+    getColour(colour, 0);
+
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
-      if (!texmap && (geom[index]->texwidth + geom[index]->texheight == 0) && cidx * colrange == v)
+      //Allow combined rgba colours and texture,
+      //if we don't want rgba then don't provide any or modify shader
+      if (hasColours && (cidx * colrange == v))
         getColour(colour, cidx);
 
       float* vert = geom[index]->render->vertices[v];

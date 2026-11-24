@@ -81,7 +81,7 @@ void main(void)
   }
 
   if (uOpacity > 0.0) alpha *= uOpacity;
-  if (uOpaque) alpha = 1.0;
+  //if (uOpaque) alpha = 1.0; //This breaks transparent textures
   if (alpha < 0.01) discard;
 
   if (!uLighting) 
