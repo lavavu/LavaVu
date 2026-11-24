@@ -3851,6 +3851,18 @@ class Viewer(dict):
         self.app.clearAll(objects, colourmaps)
         self._get() #Ensure in sync
 
+    def clearstep(self, fixed=True):
+        """
+        Clears all data from the visualisation, time-varying and optionally fixed
+        Leaving objects, colourmaps, fixed data, properties etc in place
+
+        Parameters
+        ----------
+        fixed : boolean
+            If set to True will clear fixed time data as well, defaults to True
+        """
+        self.app.clearStep(fixed)
+
     def store(self, filename="state.json"):
         """
         Store current visualisation state as a json file

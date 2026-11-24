@@ -128,6 +128,7 @@ public:
   //Execute function
   void run(std::vector<std::string> args={});
   void clearAll(bool objects=false, bool colourmaps=false);
+  void clearStep(bool fixed=true);
 
   std::vector<unsigned char> serialize();
   void deserialize(unsigned char* source, unsigned int len);

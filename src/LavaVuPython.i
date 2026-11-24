@@ -207,6 +207,7 @@ public:
   void loadLabels(DrawingObject* target, std::vector <std::string> labels);
 
   void clearAll(bool objects=false, bool colourmaps=false);
+  void clearStep(bool fixed=true);
   void clearObject(DrawingObject* target);
   void clearValues(DrawingObject* target, std::string label="");
   void clearData(DrawingObject* target, lucGeometryDataType type);

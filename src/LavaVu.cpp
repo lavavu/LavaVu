@@ -616,6 +616,16 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
   aobject = NULL;
 }
 
+void LavaVu::clearStep(bool fixed)
+{
+  //Clears data from objects, time varying and optionally, fixed
+  GL_Check_Thread(viewer->render_thread); //Textures will be deleted, need to check thread
+  //Clear all data
+  if (!amodel) return;
+  amodel->clearObjects(fixed);
+  //amodel->init(true); //Re-initialise and clear renderers
+}
+
 std::vector<unsigned char> LavaVu::serialize()
 {
   if (!amodel)
