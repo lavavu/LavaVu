@@ -3586,7 +3586,7 @@ Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len
     }
     else
       p = container->read(target, len, type, array, width, height, depth);
-    reloadObject(target);
+    //reloadObject(target); //SLOW
   }
   else
     std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
@@ -3601,7 +3601,7 @@ Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, 
   if (container)
   {
     p = container->read(target, len, type, array, width, height, depth);
-    reloadObject(target);
+    //reloadObject(target); //SLOW
   }
   else
     std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
@@ -3618,7 +3618,7 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeo
   if (container)
   {
     p = container->read(target, len/dsize, type, array, width, height, depth);
-    reloadObject(target);
+    //reloadObject(target); //SLOW
   }
   else
     std::cerr << "Container not found for data type: " << GeomData::names[type] << ", object:" << target->name() << std::endl;
@@ -3633,7 +3633,7 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::s
   if (container)
   {
     p = container->read(target, len, array, label, width, height, depth);
-    reloadObject(target);
+    //reloadObject(target);
   }
   else
     std::cerr << "Container not found for data label: " << label << ", object:" << target->name() << std::endl;
