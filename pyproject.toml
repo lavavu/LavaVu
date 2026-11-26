@@ -5,9 +5,11 @@ authors = [
 ]
 description = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities"
 readme = "README.md"
-license = {file = "LICENSE.md"}
+license = "LGPL-3.0-or-later"
+license-files = [
+    "LICENSE.md",
+]
 classifiers = [
-    'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
     'Operating System :: POSIX :: Linux',
