@@ -570,7 +570,7 @@ void TriSurfaces::sort()
   if (view->is3d)
   {
     //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
-    sorter.sort(tricount);
+    sorter.sort(tricount, opaqueCount); //Start sort after opaque entries
     t2 = clock();
     debug_print("  %.4lf seconds to sort %d triangles\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount);
   }
@@ -578,13 +578,13 @@ void TriSurfaces::sort()
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   t1 = clock();
   LOCK_GUARD(loadmutex);
-  unsigned int idxcount = 0;
-  for(int i=tricount-1; i>=0; i--)
+  //Only update the non-opaque sorted indices, reversing order
+  unsigned int idxcount = tricount*3;
+  for(unsigned int i=opaqueCount; i<tricount; i++)
   {
-    assert(idxcount < 3 * tricount * sizeof(unsigned int));
+    idxcount -= 3;
     //Copy index bytes
     memcpy(&sorter.indices[idxcount], sorter.buffer[i].index, sizeof(GLuint) * 3);
-    idxcount += 3;
     //if (i%100==0) printf("%d ==> %d,%d,%d\n", i, sorter.buffer[i].index[0], sorter.buffer[i].index[1], sorter.buffer[i].index[2]);
   }
 
@@ -642,7 +642,6 @@ void TriSurfaces::draw()
   if (sorter.changed)
     render();
 
-  setState(0); //Set global draw state (using first object)
   Shader_Ptr prog = session.shaders[lucTriangleType];
 
   // Draw using vertex buffer object
@@ -675,8 +674,8 @@ void TriSurfaces::draw()
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
-        setState(index); //Set draw state settings for this object
         //fprintf(stderr, "(%d %s) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index]/3, start/3, (start+counts[index])/3);
+        setState(index); //Set draw state settings for this object
         glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
       }

@@ -173,12 +173,12 @@ class SortData
       changed = true;
     }
 
-    void sort(unsigned int N)
+    void sort(unsigned int N, unsigned int offset=0)
     {
       if (N > size) abort_program("Sort count out of range");
       //Sort by each byte of 2 byte index
-      radix<T>(0, N, buffer, swap);
-      radix<T>(1, N, swap, buffer);
+      radix<T>(0, N-offset, buffer+offset, swap+offset);
+      radix<T>(1, N-offset, swap+offset, buffer+offset);
     }
 };
 
